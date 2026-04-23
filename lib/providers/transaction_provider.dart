@@ -1,22 +1,49 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
-import '../database/db_helper.dart';
+import '../database/pb_helper.dart';
 import '../models/transaction_model.dart';
 
 class TransactionProvider extends ChangeNotifier {
-  final DbHelper _dbHelper = DbHelper();
+  final PbHelper _pbHelper = PbHelper();
+  final Connectivity _connectivity = Connectivity();
   List<TransactionModel> _transactions = [];
   bool _isLoading = false;
+  String? _errorMessage;
+  bool _isOnline = true;
 
   List<TransactionModel> get allTransactions => _transactions;
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  bool get isOnline => _isOnline;
+
+  Future<void> initialize() async {
+    await _pbHelper.initialize();
+    await checkConnectivity();
+  }
+
+  Future<void> checkConnectivity() async {
+    final result = await _connectivity.checkConnectivity();
+    _isOnline = !result.contains(ConnectivityResult.none);
+    notifyListeners();
+  }
 
   Future<void> loadTransactions() async {
+    await checkConnectivity();
+    if (!_isOnline) {
+      _errorMessage = 'Tidak ada koneksi internet';
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
-      _transactions = await _dbHelper.getAllTransactions();
+      _transactions = await _pbHelper.fetchAll();
     } catch (e) {
+      _errorMessage = e.toString();
       debugPrint('Error loading transactions: $e');
     }
 
@@ -25,40 +52,63 @@ class TransactionProvider extends ChangeNotifier {
   }
 
   Future<bool> addTransaction(TransactionModel transaction) async {
+    await checkConnectivity();
+    if (!_isOnline) {
+      _errorMessage = 'Tidak ada koneksi internet';
+      notifyListeners();
+      return false;
+    }
+
     try {
-      final id = await _dbHelper.insertTransaction(transaction);
-      final newTransaction = transaction.copyWith(id: id);
+      final newTransaction = await _pbHelper.create(transaction);
       _transactions.insert(0, newTransaction);
       notifyListeners();
       return true;
     } catch (e) {
+      _errorMessage = e.toString();
       debugPrint('Error adding transaction: $e');
       return false;
     }
   }
 
-  Future<bool> deleteTransaction(int id) async {
+  Future<bool> deleteTransaction(String id) async {
+    await checkConnectivity();
+    if (!_isOnline) {
+      _errorMessage = 'Tidak ada koneksi internet';
+      notifyListeners();
+      return false;
+    }
+
     try {
-      await _dbHelper.deleteTransaction(id);
+      await _pbHelper.delete(id);
       _transactions.removeWhere((t) => t.id == id);
       notifyListeners();
       return true;
     } catch (e) {
+      _errorMessage = e.toString();
       debugPrint('Error deleting transaction: $e');
       return false;
     }
   }
 
   Future<bool> updateTransaction(TransactionModel transaction) async {
+    await checkConnectivity();
+    if (!_isOnline) {
+      _errorMessage = 'Tidak ada koneksi internet';
+      notifyListeners();
+      return false;
+    }
+
     try {
-      await _dbHelper.updateTransaction(transaction);
+      final updatedTransaction = await _pbHelper.update(transaction.id!, transaction);
       final index = _transactions.indexWhere((t) => t.id == transaction.id);
       if (index != -1) {
-        _transactions[index] = transaction;
+        _transactions[index] = updatedTransaction;
         notifyListeners();
       }
       return true;
     } catch (e) {
+      _errorMessage = e.toString();
       debugPrint('Error updating transaction: $e');
       return false;
     }

@@ -1,5 +1,7 @@
+import 'package:pocketbase/pocketbase.dart';
+
 class TransactionModel {
-  final int? id;
+  final String? id;
   final String title;
   final double amount;
   final String type;
@@ -17,9 +19,20 @@ class TransactionModel {
     required this.note,
   });
 
-  Map<String, dynamic> toMap() {
+  factory TransactionModel.fromRecord(RecordModel record) {
+    return TransactionModel(
+      id: record.id,
+      title: record.data['title'] as String,
+      amount: (record.data['amount'] as num).toDouble(),
+      type: record.data['type'] as String,
+      category: record.data['category'] as String,
+      date: DateTime.parse(record.data['date'] as String),
+      note: (record.data['note'] as String?) ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
     return {
-      'id': id,
       'title': title,
       'amount': amount,
       'type': type,
@@ -29,20 +42,8 @@ class TransactionModel {
     };
   }
 
-  factory TransactionModel.fromMap(Map<String, dynamic> map) {
-    return TransactionModel(
-      id: map['id'] as int?,
-      title: map['title'] as String,
-      amount: map['amount'] as double,
-      type: map['type'] as String,
-      category: map['category'] as String,
-      date: DateTime.parse(map['date'] as String),
-      note: map['note'] as String,
-    );
-  }
-
   TransactionModel copyWith({
-    int? id,
+    String? id,
     String? title,
     double? amount,
     String? type,

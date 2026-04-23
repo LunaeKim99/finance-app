@@ -19,7 +19,7 @@ class FinanceApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => TransactionProvider()..loadTransactions(),
+      create: (_) => TransactionProvider()..initialize()..loadTransactions(),
       child: Platform.isIOS
           ? CupertinoApp(
               debugShowCheckedModeBanner: false,
