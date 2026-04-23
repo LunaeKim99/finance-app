@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:pocketbase/pocketbase.dart';
 import '../models/transaction_model.dart';
 
@@ -13,11 +14,22 @@ class PbHelper {
 
   PbHelper._internal();
 
+  String _getBaseUrl() {
+    if (Platform.isAndroid) {
+      if (Platform.environment.containsKey('ANDROID_EMULATOR')) {
+        return 'http://10.0.2.2:8090';
+      }
+      return 'http://192.168.18.6:8090';
+    } else if (Platform.isIOS) {
+      return 'http://127.0.0.1:8090';
+    }
+    return 'http://127.0.0.1:8090';
+  }
+
   Future<void> initialize() async {
     if (_isInitialized) return;
     
-    const defaultUrl = 'http://127.0.0.1:8090';
-    _pb = PocketBase(defaultUrl);
+    _pb = PocketBase(_getBaseUrl());
     _isInitialized = true;
   }
 
