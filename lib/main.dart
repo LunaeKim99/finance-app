@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'providers/transaction_provider.dart';
 import 'screens/dashboard_screen.dart';
@@ -10,6 +13,7 @@ import 'screens/report_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  initializeDateFormatting('id_ID', null);
   runApp(const FinanceApp());
 }
 
@@ -27,6 +31,15 @@ class FinanceApp extends StatelessWidget {
                 primaryColor: Color(0xFF4CAF50),
                 brightness: Brightness.light,
               ),
+              locale: const Locale('id', 'ID'),
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [
+                Locale('id', 'ID'),
+              ],
               home: const AppShell(),
             )
           : MaterialApp(
@@ -40,6 +53,15 @@ class FinanceApp extends StatelessWidget {
                 ),
                 platform: TargetPlatform.android,
               ),
+              locale: const Locale('id', 'ID'),
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [
+                Locale('id', 'ID'),
+              ],
               home: const AppShell(),
             ),
     );
