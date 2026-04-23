@@ -1,5 +1,3 @@
-import 'package:pocketbase/pocketbase.dart';
-
 class TransactionModel {
   final String? id;
   final String title;
@@ -21,15 +19,15 @@ class TransactionModel {
 
   String get safeId => id ?? '';
 
-  factory TransactionModel.fromRecord(RecordModel record) {
+  factory TransactionModel.fromMap(Map<String, dynamic> map) {
     return TransactionModel(
-      id: record.id,
-      title: record.data['title'] as String,
-      amount: (record.data['amount'] as num).toDouble(),
-      type: record.data['type'] as String,
-      category: record.data['category'] as String,
-      date: DateTime.parse(record.data['date'] as String),
-      note: (record.data['note'] as String?) ?? '',
+      id: map['id'] as String?,
+      title: map['title'] as String,
+      amount: (map['amount'] as num).toDouble(),
+      type: map['type'] as String,
+      category: map['category'] as String,
+      date: DateTime.parse(map['date'] as String),
+      note: (map['note'] as String?) ?? '',
     );
   }
 

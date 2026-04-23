@@ -47,12 +47,24 @@ class PbHelper {
 
   PocketBase get pb => _pb;
 
+  TransactionModel _recordToModel(RecordModel record) {
+    return TransactionModel(
+      id: record.id,
+      title: record.data['title'] as String,
+      amount: (record.data['amount'] as num).toDouble(),
+      type: record.data['type'] as String,
+      category: record.data['category'] as String,
+      date: DateTime.parse(record.data['date'] as String),
+      note: (record.data['note'] as String?) ?? '',
+    );
+  }
+
   Future<List<TransactionModel>> fetchAll() async {
     try {
       final result = await _pb.collection('transactions').getList(
         sort: '-date',
       );
-      return result.items.map((record) => TransactionModel.fromRecord(record)).toList();
+      return result.items.map((record) => _recordToModel(record)).toList();
     } catch (e) {
       throw Exception('Gagal mengambil data: ${e.toString()}');
     }
@@ -61,7 +73,7 @@ class PbHelper {
   Future<TransactionModel> create(TransactionModel t) async {
     try {
       final result = await _pb.collection('transactions').create(body: t.toJson());
-      return TransactionModel.fromRecord(result);
+      return _recordToModel(result);
     } catch (e) {
       throw Exception('Gagal membuat transaksi: ${e.toString()}');
     }
@@ -78,7 +90,7 @@ class PbHelper {
   Future<TransactionModel> update(String id, TransactionModel t) async {
     try {
       final result = await _pb.collection('transactions').update(id, body: t.toJson());
-      return TransactionModel.fromRecord(result);
+      return _recordToModel(result);
     } catch (e) {
       throw Exception('Gagal mengupdate transaksi: ${e.toString()}');
     }
@@ -95,7 +107,7 @@ class PbHelper {
         filter: 'date >= "$startStr" && date <= "$endStr"',
         sort: '-date',
       );
-      return result.items.map((record) => TransactionModel.fromRecord(record)).toList();
+      return result.items.map((record) => _recordToModel(record)).toList();
     } catch (e) {
       throw Exception('Gagal mengambil data bulan: ${e.toString()}');
     }
