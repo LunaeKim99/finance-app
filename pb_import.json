@@ -1,0 +1,20 @@
+[
+  {
+    "id": "transactions_collection",
+    "name": "transactions",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {"id": "f1", "name": "title", "type": "text", "required": true},
+      {"id": "f2", "name": "amount", "type": "number", "required": true},
+      {"id": "f3", "name": "type", "type": "select", "required": true, "options": {"maxSelect": 1, "values": ["income", "expense"]}},
+      {"id": "f4", "name": "category", "type": "text", "required": true},
+      {"id": "f5", "name": "date", "type": "date", "required": true},
+      {"id": "f6", "name": "note", "type": "text", "required": false}
+    ],
+    "listRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": ""
+  }
+]
