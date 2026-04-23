@@ -41,7 +41,7 @@ class TransactionProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _transactions = await _pbHelper.fetchAll();
+      _transactions = await _pbHelper.fetchAllTransactions();
     } catch (e) {
       _errorMessage = e.toString();
       debugPrint('Error loading transactions: $e');
@@ -60,7 +60,7 @@ class TransactionProvider extends ChangeNotifier {
     }
 
     try {
-      final newTransaction = await _pbHelper.create(transaction);
+      final newTransaction = await _pbHelper.createTransaction(transaction);
       _transactions.insert(0, newTransaction);
       notifyListeners();
       return true;
@@ -80,7 +80,7 @@ class TransactionProvider extends ChangeNotifier {
     }
 
     try {
-      await _pbHelper.delete(id);
+      await _pbHelper.deleteTransaction(id);
       _transactions.removeWhere((t) => t.id == id);
       notifyListeners();
       return true;
@@ -105,7 +105,7 @@ class TransactionProvider extends ChangeNotifier {
         _errorMessage = 'Transaction ID is required for update';
         return false;
       }
-      final updatedTransaction = await _pbHelper.update(transactionId, transaction);
+      final updatedTransaction = await _pbHelper.updateTransaction(transactionId, transaction);
       final index = _transactions.indexWhere((t) => t.id == transaction.id);
       if (index != -1) {
         _transactions[index] = updatedTransaction;
