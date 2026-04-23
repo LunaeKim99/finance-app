@@ -78,10 +78,6 @@
         }
       }
     ],
-    "indexes": [
-      "CREATE INDEX idx_transactions_date ON transactions (date)",
-      "CREATE INDEX idx_transactions_type ON transactions (type)"
-    ],
     "listRule": "",
     "viewRule": "",
     "createRule": "",
@@ -151,9 +147,6 @@
         "unique": false,
         "options": {}
       }
-    ],
-    "indexes": [
-      "CREATE INDEX idx_categories_type ON categories (type)"
     ],
     "listRule": "",
     "viewRule": "",
