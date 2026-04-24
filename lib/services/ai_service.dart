@@ -109,7 +109,11 @@ PENTING: Selalu balas dalam format JSON valid. Jangan tambahkan teks di luar JSO
         ),
       );
 
-      _chat = _model!.startChat();
+      _chat = _model!.startChat(
+        history: [
+          Content.text(_systemPrompt),
+        ],
+      );
 
       _isInitialized = true;
       debugPrint('[AiService] Initialized successfully!');
@@ -132,10 +136,11 @@ PENTING: Selalu balas dalam format JSON valid. Jangan tambahkan teks di luar JSO
   }
 
   Future<AiResponse> sendMessage(String message, DateTime currentDate) async {
-    // SELALU initialize ulang untuk dapat API key terbaru
-    final success = await initialize();
-    if (!success) {
-      return _buildErrorResponse(_lastError);
+    if (!_isInitialized || _model == null || _chat == null) {
+      final success = await initialize();
+      if (!success) {
+        return _buildErrorResponse(_lastError);
+      }
     }
 
     try {
