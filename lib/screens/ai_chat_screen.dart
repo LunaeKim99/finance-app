@@ -157,27 +157,34 @@ class _AiChatScreenState extends State<AiChatScreen> {
   }
 
   Future<void> _startVoiceInput() async {
+    final initialized = await _voiceService.initialize();
+    if (!initialized) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Mikrofon tidak tersedia di perangkat ini')),
+        );
+      }
+      return;
+    }
+
+    _recognizedWords = '';
+
     await _voiceService.startListening(
       onResult: (result) {
         setState(() {
           _recognizedWords = result.recognizedWords;
-          if (result.finalResult) {
-            _textController.text = _recognizedWords;
-          }
+          _textController.text = _recognizedWords;
         });
       },
       onListeningStart: () {
-        setState(() {
-          _isListening = true;
-        });
+        setState(() => _isListening = true);
       },
       onListeningStop: () {
-        setState(() {
-          _isListening = false;
-        });
-        if (_recognizedWords.isNotEmpty) {
-          _sendTextMessage(_recognizedWords);
+        setState(() => _isListening = false);
+        final words = _recognizedWords.trim();
+        if (words.isNotEmpty) {
           _recognizedWords = '';
+          _sendTextMessage(words);
         }
       },
     );

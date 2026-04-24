@@ -43,12 +43,16 @@ class FinanceApp extends StatelessWidget {
           },
         ),
       ],
-      child: Platform.isIOS
-          ? CupertinoApp(
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          if (Platform.isIOS) {
+            return CupertinoApp(
               debugShowCheckedModeBanner: false,
-              theme: const CupertinoThemeData(
-                primaryColor: Color(0xFF4CAF50),
-                brightness: Brightness.light,
+              theme: CupertinoThemeData(
+                primaryColor: const Color(0xFF4CAF50),
+                brightness: themeProvider.isDarkMode
+                    ? Brightness.dark
+                    : Brightness.light,
               ),
               locale: const Locale('id', 'ID'),
               localizationsDelegates: const [
@@ -56,47 +60,43 @@ class FinanceApp extends StatelessWidget {
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
               ],
-              supportedLocales: const [
-                Locale('id', 'ID'),
-              ],
+              supportedLocales: const [Locale('id', 'ID')],
               home: const AppShell(),
-            )
-          : Consumer<ThemeProvider>(
-              builder: (context, themeProvider, child) {
-                return MaterialApp(
-                  debugShowCheckedModeBanner: false,
-                  title: 'Personal Finance',
-                  themeMode: themeProvider.themeMode,
-                  theme: ThemeData(
-                    useMaterial3: true,
-                    colorScheme: ColorScheme.fromSeed(
-                      seedColor: const Color(0xFF4CAF50),
-                      brightness: Brightness.light,
-                    ),
-                    scaffoldBackgroundColor: Colors.white,
-                    platform: TargetPlatform.android,
-                  ),
-                  darkTheme: ThemeData(
-                    useMaterial3: true,
-                    colorScheme: ColorScheme.fromSeed(
-                      seedColor: const Color(0xFF4CAF50),
-                      brightness: Brightness.dark,
-                    ),
-                    scaffoldBackgroundColor: const Color(0xFF121212),
-                  ),
-                  locale: const Locale('id', 'ID'),
-                  localizationsDelegates: const [
-                    GlobalMaterialLocalizations.delegate,
-                    GlobalWidgetsLocalizations.delegate,
-                    GlobalCupertinoLocalizations.delegate,
-                  ],
-                  supportedLocales: const [
-                    Locale('id', 'ID'),
-                  ],
-                  home: const AppShell(),
-                );
-              },
+            );
+          }
+
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Personal Finance',
+            themeMode: themeProvider.themeMode,
+            theme: ThemeData(
+              useMaterial3: true,
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: const Color(0xFF4CAF50),
+                brightness: Brightness.light,
+              ),
+              scaffoldBackgroundColor: Colors.white,
+              platform: TargetPlatform.android,
             ),
+            darkTheme: ThemeData(
+              useMaterial3: true,
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: const Color(0xFF4CAF50),
+                brightness: Brightness.dark,
+              ),
+              scaffoldBackgroundColor: const Color(0xFF121212),
+            ),
+            locale: const Locale('id', 'ID'),
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [Locale('id', 'ID')],
+            home: const AppShell(),
+          );
+        },
+      ),
     );
   }
 }

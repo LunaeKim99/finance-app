@@ -8,15 +8,26 @@ class VoiceService {
   bool _isInitialized = false;
   bool _isListening = false;
 
+  // Simpan callback agar bisa dipanggil saat stop/cancel
+  Function()? _onListeningStopCallback;
+
   bool get isInitialized => _isInitialized;
   bool get isListening => _isListening;
 
   Future<bool> initialize() async {
     if (_isInitialized) return true;
-
     _isInitialized = await _speech.initialize(
       onError: (error) => debugPrint('Voice error: $error'),
-      onStatus: (status) => debugPrint('Voice status: $status'),
+      onStatus: (status) {
+        debugPrint('Voice status: $status');
+        // Jika speech engine berhenti otomatis, panggil callback
+        if (status == 'done' || status == 'notListening') {
+          if (_isListening) {
+            _isListening = false;
+            _onListeningStopCallback?.call();
+          }
+        }
+      },
     );
     return _isInitialized;
   }
@@ -30,9 +41,10 @@ class VoiceService {
       final initialized = await initialize();
       if (!initialized) return;
     }
-
     if (_isListening) return;
 
+    // Simpan callback untuk dipanggil nanti
+    _onListeningStopCallback = onListeningStop;
     _isListening = true;
     onListeningStart();
 
@@ -44,24 +56,24 @@ class VoiceService {
       onResult: onResult,
       localeId: selectedLocale,
       listenFor: const Duration(seconds: 30),
+      pauseFor: const Duration(seconds: 3),
     );
   }
 
   Future<void> stopListening() async {
     if (!_isListening) return;
-
     _isListening = false;
     await _speech.stop();
-    onListeningStop();
+    _onListeningStopCallback?.call();
+    _onListeningStopCallback = null;
   }
 
   Future<void> cancelListening() async {
     _isListening = false;
     await _speech.cancel();
-    onListeningStop();
+    _onListeningStopCallback?.call();
+    _onListeningStopCallback = null;
   }
-
-  void onListeningStop() {}
 
   Future<List<LocaleName>> getAvailableLocales() async {
     return await _speech.locales();
