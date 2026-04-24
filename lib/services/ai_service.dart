@@ -90,7 +90,7 @@ PENTING: Selalu balas dalam format JSON valid. Jangan tambahkan teks di luar JSO
       }
 
       _model = GenerativeModel(
-        model: 'gemini-2.5-flash',
+        model: 'gemini-2.0-flash',
         apiKey: apiKey,
         generationConfig: GenerationConfig(
           temperature: 0.3,
