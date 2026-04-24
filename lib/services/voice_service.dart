@@ -63,9 +63,12 @@ class VoiceService {
   Future<void> stopListening() async {
     if (!_isListening) return;
     _isListening = false;
-    await _speech.stop();
-    _onListeningStopCallback?.call();
+    // Simpan callback lalu null-kan dulu sebelum stop
+    // agar onStatus 'done' tidak trigger lagi
+    final callback = _onListeningStopCallback;
     _onListeningStopCallback = null;
+    await _speech.stop();
+    callback?.call();
   }
 
   Future<void> cancelListening() async {

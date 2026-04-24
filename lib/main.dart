@@ -145,6 +145,20 @@ class _AppShellState extends State<AppShell> {
           return CupertinoPageScaffold(
             navigationBar: CupertinoNavigationBar(
               middle: Text(_getTitle(index)),
+              trailing: index == 0
+                  ? Consumer<ThemeProvider>(
+                      builder: (context, themeProvider, child) => CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        onPressed: themeProvider.toggleTheme,
+                        child: Icon(
+                          themeProvider.isDarkMode
+                              ? CupertinoIcons.sun_max
+                              : CupertinoIcons.moon,
+                          size: 22,
+                        ),
+                      ),
+                    )
+                  : null,
             ),
             child: SafeArea(
               child: _screens[index],

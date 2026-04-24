@@ -180,6 +180,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
         setState(() => _isListening = true);
       },
       onListeningStop: () {
+        if (!mounted) return;
         setState(() => _isListening = false);
         final words = _recognizedWords.trim();
         if (words.isNotEmpty) {
