@@ -15,7 +15,7 @@ class AiService {
   String? _lastError;
   DateTime? _lastRequestTime;
 
-  static const String _model = 'microsoft/Phi-3-mini-4k-instruct';
+  static const String _model = 'microsoft/Phi-3-mini-4k-instruct-gguf';
   static const String _baseUrl = 'https://router.huggingface.co/v1/chat/completions';
   static const Duration _minRequestInterval = Duration(seconds: 3);
 
