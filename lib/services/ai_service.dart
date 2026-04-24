@@ -67,7 +67,7 @@ PENTING: Selalu balas dalam format JSON valid. Jangan tambahkan teks di luar JSO
   Future<void> initialize() async {
     final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
     _model = GenerativeModel(
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.5-flash',
       apiKey: apiKey,
       systemInstruction: _systemPrompt,
     );
