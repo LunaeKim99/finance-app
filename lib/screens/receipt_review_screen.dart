@@ -108,6 +108,25 @@ class _ReceiptReviewScreenState extends State<ReceiptReviewScreen> {
   Widget _buildContent() {
     return Column(
       children: [
+        if (widget.scanResult.usedOfflineMode)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            color: const Color.fromARGB(38, 255, 165, 0),
+            child: const Row(
+              children: [
+                Icon(Icons.wifi_off, size: 16, color: Colors.orange),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Mode offline — hasil scan mungkin kurang akurat. '
+                    'Silakan periksa dan edit jika perlu.',
+                    style: TextStyle(fontSize: 12, color: Colors.orange),
+                  ),
+                ),
+              ],
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.all(16),
           child: _buildToggle(),

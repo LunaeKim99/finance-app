@@ -3,21 +3,19 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 import '../models/receipt_scan_result.dart';
+import 'ocr_service.dart';
 
 class ReceiptScanService {
   static const String _model = 'llama-3.1-8b-instant';
   static const String _baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
   static const Duration _minRequestInterval = Duration(seconds: 3);
 
-  final TextRecognizer _textRecognizer = TextRecognizer(
-    script: TextRecognitionScript.latin,
-  );
   final ImagePicker _imagePicker = ImagePicker();
+  final OcrService _ocrService = OcrService();
 
   DateTime? _lastRequestTime;
 
@@ -37,31 +35,60 @@ class ReceiptScanService {
   }
 
   Future<ReceiptScanResult> scanReceipt(File imageFile) async {
-    try {
-      await Future.delayed(const Duration(milliseconds: 100));
+    final ocrResult = await _ocrService.extractText(imageFile.path);
 
-      final inputImage = InputImage.fromFile(imageFile);
-      final recognizedText = await _textRecognizer.processImage(inputImage);
-      final rawText = recognizedText.text;
+    if (!ocrResult.isSuccess || ocrResult.text.trim().isEmpty) {
+      throw Exception(
+        'Tidak dapat membaca teks dari gambar.\n'
+        'Pastikan foto struk cukup terang dan tulisan terlihat jelas.',
+      );
+    }
 
-      if (rawText.trim().isEmpty) {
-        throw Exception('Tidak ada teks yang terdeteksi pada gambar. Coba lagi dengan foto yang lebih jelas!');
+    if (ocrResult.engine == OcrEngine.tesseract) {
+      return _parseOfflineResult(ocrResult.text);
+    }
+
+    return await _parseWithGroq(ocrResult.text);
+  }
+
+  ReceiptScanResult _parseOfflineResult(String rawText) {
+    final numberRegex = RegExp(r'\d{3,}(?:[.,]\d{3})*');
+    final matches = numberRegex.allMatches(rawText);
+
+    double total = 0;
+    for (final match in matches) {
+      final numStr = match.group(0)!
+          .replaceAll('.', '')
+          .replaceAll(',', '');
+      final value = double.tryParse(numStr) ?? 0;
+      if (value > total) total = value;
+    }
+
+    return ReceiptScanResult(
+      merchant: 'Tidak diketahui (mode offline)',
+      date: DateTime.now(),
+      total: total,
+      items: [],
+      currency: 'IDR',
+      usedOfflineMode: true,
+    );
+  }
+
+  Future<ReceiptScanResult> _parseWithGroq(String rawText) async {
+    if (_lastRequestTime != null) {
+      final elapsed = DateTime.now().difference(_lastRequestTime!);
+      if (elapsed < _minRequestInterval) {
+        await Future.delayed(_minRequestInterval - elapsed);
       }
+    }
+    _lastRequestTime = DateTime.now();
 
-      if (_lastRequestTime != null) {
-        final elapsed = DateTime.now().difference(_lastRequestTime!);
-        if (elapsed < _minRequestInterval) {
-          await Future.delayed(_minRequestInterval - elapsed);
-        }
-      }
-      _lastRequestTime = DateTime.now();
+    final apiKey = dotenv.env['GROQ_API_KEY'] ?? '';
+    if (apiKey.isEmpty) {
+      throw Exception('API key belum dikonfigurasi. Cek file .env!');
+    }
 
-      final apiKey = dotenv.env['GROQ_API_KEY'] ?? '';
-      if (apiKey.isEmpty) {
-        throw Exception('API key belum dikonfigurasi. Cek file .env!');
-      }
-
-      const systemPrompt = '''Kamu adalah asisten keuangan. Analisis teks struk belanja berikut dan ekstrak
+    const systemPrompt = '''Kamu adalah asisten keuangan. Analisis teks struk belanja berikut dan ekstrak
 informasi dalam format JSON yang valid. Jangan tambahkan teks apapun di luar JSON.
 Format output:
 {
@@ -77,44 +104,40 @@ Format output:
 }
 ] }''';
 
-      final userPrompt = 'Teks struk:\n$rawText';
+    final userPrompt = 'Teks struk:\n$rawText';
 
-      final response = await http.post(
-        Uri.parse(_baseUrl),
-        headers: {
-          'Authorization': 'Bearer $apiKey',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'model': _model,
-          'messages': [
-            {'role': 'system', 'content': systemPrompt},
-            {'role': 'user', 'content': userPrompt},
-          ],
-          'temperature': 0.1,
-          'max_tokens': 1024,
-        }),
-      );
+    final response = await http.post(
+      Uri.parse(_baseUrl),
+      headers: {
+        'Authorization': 'Bearer $apiKey',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'model': _model,
+        'messages': [
+          {'role': 'system', 'content': systemPrompt},
+          {'role': 'user', 'content': userPrompt},
+        ],
+        'temperature': 0.1,
+        'max_tokens': 1024,
+      }),
+    );
 
-      if (response.statusCode != 200) {
-        debugPrint('Groq API error: ${response.statusCode} - ${response.body}');
-        throw Exception('Gagal memproses struk. Coba lagi ya! (Error: ${response.statusCode})');
-      }
-
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final choices = data['choices'] as List<dynamic>;
-      if (choices.isEmpty) {
-        throw Exception('响应 kosong. Coba lagi!');
-      }
-
-      final content = choices[0]['message']['content'] as String;
-      final jsonText = _extractJson(content);
-
-      return _parseReceiptJson(jsonText);
-    } catch (e) {
-      debugPrint('ReceiptScanService error: $e');
-      rethrow;
+    if (response.statusCode != 200) {
+      debugPrint('Groq API error: ${response.statusCode} - ${response.body}');
+      throw Exception('Gagal memproses struk. Coba lagi ya! (Error: ${response.statusCode})');
     }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final choices = data['choices'] as List<dynamic>;
+    if (choices.isEmpty) {
+      throw Exception('响应 kosong. Coba lagi!');
+    }
+
+    final content = choices[0]['message']['content'] as String;
+    final jsonText = _extractJson(content);
+
+    return _parseReceiptJson(jsonText);
   }
 
   String _extractJson(String text) {
@@ -159,6 +182,7 @@ Format output:
         total: total,
         currency: json['currency'] as String? ?? 'IDR',
         items: itemsList,
+        usedOfflineMode: false,
       );
     } catch (e) {
       debugPrint('Parse error: $e');
@@ -166,7 +190,5 @@ Format output:
     }
   }
 
-  void dispose() {
-    _textRecognizer.close();
-  }
+  void dispose() {}
 }

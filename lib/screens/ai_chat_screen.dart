@@ -294,9 +294,9 @@ class _AiChatScreenState extends State<AiChatScreen> {
     _scrollToBottom();
 
     try {
-      final extractedText = await _ocrService.extractText(file);
+      final ocrResult = await _ocrService.extractText(file.path);
 
-      if (extractedText.trim().isEmpty) {
+      if (!ocrResult.isSuccess || ocrResult.text.trim().isEmpty) {
         _replaceLoadingWithMessage(
           'Maaf, tidak ada teks yang bisa dibaca dari gambar ini. '
           'Coba foto yang lebih jelas ya! 📸',
@@ -304,7 +304,15 @@ class _AiChatScreenState extends State<AiChatScreen> {
         return;
       }
 
-      final prompt = _ocrService.buildOcrPrompt(extractedText);
+      if (ocrResult.engine == OcrEngine.tesseract) {
+        _replaceLoadingWithMessage(
+          '📴 Mode offline — struk dibaca tanpa AI. '
+          'Silakan cek hasilnya di layar review.',
+        );
+        return;
+      }
+
+      final prompt = _ocrService.buildReceiptPrompt(ocrResult.text);
       final response = await _aiService.sendMessage(prompt, DateTime.now());
       _replaceLoadingWithResponse(response);
     } catch (e) {

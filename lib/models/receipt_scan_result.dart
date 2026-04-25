@@ -40,6 +40,7 @@ class ReceiptScanResult {
   final double total;
   final String currency;
   final List<ReceiptItem> items;
+  final bool usedOfflineMode;
 
   const ReceiptScanResult({
     this.merchant = '',
@@ -47,6 +48,7 @@ class ReceiptScanResult {
     this.total = 0,
     this.currency = 'IDR',
     this.items = const [],
+    this.usedOfflineMode = false,
   });
 
   ReceiptScanResult copyWith({
@@ -55,6 +57,7 @@ class ReceiptScanResult {
     double? total,
     String? currency,
     List<ReceiptItem>? items,
+    bool? usedOfflineMode,
   }) {
     return ReceiptScanResult(
       merchant: merchant ?? this.merchant,
@@ -62,6 +65,7 @@ class ReceiptScanResult {
       total: total ?? this.total,
       currency: currency ?? this.currency,
       items: items ?? this.items,
+      usedOfflineMode: usedOfflineMode ?? this.usedOfflineMode,
     );
   }
 }
