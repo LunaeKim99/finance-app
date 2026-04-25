@@ -9,6 +9,7 @@ import '../models/transaction_model.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/usage_provider.dart';
 import '../services/export_service.dart';
+import 'upgrade_screen.dart';
 
 class ExportScreen extends StatefulWidget {
   const ExportScreen({super.key});
@@ -221,7 +222,10 @@ class _ExportScreenState extends State<ExportScreen> {
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: () {
-                context.read<UsageProvider>().upgradeToPremium();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const UpgradeScreen()),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.amber,

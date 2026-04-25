@@ -9,6 +9,7 @@ import '../services/ai_service.dart';
 import '../services/voice_service.dart';
 import '../services/ocr_service.dart';
 import '../utils/app_theme.dart';
+import '../screens/upgrade_screen.dart';
 import 'package:intl/intl.dart';
 
 class ChatMessage {
@@ -120,8 +121,17 @@ class _AiChatScreenState extends State<AiChatScreen> {
     
     if (!usageProvider.canUseAiText()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Batas harian tercapai (10/10). Upgrade ke Premium untuk input AI tanpa batas.'),
+        SnackBar(
+          content: const Text('Batas harian tercapai (10/10).'),
+          action: SnackBarAction(
+            label: 'Upgrade',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const UpgradeScreen()),
+              );
+            },
+          ),
         ),
       );
       return;

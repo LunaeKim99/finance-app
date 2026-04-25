@@ -9,6 +9,7 @@ import '../providers/transaction_provider.dart';
 import '../providers/usage_provider.dart';
 import '../services/ai_service.dart';
 import '../screens/export_screen.dart';
+import '../screens/upgrade_screen.dart';
 import '../utils/app_theme.dart';
 
 class ReportScreen extends StatefulWidget {
@@ -506,7 +507,10 @@ class _ReportScreenState extends State<ReportScreen> {
               const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: () {
-                  usageProvider.upgradeToPremium();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const UpgradeScreen()),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.amber,

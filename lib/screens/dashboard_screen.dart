@@ -11,6 +11,7 @@ import '../providers/usage_provider.dart';
 import '../services/ai_service.dart';
 import '../screens/add_transaction_screen.dart';
 import '../screens/history_screen.dart';
+import '../screens/upgrade_screen.dart';
 import '../utils/app_theme.dart';
 import '../widgets/transaction_card.dart';
 
@@ -287,6 +288,68 @@ class _DashboardScreenState extends State<DashboardScreen> {
             title: const Text('Personal Finance'),
             centerTitle: true,
             actions: [
+              Consumer<UsageProvider>(
+                builder: (context, usageProvider, _) {
+                  final isPremium = usageProvider.isPremium;
+                  return GestureDetector(
+                    onTap: () {
+                      if (!isPremium) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const UpgradeScreen()),
+                        );
+                      } else {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Row(
+                              children: [
+                                Icon(Icons.verified_user, color: Colors.amber),
+                                SizedBox(width: 8),
+                                Text('Premium'),
+                              ],
+                            ),
+                            content: const Text('Kamu sudah Premium! Nikmati semua fitur tanpa batasan.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('OK'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        color: isPremium ? Colors.amber : Colors.grey,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isPremium ? Icons.emoji_events : Icons.lock,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            isPremium ? 'PREMIUM' : 'FREE',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
               Consumer<ThemeProvider>(
                 builder: (context, themeProvider, _) => IconButton(
                   icon: Icon(
@@ -446,7 +509,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: () {
-                  usageProvider.upgradeToPremium();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const UpgradeScreen()),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.amber,
