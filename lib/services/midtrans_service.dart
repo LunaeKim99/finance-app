@@ -9,7 +9,6 @@ import '../models/payment_model.dart';
 
 class MidtransService {
   String? get _serverKey => dotenv.env['MIDTRANS_SERVER_KEY'];
-  String? get _clientKey => dotenv.env['MIDTRANS_CLIENT_KEY'];
   String? get _baseUrl => dotenv.env['MIDTRANS_BASE_URL'];
 
   bool get isConfigured => 
