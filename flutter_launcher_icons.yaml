@@ -1,0 +1,7 @@
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo_uwangku.svg"
+  adaptive_icon_background: "#4CAF50"
+  adaptive_icon_foreground: "assets/images/logo_uwangku.svg"
+  remove_alpha_ios: true
