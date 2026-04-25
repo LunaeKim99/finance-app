@@ -21,6 +21,7 @@ class ReportScreen extends StatefulWidget {
 
 class _ReportScreenState extends State<ReportScreen> {
   DateTime _selectedMonth = DateTime.now();
+  bool _showMonthlySummary = false;
 
   @override
   Widget build(BuildContext context) {
@@ -879,11 +880,6 @@ class _ReportScreenState extends State<ReportScreen> {
       );
     }
 
-    final monthTransactions = provider.allTransactions.where((t) {
-      return t.date.month == _selectedMonth.month &&
-          t.date.year == _selectedMonth.year;
-    }).toList();
-
     final monthName = DateFormat('MMMM yyyy', 'id_ID').format(_selectedMonth);
 
     return Column(
@@ -891,94 +887,105 @@ class _ReportScreenState extends State<ReportScreen> {
       children: [
         _buildSectionTitle('Ringkasan Bulanan AI'),
         const SizedBox(height: 12),
-        FutureBuilder<String>(
-          key: ValueKey('monthly_${_selectedMonth.month}_${_selectedMonth.year}'),
-          future: AiRecommendationService().generateMonthlySummary(
-            monthTransactions,
-            monthName,
+        Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          builder: (context, snapshot) {
-            return Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          isIOS
-                              ? CupertinoIcons.sparkles
-                              : Icons.auto_awesome_rounded,
-                          color: const Color(0xFF4CAF50),
-                          size: 20,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                if (!_showMonthlySummary)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () =>
+                          setState(() => _showMonthlySummary = true),
+                      icon: const Icon(Icons.auto_awesome_rounded),
+                      label: const Text('Generate Ringkasan Bulan Ini'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4CAF50),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Analisis $monthName',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    if (snapshot.connectionState == ConnectionState.waiting)
-                      const Center(
-                        child: Column(
+                  )
+                else
+                  FutureBuilder<String>(
+                    key: ValueKey(
+                      'monthly_${_selectedMonth.month}_${_selectedMonth.year}',
+                    ),
+                    future: AiRecommendationService().generateMonthlySummary(
+                      provider.allTransactions
+                          .where((t) =>
+                              t.date.month == _selectedMonth.month &&
+                              t.date.year == _selectedMonth.year)
+                          .toList(),
+                      monthName,
+                    ),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: Column(
+                            children: [
+                              CircularProgressIndicator(
+                                color: Color(0xFF4CAF50),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'AI sedang menganalisis...',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      if (snapshot.hasError) {
+                        return Column(
                           children: [
-                            CircularProgressIndicator(
-                              color: Color(0xFF4CAF50),
-                            ),
-                            SizedBox(height: 8),
+                            const Icon(Icons.error_outline, color: Colors.red),
+                            const SizedBox(height: 6),
                             Text(
-                              'AI sedang menganalisis keuangan bulan ini...',
-                              style: TextStyle(
+                              'Gagal: ${snapshot.error}',
+                              style: const TextStyle(
+                                color: Colors.red,
                                 fontSize: 13,
-                                color: Colors.grey,
                               ),
                             ),
-                          ],
-                        ),
-                      )
-                    else if (snapshot.hasError)
-                      Row(
-                        children: [
-                          const Icon(Icons.error_outline,
-                              color: Colors.red, size: 16),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Gagal memuat: ${snapshot.error}',
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontSize: 13,
+                            const SizedBox(height: 8),
+                            TextButton.icon(
+                              onPressed: () => setState(() {
+                                _showMonthlySummary = false;
+                                Future.delayed(
+                                  const Duration(milliseconds: 300),
+                                  () => setState(
+                                    () => _showMonthlySummary = true,
+                                  ),
+                                );
+                              }),
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Coba Lagi'),
                             ),
-                          ),
-                        ],
-                      )
-                    else if (monthTransactions.isEmpty)
-                      const Center(
-                        child: Text(
-                          'Tidak ada transaksi pada bulan ini',
-                          style: TextStyle(color: Colors.grey, fontSize: 13),
-                        ),
-                      )
-                    else
-                      MarkdownBody(
+                          ],
+                        );
+                      }
+                      return MarkdownBody(
                         data: snapshot.data ?? '',
                         styleSheet: MarkdownStyleSheet(
                           p: const TextStyle(fontSize: 13, height: 1.5),
                         ),
-                      ),
-                  ],
-                ),
-              ),
-            );
-          },
+                      );
+                    },
+                  ),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -987,6 +994,7 @@ class _ReportScreenState extends State<ReportScreen> {
   void _prevMonth() {
     setState(() {
       _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month - 1);
+      _showMonthlySummary = false;
     });
   }
 
@@ -996,6 +1004,7 @@ class _ReportScreenState extends State<ReportScreen> {
         (_selectedMonth.year == now.year && _selectedMonth.month < now.month)) {
       setState(() {
         _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month + 1);
+        _showMonthlySummary = false;
       });
     }
   }
