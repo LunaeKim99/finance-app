@@ -307,29 +307,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return Scaffold(
           appBar: AppBar(
             title: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Image(
-                  image: AssetImage('assets/images/logo.png'),
-                  height: 36,
-                  width: 36,
+                  image: const AssetImage('assets/images/logo.png'),
+                  height: 28,
+                  width: 28,
                 ),
                 const SizedBox(width: 8),
-                const Text('UWANGKU'),
+                const Text(
+                  'UWANGKU',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 17,
+                    letterSpacing: 0.5,
+                  ),
+                ),
               ],
             ),
-            centerTitle: false,
+            centerTitle: true,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            backgroundColor: Colors.transparent,
             actions: [
               if (AppConfig.isDemoBuild)
                 Container(
-                  margin: const EdgeInsets.symmetric(
-                    vertical: 10,
-                    horizontal: 4,
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
+                  margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: Colors.orange,
                     borderRadius: BorderRadius.circular(20),
@@ -359,11 +363,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         showDialog(
                           context: context,
                           builder: (context) => AlertDialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                             title: const Row(
                               children: [
-                                Icon(Icons.verified_user, color: Colors.amber),
+                                Icon(
+                                  Icons.workspace_premium_rounded,
+                                  color: Color(0xFF4CAF50),
+                                ),
                                 SizedBox(width: 8),
-                                Text('Premium'),
+                                Text('Premium Aktif'),
                               ],
                             ),
                             content: const Text(
@@ -372,7 +382,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context),
-                                child: const Text('OK'),
+                                child: const Text(
+                                  'OK',
+                                  style: TextStyle(color: Color(0xFF4CAF50)),
+                                ),
                               ),
                             ],
                           ),
@@ -380,28 +393,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      margin: const EdgeInsets.only(right: 4),
                       decoration: BoxDecoration(
-                        color: isPremium ? Colors.amber : Colors.grey,
+                        color: isPremium
+                            ? const Color(0xFF4CAF50)
+                            : Colors.grey.shade400,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            isPremium ? Icons.emoji_events : Icons.lock,
-                            size: 14,
+                            isPremium
+                                ? Icons.workspace_premium_rounded
+                                : Icons.lock_outline_rounded,
+                            size: 13,
                             color: Colors.white,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             isPremium ? 'PREMIUM' : 'FREE',
                             style: const TextStyle(
-                              fontSize: 12,
+                              fontSize: 11,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
@@ -418,11 +432,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     themeProvider.isDarkMode
                         ? Icons.light_mode_outlined
                         : Icons.dark_mode_outlined,
+                    size: 22,
                   ),
                   onPressed: themeProvider.toggleTheme,
-                  tooltip: themeProvider.isDarkMode
-                      ? 'Mode Terang'
-                      : 'Mode Gelap',
+                  tooltip: themeProvider.isDarkMode ? 'Mode Terang' : 'Mode Gelap',
                 ),
               ),
             ],
@@ -436,22 +449,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildOfflineBanner(bool isIOS) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.orange,
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.orange.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.orange.withOpacity(0.4)),
       ),
       child: Row(
         children: [
           Icon(
-            isIOS ? CupertinoIcons.wifi_slash : Icons.wifi_off,
-            color: Colors.white,
+            isIOS ? CupertinoIcons.wifi_slash : Icons.wifi_off_rounded,
+            color: Colors.orange,
+            size: 18,
           ),
           const SizedBox(width: 8),
           const Text(
             'Tidak ada koneksi internet',
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(
+              color: Colors.orange,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
@@ -465,24 +484,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              isIOS ? CupertinoIcons.doc_text : Icons.receipt_long_outlined,
-              size: 80,
-              color: Colors.grey.shade300,
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFF4CAF50).withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isIOS
+                    ? CupertinoIcons.doc_text
+                    : Icons.receipt_long_outlined,
+                size: 36,
+                color: const Color(0xFF4CAF50).withOpacity(0.5),
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             const Text(
               'Belum ada transaksi',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1A1A1A),
               ),
             ),
-            const SizedBox(height: 8),
-            const Text(
+            const SizedBox(height: 6),
+            Text(
               'Tap + untuk mulai mencatat keuanganmu',
-              style: TextStyle(fontSize: 14, color: Color(0xFF757575)),
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade500,
+              ),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
@@ -498,17 +529,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                 );
               },
-              icon: const Icon(Icons.add, size: 20),
+              icon: const Icon(Icons.add_rounded, size: 18),
               label: const Text('Tambah Sekarang'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4CAF50),
                 foregroundColor: Colors.white,
+                elevation: 0,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
                   vertical: 12,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(14),
                 ),
               ),
             ),
@@ -550,38 +582,91 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final categoryTotals = txProvider.getCategoryTotals(month, year);
 
     if (!isPremium) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              const Row(
-                children: [
-                  Icon(Icons.lock, color: Colors.amber),
-                  SizedBox(width: 8),
-                  Text(
-                    'Saran Keuangan AI',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFF4CAF50).withOpacity(0.08),
+              const Color(0xFF4CAF50).withOpacity(0.03),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color(0xFF4CAF50).withOpacity(0.25),
+            width: 1.5,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4CAF50).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Fitur ini khusus pengguna Premium.\nDapatkan saran keuangan personal.',
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton(
+                  child: const Icon(
+                    Icons.auto_awesome_rounded,
+                    color: Color(0xFF4CAF50),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Saran Keuangan AI',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                    Text(
+                      'Khusus pengguna Premium',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const UpgradeScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const UpgradeScreen(),
+                    ),
                   );
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
-                child: const Text('Upgrade ke Premium'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4CAF50),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text(
+                  'Upgrade ke Premium',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     }
