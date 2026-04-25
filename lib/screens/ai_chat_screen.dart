@@ -437,7 +437,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
             ),
           ],
         ),
-        centerTitle: true,
+        centerTitle: false,
       ),
       body: Column(
         children: [
