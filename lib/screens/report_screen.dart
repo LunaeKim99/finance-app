@@ -2,9 +2,13 @@ import 'dart:io';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/transaction_provider.dart';
+import '../providers/usage_provider.dart';
+import '../services/ai_service.dart';
+import '../screens/export_screen.dart';
 import '../utils/app_theme.dart';
 
 class ReportScreen extends StatefulWidget {
@@ -46,6 +50,8 @@ class _ReportScreenState extends State<ReportScreen> {
                 const SizedBox(height: 24),
                 _buildSummaryCards(income, expense, balance, currencyFormat),
                 const SizedBox(height: 24),
+                _buildWeeklySummary(provider),
+                const SizedBox(height: 24),
                 _buildPieChart(categoryTotals, currencyFormat),
                 const SizedBox(height: 24),
                 _buildBarChart(provider),
@@ -56,8 +62,16 @@ class _ReportScreenState extends State<ReportScreen> {
 
         if (isIOS) {
           return CupertinoPageScaffold(
-            navigationBar: const CupertinoNavigationBar(
-              middle: Text('Laporan'),
+            navigationBar: CupertinoNavigationBar(
+              middle: const Text('Laporan'),
+              trailing: CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ExportScreen()),
+                ),
+                child: const Icon(CupertinoIcons.share),
+              ),
             ),
             child: body,
           );
@@ -67,6 +81,15 @@ class _ReportScreenState extends State<ReportScreen> {
           appBar: AppBar(
             title: const Text('Laporan'),
             centerTitle: true,
+            actions: [
+              IconButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ExportScreen()),
+                ),
+                icon: const Icon(Icons.download_outlined),
+              ),
+            ],
           ),
           body: body,
         );
@@ -449,6 +472,99 @@ class _ReportScreenState extends State<ReportScreen> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildWeeklySummary(TransactionProvider provider) {
+    final usageProvider = context.watch<UsageProvider>();
+    final isPremium = usageProvider.isPremium;
+
+    if (!isPremium) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.lock, color: Colors.amber),
+                  SizedBox(width: 8),
+                  Text(
+                    'Ringkasan Mingguan',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Fitur ini khusus pengguna Premium.\nDapatkan ringkasan naratif keuangan mingguan.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () {
+                  usageProvider.upgradeToPremium();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber,
+                ),
+                child: const Text('Upgrade ke Premium'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return FutureBuilder<String>(
+      future: AiRecommendationService().generateWeeklySummary(
+        provider.allTransactions,
+      ),
+      builder: (context, snapshot) {
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.summarize, color: Color(0xFF4CAF50)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Ringkasan Mingguan',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (snapshot.connectionState == ConnectionState.waiting)
+                  const Center(
+                    child: Column(
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 8),
+                        Text('Menganalisis transaksi...'),
+                      ],
+                    ),
+                  )
+                else if (snapshot.hasError)
+                  Text('Gagal: ${snapshot.error}')
+                else
+                  MarkdownBody(
+                    data: snapshot.data ?? '',
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

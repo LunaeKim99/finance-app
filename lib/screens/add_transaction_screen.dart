@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/transaction_model.dart';
 import '../providers/transaction_provider.dart';
+import '../providers/usage_provider.dart';
+import '../services/receipt_scan_service.dart';
+import '../screens/receipt_review_screen.dart';
 import '../utils/app_theme.dart';
 
 class AddTransactionScreen extends StatefulWidget {
@@ -145,6 +148,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           _buildDatePicker(),
           const SizedBox(height: 16),
           _buildNoteField(),
+          const SizedBox(height: 16),
+          _buildScanReceiptButton(),
           const SizedBox(height: 32),
           _buildSubmitButton(),
         ],
@@ -641,6 +646,111 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       ),
       maxLines: 3,
     );
+  }
+
+  Widget _buildScanReceiptButton() {
+    final isIOS = Platform.isIOS;
+    final usageProvider = context.read<UsageProvider>();
+
+    return isIOS
+        ? CupertinoButton(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            color: Colors.blue,
+            onPressed: () => _scanReceipt(usageProvider),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(CupertinoIcons.camera, size: 20),
+                SizedBox(width: 8),
+                Text('Scan Struk'),
+              ],
+            ),
+          )
+        : OutlinedButton.icon(
+            onPressed: () => _scanReceipt(usageProvider),
+            icon: const Icon(Icons.camera_alt),
+            label: const Text('Scan Struk'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 48),
+            ),
+          );
+  }
+
+  Future<void> _scanReceipt(UsageProvider usageProvider) async {
+    if (!usageProvider.canUseAiPhoto()) {
+      if (Platform.isIOS) {
+        showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: const Text('Batas Tercapai'),
+            content: const Text(
+              'Batas scan struk harian tercapai (2/2). Coba lagi besok atau upgrade ke Premium.',
+            ),
+            actions: [
+              CupertinoDialogAction(
+                child: const Text('OK'),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Batas scan struk harian tercapai (2/2). Coba lagi besok atau upgrade ke Premium.',
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
+    final scanner = ReceiptScanService();
+    final image = await scanner.pickImage();
+    if (image == null) return;
+
+    if (Platform.isIOS) {
+      showCupertinoDialog(
+        context: context,
+        builder: (context) => const CupertinoAlertDialog(
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CupertinoActivityIndicator(),
+              SizedBox(width: 12),
+              Text('Memproses struk...'),
+            ],
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Memproses struk...')),
+      );
+    }
+
+    try {
+      final result = await scanner.scanReceipt(image);
+      await usageProvider.incrementAiPhoto();
+
+      if (mounted) {
+        Navigator.pop(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ReceiptReviewScreen(scanResult: result),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal scan: $e')),
+        );
+      }
+    }
   }
 
   Widget _buildSubmitButton() {

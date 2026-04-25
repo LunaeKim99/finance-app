@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 import '../models/transaction_model.dart';
 
@@ -342,4 +343,120 @@ class AiResponse {
     required this.message,
     this.transaction,
   });
+}
+
+class AiRecommendationService {
+  static const String _model = 'llama-3.1-8b-instant';
+  static const String _baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
+  static const Duration _minRequestInterval = Duration(seconds: 3);
+
+  DateTime? _lastRequestTime;
+
+  final _currencyFormat = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
+
+  Future<String> _sendToGroq(String systemPrompt, String userPrompt) async {
+    if (_lastRequestTime != null) {
+      final elapsed = DateTime.now().difference(_lastRequestTime!);
+      if (elapsed < _minRequestInterval) {
+        await Future.delayed(_minRequestInterval - elapsed);
+      }
+    }
+    _lastRequestTime = DateTime.now();
+
+    final apiKey = dotenv.env['GROQ_API_KEY'] ?? '';
+    if (apiKey.isEmpty) {
+      throw Exception('API key belum dikonfigurasi. Cek file .env!');
+    }
+
+    final response = await http.post(
+      Uri.parse(_baseUrl),
+      headers: {
+        'Authorization': 'Bearer $apiKey',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'model': _model,
+        'messages': [
+          {'role': 'system', 'content': systemPrompt},
+          {'role': 'user', 'content': userPrompt},
+        ],
+        'temperature': 0.7,
+        'max_tokens': 1024,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('AI error: ${response.statusCode}');
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final choices = data['choices'] as List<dynamic>;
+    if (choices.isEmpty) {
+      throw Exception('响应 kosong');
+    }
+
+    return choices[0]['message']['content'] as String;
+  }
+
+  Future<String> generateWeeklySummary(List<TransactionModel> transactions) async {
+    final now = DateTime.now();
+    final weekAgo = now.subtract(const Duration(days: 7));
+
+    final weeklyTx = transactions.where((t) => t.date.isAfter(weekAgo)).toList();
+    if (weeklyTx.isEmpty) {
+      return 'Belum ada transaksi minggu ini. Catat transaksi pertamamu! 📝';
+    }
+
+    final buffer = StringBuffer();
+    for (final tx in weeklyTx) {
+      final dateStr = DateFormat('dd/MM').format(tx.date);
+      final amountStr = _currencyFormat.format(tx.amount);
+      buffer.writeln('$dateStr | ${tx.category} | ${tx.type} | $amountStr');
+    }
+
+    const systemPrompt = '''Kamu adalah asisten keuangan pribadi yang ramah dan berbahasa Indonesia santai.
+Buat ringkasan keuangan mingguan berdasarkan data transaksi berikut.
+Tulis dalam 2-3 paragraf pendek, gunakan bahasa yang mudah dipahami,
+sertakan total pengeluaran, kategori terbesar, dan 1 kalimat motivasi di akhir.''';
+
+    final userPrompt = 'Data transaksi 7 hari terakhir:\n${buffer.toString()}';
+
+    try {
+      return await _sendToGroq(systemPrompt, userPrompt);
+    } catch (e) {
+      return 'Gagal membuat ringkasan: $e';
+    }
+  }
+
+  Future<String> generateBudgetRecommendation({
+    required Map<String, double> categoryTotals,
+    required double totalIncome,
+    required double totalExpense,
+  }) async {
+    final buffer = StringBuffer();
+    for (final entry in categoryTotals.entries) {
+      buffer.writeln('${entry.key}: ${_currencyFormat.format(entry.value)}');
+    }
+
+    const systemPrompt = '''Kamu adalah financial coach yang berbahasa Indonesia. Berikan tepat 3 saran
+keuangan yang konkret dan spesifik berdasarkan data bulan ini.
+Format output: daftar bernomor 1-3, setiap saran maksimal 2 kalimat.
+Saran harus realistis dan menyebutkan nominal jika relevan.''';
+
+    final userPrompt = '''Data keuangan bulan ini:
+Total Pemasukan: ${_currencyFormat.format(totalIncome)}
+Total Pengeluaran: ${_currencyFormat.format(totalExpense)}
+Pengeluaran per Kategori:
+${buffer.toString()}''';
+
+    try {
+      return await _sendToGroq(systemPrompt, userPrompt);
+    } catch (e) {
+      return 'Gagal membuat saran: $e';
+    }
+  }
 }

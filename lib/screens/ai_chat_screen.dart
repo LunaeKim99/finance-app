@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/transaction_model.dart';
 import '../providers/transaction_provider.dart';
+import '../providers/usage_provider.dart';
 import '../services/ai_service.dart';
 import '../services/voice_service.dart';
 import '../services/ocr_service.dart';
@@ -115,6 +116,17 @@ class _AiChatScreenState extends State<AiChatScreen> {
   Future<void> _sendTextMessage(String text) async {
     if (text.trim().isEmpty) return;
 
+    final usageProvider = context.read<UsageProvider>();
+    
+    if (!usageProvider.canUseAiText()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Batas harian tercapai (10/10). Upgrade ke Premium untuk input AI tanpa batas.'),
+        ),
+      );
+      return;
+    }
+
     _textController.clear();
     _addMessage(
       ChatMessage(
@@ -144,6 +156,8 @@ class _AiChatScreenState extends State<AiChatScreen> {
         _messages.removeLast();
         _isLoading = false;
       });
+      
+      await usageProvider.incrementAiText();
 
       if (response.action == AiAction.addTransaction && response.transaction != null) {
         _addMessage(
@@ -367,12 +381,41 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Row(
+        title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.smart_toy, size: 24),
             SizedBox(width: 8),
             Text('Asisten Keuangan'),
+            SizedBox(width: 8),
+            Consumer<UsageProvider>(
+              builder: (context, usageProvider, _) {
+                if (usageProvider.isPremium) {
+                  return Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.amber,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'PREMIUM',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
+                  );
+                }
+                return Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Sisa: ${usageProvider.remainingAiText}/10',
+                    style: TextStyle(fontSize: 10),
+                  ),
+                );
+              },
+            ),
           ],
         ),
         centerTitle: true,

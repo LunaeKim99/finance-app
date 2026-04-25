@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/usage_provider.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/add_transaction_screen.dart';
 import 'screens/history_screen.dart';
@@ -42,6 +43,13 @@ class FinanceApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) {
             final provider = ThemeProvider();
+            provider.initialize();
+            return provider;
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (_) {
+            final provider = UsageProvider();
             provider.initialize();
             return provider;
           },

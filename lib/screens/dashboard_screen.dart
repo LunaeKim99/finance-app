@@ -1,18 +1,30 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/transaction_model.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/theme_provider.dart';
+import '../providers/usage_provider.dart';
+import '../services/ai_service.dart';
 import '../screens/add_transaction_screen.dart';
 import '../screens/history_screen.dart';
 import '../utils/app_theme.dart';
 import '../widgets/transaction_card.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  void _refreshRecommendation() {
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -254,6 +266,8 @@ class DashboardScreen extends StatelessWidget {
                       );
                     },
                   ),
+                const SizedBox(height: 24),
+                _buildBudgetRecommendation(),
               ],
             ),
           ),
@@ -393,5 +407,118 @@ class DashboardScreen extends StatelessWidget {
         ),
       );
     }
+  }
+
+  Widget _buildBudgetRecommendation() {
+    final usageProvider = Provider.of<UsageProvider>(context, listen: false);
+    final isPremium = usageProvider.isPremium;
+    final txProvider = Provider.of<TransactionProvider>(context, listen: false);
+
+    final month = DateTime.now().month;
+    final year = DateTime.now().year;
+    final income = txProvider.getMonthlyIncomeByMonth(month, year);
+    final expense = txProvider.getMonthlyExpenseByMonth(month, year);
+    final categoryTotals = txProvider.getCategoryTotals(month, year);
+
+    if (!isPremium) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.lock, color: Colors.amber),
+                  SizedBox(width: 8),
+                  Text(
+                    'Saran Keuangan AI',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Fitur ini khusus pengguna Premium.\nDapatkan saran keuangan personal.',
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () {
+                  usageProvider.upgradeToPremium();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber,
+                ),
+                child: const Text('Upgrade ke Premium'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.lightbulb, color: Color(0xFF4CAF50)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Saran Keuangan AI',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh, size: 20),
+                  onPressed: _refreshRecommendation,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            FutureBuilder<String>(
+              future: AiRecommendationService().generateBudgetRecommendation(
+                categoryTotals: categoryTotals,
+                totalIncome: income,
+                totalExpense: expense,
+              ),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Column(
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 8),
+                        Text('Menganalisis...'),
+                      ],
+                    ),
+                  );
+                } else if (snapshot.hasError) {
+                  return Text('Gagal: ${snapshot.error}');
+                }
+                return MarkdownBody(
+                  data: snapshot.data ?? '',
+                  styleSheet: MarkdownStyleSheet(
+                    p: const TextStyle(fontSize: 14),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
