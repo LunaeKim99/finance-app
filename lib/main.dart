@@ -131,52 +131,86 @@ class _AppShellState extends State<AppShell> {
     AiChatScreen(),
   ];
 
+  int _navToScreenIndex(int navIndex) {
+    if (navIndex < 2) return navIndex;
+    return navIndex - 1;
+  }
+
+  void _onNavTap(int index) {
+    if (index == 2) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const AddTransactionScreen(),
+        ),
+      );
+      return;
+    }
+    setState(() => _currentIndex = _navToScreenIndex(index));
+  }
+
+  int get _activeNavIndex {
+    if (_currentIndex < 2) return _currentIndex;
+    return _currentIndex + 1;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isIOS = Platform.isIOS;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeColor = const Color(0xFF4CAF50);
+    final inactiveColor = isDark ? Colors.grey : Colors.grey;
+    final bgColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
 
-    if (isIOS) {
+    if (Platform.isIOS) {
       return CupertinoTabScaffold(
         tabBar: CupertinoTabBar(
           currentIndex: _currentIndex,
           onTap: (index) => setState(() => _currentIndex = index),
-          items: const [
-            BottomNavigationBarItem(
+          items: [
+            const BottomNavigationBarItem(
               icon: Icon(CupertinoIcons.home),
               label: 'Beranda',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(CupertinoIcons.clock),
               label: 'Riwayat',
             ),
             BottomNavigationBarItem(
+              icon: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: activeColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(CupertinoIcons.add, color: Colors.white),
+              ),
+              label: '',
+            ),
+            const BottomNavigationBarItem(
               icon: Icon(CupertinoIcons.chart_pie),
               label: 'Laporan',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(CupertinoIcons.chat_bubble_2),
               label: 'AI Chat',
             ),
           ],
         ),
         tabBuilder: (context, index) {
+          if (index == 2) {
+            return CupertinoPageScaffold(
+              child: SafeArea(
+                child: _screens[_currentIndex],
+              ),
+            );
+          }
+          if (index > 2) {
+            index = index - 1;
+          }
           return CupertinoPageScaffold(
             navigationBar: CupertinoNavigationBar(
               middle: Text(_getTitle(index)),
-              trailing: index == 0
-                  ? Consumer<ThemeProvider>(
-                      builder: (context, themeProvider, child) => CupertinoButton(
-                        padding: EdgeInsets.zero,
-                        onPressed: themeProvider.toggleTheme,
-                        child: Icon(
-                          themeProvider.isDarkMode
-                              ? CupertinoIcons.sun_max
-                              : CupertinoIcons.moon,
-                          size: 22,
-                        ),
-                      ),
-                    )
-                  : null,
             ),
             child: SafeArea(
               child: _screens[index],
@@ -187,69 +221,144 @@ class _AppShellState extends State<AppShell> {
     }
 
     return Scaffold(
-      body: _screens[_currentIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) => setState(() => _currentIndex = index),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Beranda',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.history_outlined),
-            selectedIcon: Icon(Icons.history),
-            label: 'Riwayat',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.pie_chart_outline),
-            selectedIcon: Icon(Icons.pie_chart),
-            label: 'Laporan',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.smart_toy_outlined),
-            selectedIcon: Icon(Icons.smart_toy),
-            label: 'AI Chat',
-          ),
-        ],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
       ),
-      floatingActionButton: Stack(
-        alignment: Alignment.bottomRight,
-        children: [
-          Positioned(
-            right: 0,
-            bottom: 0,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: bgColor,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: SizedBox(
+            height: 65,
+            child: Row(
               children: [
-                FloatingActionButton.small(
-                  heroTag: 'ai',
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AiChatScreen()),
-                  ),
-                  backgroundColor: const Color(0xFF4CAF50),
-                  child: const Icon(Icons.auto_awesome,
-                      color: Colors.white, size: 20),
-                  tooltip: 'Catat dengan AI',
+                _buildNavItem(
+                  navIndex: 0,
+                  icon: Icons.home_outlined,
+                  activeIcon: Icons.home_rounded,
+                  label: 'Beranda',
+                  activeColor: activeColor,
+                  inactiveColor: inactiveColor,
                 ),
-                const SizedBox(height: 8),
-                FloatingActionButton(
-                  heroTag: 'add',
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AddTransactionScreen()),
-                  ),
-                  backgroundColor: const Color(0xFF4CAF50),
-                  child: const Icon(Icons.add, color: Colors.white),
-                  tooltip: 'Tambah Manual',
+                _buildNavItem(
+                  navIndex: 1,
+                  icon: Icons.history_outlined,
+                  activeIcon: Icons.history_rounded,
+                  label: 'Riwayat',
+                  activeColor: activeColor,
+                  inactiveColor: inactiveColor,
+                ),
+                _buildCenterAddButton(activeColor),
+                _buildNavItem(
+                  navIndex: 3,
+                  icon: Icons.bar_chart_outlined,
+                  activeIcon: Icons.bar_chart_rounded,
+                  label: 'Laporan',
+                  activeColor: activeColor,
+                  inactiveColor: inactiveColor,
+                ),
+                _buildNavItem(
+                  navIndex: 4,
+                  icon: Icons.smart_toy_outlined,
+                  activeIcon: Icons.smart_toy_rounded,
+                  label: 'AI Chat',
+                  activeColor: activeColor,
+                  inactiveColor: inactiveColor,
                 ),
               ],
             ),
           ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required int navIndex,
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+    required Color activeColor,
+    required Color inactiveColor,
+  }) {
+    final isActive = _activeNavIndex == navIndex;
+
+    return Expanded(
+      child: InkWell(
+        onTap: () => _onNavTap(navIndex),
+        borderRadius: BorderRadius.circular(12),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                isActive ? activeIcon : icon,
+                key: ValueKey(isActive),
+                color: isActive ? activeColor : inactiveColor,
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                color: isActive ? activeColor : inactiveColor,
+                fontSize: 11,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCenterAddButton(Color activeColor) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _onNavTap(2),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    activeColor,
+                    activeColor.withValues(alpha: 0.75),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: activeColor.withValues(alpha: 0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.add_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
