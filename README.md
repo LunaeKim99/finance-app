@@ -12,7 +12,10 @@ Aplikasi Asisten Keuangan Pribadi Berbasis AI menggunakan Flutter dengan dukunga
 - **AI Chat** - Catat transaksi via chat natural language (Groq Llama 3.1)
 - **Voice Input** - Catat transaksi via suara (speech-to-text)
 - **OCR Scan** - Scan struk/nota via kamera (ML Kit text recognition)
+  - **Offline Mode**: Tesseract OCR fallback jika tidak ada internet
+  - Auto-detect koneksi → ML Kit (online) atau Tesseract (offline)
 - **Cross-Platform** - Tampilan native untuk Android (Material) dan iOS (Cupertino)
+- **Splash Screen** - Gradient animasi dengan logo UWANGKU
 - **Offline Mode** - Bisa jalan tanpa internet menggunakan SQLite lokal
 - **Premium** - Unlimited AI, Export PDF/CSV (via Midtrans)
 

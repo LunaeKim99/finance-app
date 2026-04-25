@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2026-04-25
+
+### Added
+
+- **Offline OCR Fallback** - Tesseract OCR untuk mode offline
+  - Cek koneksi otomatis: online → ML Kit, offline → Tesseract
+  - tessdata bahasa Indonesia & English
+  - Auto retry ML Kit jika error ke Tesseract
+  - Banner "Mode Offline" di receipt review
+
+- **Bottom Navigation Redesign** - Navigation bar baru
+  - 5 item: Beranda | Riwayat | [+] | Laporan | AI Chat
+  - Tombol [+] hijau di tengah dengan gradient
+  - Hapus semua FloatingActionButton
+  - Dark mode support
+
+- **App Icon Update** - Launcher icons baru
+  - Background abu gelap (#263238)
+  - Generate launcher icons dengan flutter_launcher_icons
+  - iOS icons otomatis
+
+- **Splash Screen Update** - Animasi splash screen
+  - Gradient white (#FFFFFF) → light green (#E8F5E9)
+  - Fade + scale animation untuk logo
+  - LinearProgressIndicator loading
+  - Fade transition ke AppShell
+
+### Changed
+
+- Standardisasi asset: hanya `assets/images/logo.png`
+- Hapus duplicate logo files
+- Update semua Image.asset references
+
 ## [1.3.0] - 2026-04-25
 
 ### Added
