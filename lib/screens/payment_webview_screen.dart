@@ -11,10 +11,12 @@ import '../services/midtrans_service.dart';
 
 class PaymentWebviewScreen extends StatefulWidget {
   final String snapToken;
+  final VoidCallback? onSuccess;
 
   const PaymentWebviewScreen({
     super.key,
     required this.snapToken,
+    this.onSuccess,
   });
 
   @override

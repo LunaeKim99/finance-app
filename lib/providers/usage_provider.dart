@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/app_config.dart';
 import '../models/usage_model.dart';
 
 class UsageProvider extends ChangeNotifier {
@@ -14,11 +15,11 @@ class UsageProvider extends ChangeNotifier {
   bool _isInitialized = false;
 
   UsageModel get usage => _usage;
-  bool get isPremium => _usage.isPremium;
+  bool get isPremium => AppConfig.allFeaturesUnlocked ? true : _usage.isPremium;
   bool get isInitialized => _isInitialized;
 
-  int get remainingAiText => _usage.isPremium ? -1 : (10 - _usage.aiTextUsedToday);
-  int get remainingAiPhoto => _usage.isPremium ? -1 : (2 - _usage.aiPhotoUsedToday);
+  int get remainingAiText => AppConfig.allFeaturesUnlocked ? -1 : (_usage.isPremium ? -1 : (10 - _usage.aiTextUsedToday));
+  int get remainingAiPhoto => AppConfig.allFeaturesUnlocked ? -1 : (_usage.isPremium ? -1 : (2 - _usage.aiPhotoUsedToday));
 
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();
@@ -60,10 +61,12 @@ class UsageProvider extends ChangeNotifier {
   }
 
   bool canUseAiText() {
+    if (AppConfig.allFeaturesUnlocked) return true;
     return _usage.isPremium || _usage.aiTextUsedToday < 10;
   }
 
   bool canUseAiPhoto() {
+    if (AppConfig.allFeaturesUnlocked) return true;
     return _usage.isPremium || _usage.aiPhotoUsedToday < 2;
   }
 

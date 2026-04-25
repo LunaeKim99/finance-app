@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../config/app_config.dart';
 import '../models/transaction_model.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/theme_provider.dart';
@@ -106,7 +107,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                             const SizedBox(height: 4),
                             Icon(
-                              isIOS ? CupertinoIcons.money_dollar_circle_fill : Icons.account_balance_wallet,
+                              isIOS
+                                  ? CupertinoIcons.money_dollar_circle_fill
+                                  : Icons.account_balance_wallet,
                               color: Colors.white.withValues(alpha: 0.5),
                               size: 28,
                             ),
@@ -209,7 +212,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                        color: isDark
+                            ? AppTheme.darkTextPrimary
+                            : AppTheme.textPrimary,
                       ),
                     ),
                     TextButton(
@@ -236,13 +241,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             'Lihat Semua',
                             style: TextStyle(
                               fontSize: 14,
-                              color: isIOS ? CupertinoColors.activeBlue : const Color(0xFF4CAF50),
+                              color: isIOS
+                                  ? CupertinoColors.activeBlue
+                                  : const Color(0xFF4CAF50),
                             ),
                           ),
                           Icon(
                             Icons.arrow_forward_ios,
                             size: 12,
-                            color: isIOS ? CupertinoColors.activeBlue : const Color(0xFF4CAF50),
+                            color: isIOS
+                                ? CupertinoColors.activeBlue
+                                : const Color(0xFF4CAF50),
                           ),
                         ],
                       ),
@@ -263,7 +272,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       final transactions = provider.getRecentTransactions(5);
                       return TransactionCard(
                         transaction: transactions[index],
-                        onTap: () => _navigateToEdit(context, transactions[index]),
+                        onTap: () =>
+                            _navigateToEdit(context, transactions[index]),
                       );
                     },
                   ),
@@ -280,7 +290,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               middle: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Image(image: AssetImage('assets/images/logo.png'), height: 24, width: 24),
+                  Image(
+                    image: AssetImage('assets/images/logo.png'),
+                    height: 24,
+                    width: 24,
+                  ),
                   SizedBox(width: 8),
                   Text('UWANGKU'),
                 ],
@@ -295,13 +309,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
             title: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image(image: AssetImage('assets/images/logo.png'), height: 24, width: 24),
+                Image(
+                  image: AssetImage('assets/images/logo.png'),
+                  height: 36,
+                  width: 36,
+                ),
                 const SizedBox(width: 8),
                 const Text('UWANGKU'),
               ],
             ),
-            centerTitle: true,
+            centerTitle: false,
             actions: [
+              if (AppConfig.isDemoBuild)
+                Container(
+                  margin: const EdgeInsets.symmetric(
+                    vertical: 10,
+                    horizontal: 4,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'DEMO',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               Consumer<UsageProvider>(
                 builder: (context, usageProvider, _) {
                   final isPremium = usageProvider.isPremium;
@@ -310,7 +351,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       if (!isPremium) {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const UpgradeScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const UpgradeScreen(),
+                          ),
                         );
                       } else {
                         showDialog(
@@ -323,7 +366,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Text('Premium'),
                               ],
                             ),
-                            content: const Text('Kamu sudah Premium! Nikmati semua fitur tanpa batasan.'),
+                            content: const Text(
+                              'Kamu sudah Premium! Nikmati semua fitur tanpa batasan.',
+                            ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context),
@@ -335,7 +380,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       margin: const EdgeInsets.only(right: 8),
                       decoration: BoxDecoration(
                         color: isPremium ? Colors.amber : Colors.grey,
@@ -372,7 +420,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         : Icons.dark_mode_outlined,
                   ),
                   onPressed: themeProvider.toggleTheme,
-                  tooltip: themeProvider.isDarkMode ? 'Mode Terang' : 'Mode Gelap',
+                  tooltip: themeProvider.isDarkMode
+                      ? 'Mode Terang'
+                      : 'Mode Gelap',
                 ),
               ),
             ],
@@ -432,10 +482,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 8),
             const Text(
               'Tap + untuk mulai mencatat keuanganmu',
-              style: TextStyle(
-                fontSize: 14,
-                color: Color(0xFF757575),
-              ),
+              style: TextStyle(fontSize: 14, color: Color(0xFF757575)),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
@@ -443,8 +490,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Navigator.push(
                   context,
                   isIOS
-                      ? CupertinoPageRoute(builder: (_) => const AddTransactionScreen())
-                      : MaterialPageRoute(builder: (_) => const AddTransactionScreen()),
+                      ? CupertinoPageRoute(
+                          builder: (_) => const AddTransactionScreen(),
+                        )
+                      : MaterialPageRoute(
+                          builder: (_) => const AddTransactionScreen(),
+                        ),
                 );
               },
               icon: const Icon(Icons.add, size: 20),
@@ -452,7 +503,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4CAF50),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -469,18 +523,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       Navigator.push(
         context,
         CupertinoPageRoute(
-          builder: (_) => AddTransactionScreen(
-            existingTransaction: transaction,
-          ),
+          builder: (_) =>
+              AddTransactionScreen(existingTransaction: transaction),
         ),
       );
     } else {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => AddTransactionScreen(
-            existingTransaction: transaction,
-          ),
+          builder: (_) =>
+              AddTransactionScreen(existingTransaction: transaction),
         ),
       );
     }
@@ -509,10 +561,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   SizedBox(width: 8),
                   Text(
                     'Saran Keuangan AI',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ],
               ),
@@ -528,9 +577,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     MaterialPageRoute(builder: (_) => const UpgradeScreen()),
                   );
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber,
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
                 child: const Text('Upgrade ke Premium'),
               ),
             ],
