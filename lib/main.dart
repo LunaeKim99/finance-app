@@ -124,10 +124,11 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    const DashboardScreen(),
-    const HistoryScreen(),
-    const ReportScreen(),
+  final List<Widget> _screens = const [
+    DashboardScreen(),
+    HistoryScreen(),
+    ReportScreen(),
+    AiChatScreen(),
   ];
 
   @override
@@ -151,6 +152,10 @@ class _AppShellState extends State<AppShell> {
             BottomNavigationBarItem(
               icon: Icon(CupertinoIcons.chart_pie),
               label: 'Laporan',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(CupertinoIcons.chat_bubble_2),
+              label: 'AI Chat',
             ),
           ],
         ),
@@ -202,6 +207,11 @@ class _AppShellState extends State<AppShell> {
             selectedIcon: Icon(Icons.pie_chart),
             label: 'Laporan',
           ),
+          NavigationDestination(
+            icon: Icon(Icons.smart_toy_outlined),
+            selectedIcon: Icon(Icons.smart_toy),
+            label: 'AI Chat',
+          ),
         ],
       ),
       floatingActionButton: Stack(
@@ -252,6 +262,8 @@ class _AppShellState extends State<AppShell> {
         return 'Riwayat Transaksi';
       case 2:
         return 'Laporan';
+      case 3:
+        return 'AI Chat';
       default:
         return 'UWANGKU';
     }
