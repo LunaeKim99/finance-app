@@ -51,7 +51,11 @@ class _ReportScreenState extends State<ReportScreen> {
                 const SizedBox(height: 24),
                 _buildSummaryCards(income, expense, balance, currencyFormat),
                 const SizedBox(height: 24),
+                _buildDailySummary(provider),
+                const SizedBox(height: 24),
                 _buildWeeklySummary(provider),
+                const SizedBox(height: 24),
+                _buildMonthlySummary(provider),
                 const SizedBox(height: 24),
                 _buildPieChart(categoryTotals, currencyFormat),
                 const SizedBox(height: 24),
@@ -569,6 +573,414 @@ class _ReportScreenState extends State<ReportScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildDailySummary(TransactionProvider provider) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final isIOS = Platform.isIOS;
+
+    final todayTransactions = provider.allTransactions.where((t) {
+      final txDate = DateTime(t.date.year, t.date.month, t.date.day);
+      return txDate == today;
+    }).toList();
+
+    double todayIncome = 0;
+    double todayExpense = 0;
+    for (final tx in todayTransactions) {
+      if (tx.type == 'income') {
+        todayIncome += tx.amount;
+      } else {
+        todayExpense += tx.amount;
+      }
+    }
+
+    final currencyFormat = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    );
+
+    final dayFormat = DateFormat('EEEE, d MMMM yyyy', 'id_ID');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle('Ringkasan Hari Ini'),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark
+                ? const Color(0xFF2A2A2A)
+                : const Color(0xFFF5F9F5),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    isIOS
+                        ? CupertinoIcons.calendar
+                        : Icons.calendar_today_rounded,
+                    size: 16,
+                    color: const Color(0xFF4CAF50),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    dayFormat.format(now),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDailyStatCard(
+                      label: 'Pemasukan',
+                      value: currencyFormat.format(todayIncome),
+                      color: const Color(0xFF4CAF50),
+                      icon: isIOS
+                          ? CupertinoIcons.arrow_down_circle_fill
+                          : Icons.arrow_downward_rounded,
+                      isDark: isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildDailyStatCard(
+                      label: 'Pengeluaran',
+                      value: currencyFormat.format(todayExpense),
+                      color: Colors.red,
+                      icon: isIOS
+                          ? CupertinoIcons.arrow_up_circle_fill
+                          : Icons.arrow_upward_rounded,
+                      isDark: isDark,
+                    ),
+                  ),
+                ],
+              ),
+              if (todayTransactions.isEmpty) ...[
+                const SizedBox(height: 12),
+                Center(
+                  child: Text(
+                    'Belum ada transaksi hari ini',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ] else ...[
+                const SizedBox(height: 16),
+                const Divider(height: 1),
+                const SizedBox(height: 12),
+                Text(
+                  '${todayTransactions.length} Transaksi Hari Ini',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...todayTransactions.take(5).map((tx) {
+                  final isExpense = tx.type == 'expense';
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: isExpense
+                                ? Colors.red.withValues(alpha: 0.1)
+                                : const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            isExpense
+                                ? (isIOS
+                                    ? CupertinoIcons.arrow_up_circle
+                                    : Icons.arrow_upward_rounded)
+                                : (isIOS
+                                    ? CupertinoIcons.arrow_down_circle
+                                    : Icons.arrow_downward_rounded),
+                            size: 18,
+                            color: isExpense
+                                ? Colors.red
+                                : const Color(0xFF4CAF50),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                tx.category,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              if (tx.note.isNotEmpty)
+                                Text(
+                                  tx.note,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          '${isExpense ? '-' : '+'}${currencyFormat.format(tx.amount)}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: isExpense
+                                ? Colors.red
+                                : const Color(0xFF4CAF50),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                if (todayTransactions.length > 5)
+                  Center(
+                    child: Text(
+                      '... dan ${todayTransactions.length - 5} transaksi lainnya',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDailyStatCard({
+    required String label,
+    required String value,
+    required Color color,
+    required IconData icon,
+    required bool isDark,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMonthlySummary(TransactionProvider provider) {
+    final usageProvider = context.watch<UsageProvider>();
+    final isPremium = usageProvider.isPremium;
+    final isIOS = Platform.isIOS;
+
+    if (!isPremium) {
+      return Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    isIOS ? CupertinoIcons.lock_fill : Icons.lock,
+                    color: Colors.amber,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Ringkasan Bulanan AI',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Dapatkan analisis mendalam keuangan bulan ini '
+                'dengan rekomendasi dari AI.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey, fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              isIOS
+                  ? CupertinoButton.filled(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const UpgradeScreen()),
+                      ),
+                      child: const Text('Upgrade ke Premium'),
+                    )
+                  : ElevatedButton(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const UpgradeScreen()),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber,
+                      ),
+                      child: const Text('Upgrade ke Premium'),
+                    ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final monthTransactions = provider.allTransactions.where((t) {
+      return t.date.month == _selectedMonth.month &&
+          t.date.year == _selectedMonth.year;
+    }).toList();
+
+    final monthName = DateFormat('MMMM yyyy', 'id_ID').format(_selectedMonth);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle('Ringkasan Bulanan AI'),
+        const SizedBox(height: 12),
+        FutureBuilder<String>(
+          key: ValueKey('monthly_${_selectedMonth.month}_${_selectedMonth.year}'),
+          future: AiRecommendationService().generateMonthlySummary(
+            monthTransactions,
+            monthName,
+          ),
+          builder: (context, snapshot) {
+            return Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          isIOS
+                              ? CupertinoIcons.sparkles
+                              : Icons.auto_awesome_rounded,
+                          color: const Color(0xFF4CAF50),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Analisis $monthName',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (snapshot.connectionState == ConnectionState.waiting)
+                      const Center(
+                        child: Column(
+                          children: [
+                            CircularProgressIndicator(
+                              color: Color(0xFF4CAF50),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'AI sedang menganalisis keuangan bulan ini...',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else if (snapshot.hasError)
+                      Row(
+                        children: [
+                          const Icon(Icons.error_outline,
+                              color: Colors.red, size: 16),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Gagal memuat: ${snapshot.error}',
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      )
+                    else if (monthTransactions.isEmpty)
+                      const Center(
+                        child: Text(
+                          'Tidak ada transaksi pada bulan ini',
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                      )
+                    else
+                      MarkdownBody(
+                        data: snapshot.data ?? '',
+                        styleSheet: MarkdownStyleSheet(
+                          p: const TextStyle(fontSize: 13, height: 1.5),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 

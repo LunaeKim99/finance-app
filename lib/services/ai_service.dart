@@ -459,4 +459,63 @@ ${buffer.toString()}''';
       return 'Gagal membuat saran: $e';
     }
   }
+
+  Future<String> generateMonthlySummary(
+    List<TransactionModel> transactions,
+    String monthName,
+  ) async {
+    if (transactions.isEmpty) {
+      return 'Tidak ada transaksi pada $monthName.';
+    }
+
+    double totalIncome = 0;
+    double totalExpense = 0;
+    final Map<String, double> categoryMap = {};
+
+    for (final tx in transactions) {
+      if (tx.type == 'income' || tx.type == 'pemasukan') {
+        totalIncome += tx.amount;
+      } else {
+        totalExpense += tx.amount;
+        categoryMap[tx.category] = (categoryMap[tx.category] ?? 0) + tx.amount;
+      }
+    }
+
+    final sortedCategories = categoryMap.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    final categoryText = sortedCategories
+        .take(5)
+        .map((e) =>
+            '- ${e.key}: ${_currencyFormat.format(e.value)}')
+        .join('\n');
+
+    final systemPrompt = '''
+Kamu adalah asisten keuangan pribadi yang ramah dan berbicara Bahasa Indonesia.
+Buat ringkasan keuangan bulanan dalam 3-4 paragraf singkat.
+
+Gunakan format markdown dengan bullet points. Singkat, jelas, dan actionable.
+Selalu gunakan emoji di awal setiap bullet point.''';
+
+    final userPrompt = '''
+Data keuangan bulan $monthName:
+- Total Pemasukan: ${_currencyFormat.format(totalIncome)}
+- Total Pengeluaran: ${_currencyFormat.format(totalExpense)}
+- Saldo Bersih: ${_currencyFormat.format(totalIncome - totalExpense)}
+- Jumlah Transaksi: ${transactions.length}
+- Kategori Pengeluaran Terbesar:
+$categoryText
+
+Sertakan:
+1. Evaluasi keuangan bulan ini (positif/negatif)
+2. Kategori yang perlu diperhatikan
+3. Saran praktis untuk bulan depan
+4. Motivasi singkat''';
+
+    try {
+      return await _sendToGroq(systemPrompt, userPrompt);
+    } catch (e) {
+      return 'Gagal membuat ringkasan: $e';
+    }
+  }
 }
