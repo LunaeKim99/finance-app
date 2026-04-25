@@ -129,28 +129,26 @@ class OcrService {
     }
   }
 
+  /// Membangun prompt yang kompatibel dengan format AiService (_systemPrompt).
+  /// Hasil dari prompt ini akan diproses oleh _parseResponse() dan menghasilkan
+  /// AiAction.addTransaction jika berhasil — sehingga muncul sebagai kartu
+  /// konfirmasi transaksi, bukan raw JSON.
   String buildReceiptPrompt(String rawText) {
+    final today = DateTime.now().toIso8601String().split('T')[0];
     return '''
-Kamu adalah asisten keuangan. Analisis teks struk belanja berikut dan ekstrak
-informasi dalam format JSON yang valid. Jangan tambahkan teks apapun di luar JSON.
+Ini adalah teks yang diekstrak dari struk/nota/bukti transaksi. Tolong catat sebagai transaksi pengeluaran.
 
-Format output:
-{
-  "merchant": "nama toko atau null",
-  "date": "YYYY-MM-DD atau null",
-  "total": 0,
-  "currency": "IDR",
-  "items": [
-    {
-      "name": "nama item",
-      "price": 0,
-      "category": "Makanan|Minuman|Kebersihan|Elektronik|Pakaian|Lainnya"
-    }
-  ]
-}
+Aturan:
+- Gunakan TOTAL atau grand total sebagai amount (bukan subtotal atau per-item)
+- Jika ada biaya admin/transfer, gabungkan ke total
+- Tentukan kategori paling sesuai: Makanan, Transportasi, Belanja, Hiburan, Kesehatan, Pendidikan, Tagihan, atau Lainnya
+- Gunakan nama merchant/toko sebagai catatan (note)
+- Jika tidak ada total yang jelas, jumlahkan semua item
 
 Teks struk:
 $rawText
+
+[Tanggal hari ini: $today]
 ''';
   }
 
