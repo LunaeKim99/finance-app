@@ -280,7 +280,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               middle: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Image(image: AssetImage('assets/images/logo-uwangku.png'), height: 24, width: 24),
+                  Image(image: AssetImage('assets/images/logo_uwangku.png'), height: 24, width: 24),
                   SizedBox(width: 8),
                   Text('UWANGKU'),
                 ],
@@ -295,7 +295,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             title: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image(image: AssetImage('assets/images/logo-uwangku.png'), height: 24, width: 24),
+                Image(image: AssetImage('assets/images/logo_uwangku.png'), height: 24, width: 24),
                 const SizedBox(width: 8),
                 const Text('UWANGKU'),
               ],
