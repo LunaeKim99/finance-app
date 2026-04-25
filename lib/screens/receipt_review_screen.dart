@@ -130,7 +130,6 @@ class _ReceiptReviewScreenState extends State<ReceiptReviewScreen> {
   }
 
   Widget _buildToggle() {
-    final isIOS = Platform.isIOS;
     final totalStr = _currencyFormat.format(_calculateTotal());
 
     return Container(

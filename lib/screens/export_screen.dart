@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
-import '../models/transaction_model.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/usage_provider.dart';
 import '../services/export_service.dart';
@@ -21,10 +20,7 @@ class ExportScreen extends StatefulWidget {
 class _ExportScreenState extends State<ExportScreen> {
   int _selectedMonth = DateTime.now().month;
   int _selectedYear = DateTime.now().year;
-  bool _isLoading = false;
   String? _loadingType;
-
-  final _monthFormat = DateFormat('MMMM yyyy', 'id_ID');
 
   final List<int> _months = List.generate(12, (i) => i + 1);
   final List<int> _years = List.generate(5, (i) => DateTime.now().year - 2 + i);

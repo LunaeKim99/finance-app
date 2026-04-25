@@ -24,8 +24,8 @@ class PaymentWebviewScreen extends StatefulWidget {
 class _PaymentWebviewScreenState extends State<PaymentWebviewScreen> {
   late WebViewController _controller;
   bool _isLoading = true;
-  PaymentStatus _resultStatus = PaymentStatus.cancelled;
   bool _hasHandledResult = false;
+  PaymentStatus _currentStatus = PaymentStatus.cancelled;
 
   @override
   void initState() {
@@ -82,7 +82,7 @@ class _PaymentWebviewScreenState extends State<PaymentWebviewScreen> {
     if (_hasHandledResult) return;
     _hasHandledResult = true;
 
-    setState(() => _resultStatus = PaymentStatus.success);
+    setState(() => _currentStatus = PaymentStatus.success);
 
     await Future.delayed(const Duration(seconds: 1));
 
@@ -100,7 +100,7 @@ class _PaymentWebviewScreenState extends State<PaymentWebviewScreen> {
     if (_hasHandledResult) return;
     _hasHandledResult = true;
     
-    setState(() => _resultStatus = PaymentStatus.pending);
+    setState(() => _currentStatus = PaymentStatus.pending);
     Navigator.pop(context, PaymentStatus.pending);
   }
 
@@ -108,7 +108,7 @@ class _PaymentWebviewScreenState extends State<PaymentWebviewScreen> {
     if (_hasHandledResult) return;
     _hasHandledResult = true;
 
-    setState(() => _resultStatus = PaymentStatus.failed);
+    setState(() => _currentStatus = PaymentStatus.failed);
     Navigator.pop(context, PaymentStatus.failed);
   }
 
