@@ -11,10 +11,10 @@ class MidtransService {
   String? get _serverKey => dotenv.env['MIDTRANS_SERVER_KEY'];
   String? get _baseUrl => dotenv.env['MIDTRANS_BASE_URL'];
 
-  bool get isConfigured => 
-      _serverKey != null && 
-      _serverKey!.isNotEmpty && 
-      _baseUrl != null && 
+  bool get isConfigured =>
+      _serverKey != null &&
+      _serverKey!.isNotEmpty &&
+      _baseUrl != null &&
       _baseUrl!.isNotEmpty;
 
   String generateOrderId() {
@@ -36,53 +36,59 @@ class MidtransService {
     final credentials = base64Encode(utf8.encode('$_serverKey:'));
 
     if (kDebugMode) {
-      debugPrint('[Midtrans] Creating snap token for order: $orderId, amount: $amount');
+      debugPrint(
+        '[Midtrans] Creating snap token for order: $orderId, amount: $amount',
+      );
     }
 
     try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl'),
-        headers: {
-          'Authorization': 'Basic $credentials',
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({
-          'transaction_details': {
-            'order_id': orderId,
-            'gross_amount': amount.toInt(),
-          },
-          'customer_details': {
-            'first_name': customerName,
-            'email': customerEmail,
-          },
-          'item_details': [
-            {
-              'id': 'PREMIUM_PLAN',
-              'price': amount.toInt(),
-              'quantity': 1,
-              'name': 'UWANGKU Premium',
-            }
-          ],
-        }),
-      ).timeout(const Duration(seconds: 30));
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl'),
+            headers: {
+              'Authorization': 'Basic $credentials',
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({
+              'transaction_details': {
+                'order_id': orderId,
+                'gross_amount': amount.toInt(),
+              },
+              'customer_details': {
+                'first_name': customerName,
+                'email': customerEmail,
+              },
+              'item_details': [
+                {
+                  'id': 'PREMIUM_PLAN',
+                  'price': amount.toInt(),
+                  'quantity': 1,
+                  'name': 'UWANGKU Premium',
+                },
+              ],
+            }),
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (kDebugMode) {
         debugPrint('[Midtrans] Response status: ${response.statusCode}');
         debugPrint('[Midtrans] Response body: ${response.body}');
       }
 
-      if (response.statusCode == 200) {
+      if (response.statusCode >= 200 && response.statusCode < 300) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final token = data['token'] as String?;
-        
+
         if (token == null || token.isEmpty) {
           throw Exception('Token tidak valid dari Midtrans');
         }
-        
+
         return token;
       } else if (response.statusCode == 401) {
-        throw Exception('Server key tidak valid. Cek MIDTRANS_SERVER_KEY di .env');
+        throw Exception(
+          'Server key tidak valid. Cek MIDTRANS_SERVER_KEY di .env',
+        );
       } else if (response.statusCode == 402) {
         throw Exception('Pembayaran belum selesai atau tidak valid');
       } else {
@@ -98,7 +104,7 @@ class MidtransService {
 
   String getSnapUrl(String snapToken) {
     final baseHttpUrl = _baseUrl ?? '';
-    final baseSnapUrl = baseHttpUrl.contains('sandbox') 
+    final baseSnapUrl = baseHttpUrl.contains('sandbox')
         ? 'https://app.sandbox.midtrans.com/snap/v2/vtweb'
         : 'https://app.midtrans.com/snap/v2/vtweb';
     return '$baseSnapUrl/$snapToken';
