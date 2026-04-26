@@ -272,7 +272,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
               child: _buildPlanCard(
                 PremiumPlan.monthly,
                 'Bulanan',
-                _currencyFormat.format(29000),
+                _currencyFormat.format(49000),
                 '/bulan',
                 isIOS,
               ),
@@ -390,7 +390,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
   }
 
   Widget _buildPayButton(bool isIOS) {
-    final price = _selectedPlan == PremiumPlan.monthly ? 29000 : 249000;
+    final price = _selectedPlan == PremiumPlan.monthly ? 49000 : 399000;
 
     return SizedBox(
       width: double.infinity,
