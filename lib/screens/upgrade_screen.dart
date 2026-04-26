@@ -112,10 +112,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
-              child: Image.asset(
-                'assets/images/logo.png',
-                fit: BoxFit.contain,
-              ),
+              child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
             ),
           ),
           const SizedBox(height: 20),
@@ -130,10 +127,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
           const SizedBox(height: 6),
           Text(
             'Nikmati semua fitur tanpa batasan',
-            style: TextStyle(
-              color: Colors.grey.shade600,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
           ),
           const SizedBox(height: 32),
           _buildFeatureList(),
@@ -153,10 +147,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
               const SizedBox(width: 4),
               Text(
                 'Pembayaran aman via Midtrans',
-                style: TextStyle(
-                  color: Colors.grey.shade500,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
               ),
             ],
           ),
@@ -168,9 +159,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
                 style: const TextStyle(color: Colors.grey),
               ),
             const SizedBox(height: 8),
-            const CircularProgressIndicator(
-              color: Color(0xFF4CAF50),
-            ),
+            const CircularProgressIndicator(color: Color(0xFF4CAF50)),
           ],
           const SizedBox(height: 24),
         ],
@@ -180,16 +169,31 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
 
   Widget _buildFeatureList() {
     final features = [
-      (Icons.all_inclusive_rounded, 'AI Input Tanpa Batas',
-          'Catat transaksi dengan suara atau teks kapan saja'),
-      (Icons.document_scanner_rounded, 'Scan Struk Tanpa Batas',
-          'Foto struk belanja otomatis tercatat'),
-      (Icons.auto_awesome_rounded, 'Ringkasan Keuangan AI',
-          'Analisis cerdas pola pengeluaranmu'),
-      (Icons.savings_rounded, 'Saran Budget Personal',
-          'Tips hemat berdasarkan kebiasaanmu'),
-      (Icons.download_rounded, 'Export PDF & Excel',
-          'Unduh laporan keuangan kapan saja'),
+      (
+        Icons.all_inclusive_rounded,
+        'AI Input Tanpa Batas',
+        'Catat transaksi dengan suara atau teks kapan saja',
+      ),
+      (
+        Icons.document_scanner_rounded,
+        'Scan Struk Tanpa Batas',
+        'Foto struk belanja otomatis tercatat',
+      ),
+      (
+        Icons.auto_awesome_rounded,
+        'Ringkasan Keuangan AI',
+        'Analisis cerdas pola pengeluaranmu',
+      ),
+      (
+        Icons.savings_rounded,
+        'Saran Budget Personal',
+        'Tips hemat berdasarkan kebiasaanmu',
+      ),
+      (
+        Icons.download_rounded,
+        'Export PDF & Excel',
+        'Unduh laporan keuangan kapan saja',
+      ),
     ];
 
     return Container(
@@ -198,9 +202,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF4CAF50).withOpacity(0.04),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF4CAF50).withOpacity(0.15),
-        ),
+        border: Border.all(color: const Color(0xFF4CAF50).withOpacity(0.15)),
       ),
       child: Column(
         children: features.map((feature) {
@@ -217,11 +219,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
                     color: const Color(0xFF4CAF50).withOpacity(0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(
-                    icon,
-                    size: 18,
-                    color: const Color(0xFF4CAF50),
-                  ),
+                  child: Icon(icon, size: 18, color: const Color(0xFF4CAF50)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -265,10 +263,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
       children: [
         const Text(
           'Pilih Paket',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
         ),
         const SizedBox(height: 12),
         Row(
@@ -287,7 +282,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
               child: _buildPlanCard(
                 PremiumPlan.yearly,
                 'Tahunan',
-                _currencyFormat.format(99000),
+                _currencyFormat.format(249000),
                 '/tahun',
                 isIOS,
                 isPopular: true,
@@ -318,25 +313,18 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           border: Border.all(
-            color: isSelected
-                ? const Color(0xFF4CAF50)
-                : Colors.grey.shade300,
+            color: isSelected ? const Color(0xFF4CAF50) : Colors.grey.shade300,
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(14),
-          color: isSelected
-              ? const Color(0xFF4CAF50).withOpacity(0.06)
-              : null,
+          color: isSelected ? const Color(0xFF4CAF50).withOpacity(0.06) : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (isPopular && savingLabel != null)
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 3,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 margin: const EdgeInsets.only(bottom: 10),
                 decoration: BoxDecoration(
                   color: const Color(0xFF4CAF50),
@@ -358,9 +346,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
                       ? CupertinoIcons.rosette
                       : Icons.workspace_premium_rounded,
                   size: 18,
-                  color: isSelected
-                      ? const Color(0xFF4CAF50)
-                      : Colors.grey,
+                  color: isSelected ? const Color(0xFF4CAF50) : Colors.grey,
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -368,9 +354,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
-                    color: isSelected
-                        ? const Color(0xFF4CAF50)
-                        : null,
+                    color: isSelected ? const Color(0xFF4CAF50) : null,
                   ),
                 ),
               ],
@@ -381,17 +365,12 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: isSelected
-                    ? const Color(0xFF4CAF50)
-                    : null,
+                color: isSelected ? const Color(0xFF4CAF50) : null,
               ),
             ),
             Text(
               period,
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey.shade500,
-              ),
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
             ),
             if (isSelected)
               Align(
@@ -411,7 +390,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
   }
 
   Widget _buildPayButton(bool isIOS) {
-    final price = _selectedPlan == PremiumPlan.monthly ? 29000 : 99000;
+    final price = _selectedPlan == PremiumPlan.monthly ? 29000 : 249000;
 
     return SizedBox(
       width: double.infinity,
@@ -471,19 +450,13 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
             const SizedBox(height: 24),
             const Text(
               'Kamu sudah Premium! 🎉',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               'Nikmati semua fitur tanpa batasan',
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
             ),
             if (AppConfig.isDemoBuild) ...[
               const SizedBox(height: 20),
@@ -495,9 +468,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
                 decoration: BoxDecoration(
                   color: Colors.orange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.orange.withOpacity(0.3),
-                  ),
+                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
                 ),
                 child: const Text(
                   'DEMO BUILD',
@@ -516,9 +487,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
 
     if (isIOS) {
       return CupertinoPageScaffold(
-        navigationBar: const CupertinoNavigationBar(
-          middle: Text('Premium'),
-        ),
+        navigationBar: const CupertinoNavigationBar(middle: Text('Premium')),
         child: SafeArea(child: body),
       );
     }
@@ -538,7 +507,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
         ),
       ),
-body: body,
+      body: body,
     );
   }
 
@@ -587,9 +556,7 @@ body: body,
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => PaymentWebviewScreen(
-              snapToken: token,
-            ),
+            builder: (_) => PaymentWebviewScreen(snapToken: token),
           ),
         );
       }
