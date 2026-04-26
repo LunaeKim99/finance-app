@@ -31,8 +31,8 @@ Aplikasi Asisten Keuangan Pribadi Berbasis AI menggunakan Flutter dengan dukunga
 
 ### Upgrade Premium
 
-- **Bulanan**: Rp 29.000/bulan
-- **Tahunan**: Rp 99.000/tahun (hemat 71%)
+- **Bulanan**: Rp 49.000/bulan
+- **Tahunan**: Rp 399.000/tahun (hemat 71%)
 
 Bayar via Midtrans Snap (WebView)
 

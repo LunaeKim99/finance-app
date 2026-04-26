@@ -2,7 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.5.0] - 2026-04-25
+## [1.6.0] - 2026-04-26
+
+### Changed
+
+- **ReportScreen UI Revamp** - Modern minimalist design
+  - AppBar: transparent, centerTitle, green share button
+  - Month selector: pill container with dark mode
+  - Summary cards: gradient + shadow, circular icon container
+  - Section title: dark mode safe text color
+  - Daily summary: removed (simplify)
+  - Weekly & Monthly premium gate: green gradient container
+  - Pie & Bar charts: wrapped in container with shadow
+
+- **DashboardScreen Dark Mode Fix** - Card styling
+  - Card Pemasukan: gradient green in light / AppTheme.darkCard in dark
+  - Card Pengeluaran: gradient red in light / AppTheme.darkCard in dark
+  - Saldo card: red gradient when balance < 0, green when >= 0
+  - AI Recommendation: Container with dark mode support
+
+- **Premium Pricing Update**
+  - Bulanan: Rp 49.000/bulan
+  - Tahunan: Rp 399.000/tahun
+
+- **AI Chat Bubble Fix** - Text color for dark mode
+  - Changed: `Colors.grey` → `Colors.grey[100]` for message bubble
+
+### Fixed
+
+- Month selector background in dark mode
+- Pie chart container color in dark mode
+- Bar chart bottomTitles showTitles parameter
 
 ### Changed
 
