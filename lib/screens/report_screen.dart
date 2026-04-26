@@ -85,16 +85,26 @@ class _ReportScreenState extends State<ReportScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Laporan'),
+            automaticallyImplyLeading: false,
             centerTitle: true,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            backgroundColor: Colors.transparent,
+            title: const Text('Laporan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
             actions: [
-              IconButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ExportScreen()),
+              GestureDetector(
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExportScreen())),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.ios_share_rounded, size: 18, color: Color(0xFF4CAF50)),
                 ),
-                icon: const Icon(Icons.download_outlined),
               ),
+              const SizedBox(width: 8),
             ],
           ),
           body: body,
@@ -104,6 +114,7 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Widget _buildSectionTitle(String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         Container(
@@ -117,10 +128,10 @@ class _ReportScreenState extends State<ReportScreen> {
         const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1A1A1A),
+            color: isDark ? Colors.white : const Color(0xFF1A1A1A),
           ),
         ),
       ],
@@ -163,27 +174,36 @@ class _ReportScreenState extends State<ReportScreen> {
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          IconButton(
-            onPressed: _prevMonth,
-            icon: const Icon(Icons.chevron_left),
-          ),
-          const SizedBox(width: 16),
-          Text(
-            monthFormat.format(_selectedMonth),
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppTheme.darkCard
+              : Colors.grey,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconButton(
+              onPressed: _prevMonth,
+              icon: const Icon(Icons.chevron_left),
             ),
-          ),
-          const SizedBox(width: 16),
-          IconButton(
-            onPressed: _nextMonth,
-            icon: const Icon(Icons.chevron_right),
-          ),
-        ],
+            const SizedBox(width: 16),
+            Text(
+              monthFormat.format(_selectedMonth),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 16),
+            IconButton(
+              onPressed: _nextMonth,
+              icon: const Icon(Icons.chevron_right),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -195,6 +215,9 @@ class _ReportScreenState extends State<ReportScreen> {
     NumberFormat currencyFormat,
   ) {
     final isIOS = Platform.isIOS;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    const green = Color(0xFF4CAF50);
+    const red = Colors.red;
     return Column(
       children: [
         Row(
@@ -203,9 +226,12 @@ class _ReportScreenState extends State<ReportScreen> {
               child: _buildCard(
                 'Pemasukan',
                 currencyFormat.format(income),
-                AppTheme.primaryGreen,
-                _getCardColor(context, AppTheme.lightGreen),
+                green,
+                isDark ? AppTheme.darkCard : green.withValues(alpha: 0.05),
                 isIOS ? CupertinoIcons.arrow_down_circle_fill : Icons.arrow_downward,
+                gradient: LinearGradient(
+                  colors: [green.withValues(alpha: 0.15), green.withValues(alpha: 0.05)],
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -213,9 +239,12 @@ class _ReportScreenState extends State<ReportScreen> {
               child: _buildCard(
                 'Pengeluaran',
                 currencyFormat.format(expense),
-                Colors.red,
-                _getCardColor(context, AppTheme.lightRed),
+                red,
+                isDark ? AppTheme.darkCard : red.withValues(alpha: 0.05),
                 isIOS ? CupertinoIcons.arrow_up_circle_fill : Icons.arrow_upward,
+                gradient: LinearGradient(
+                  colors: [red.withValues(alpha: 0.15), red.withValues(alpha: 0.05)],
+                ),
               ),
             ),
           ],
@@ -224,19 +253,12 @@ class _ReportScreenState extends State<ReportScreen> {
         _buildCard(
           'Saldo Bersih',
           currencyFormat.format(balance),
-          balance >= 0 ? AppTheme.primaryGreen : Colors.red,
-          _getCardColor(context, const Color(0xFFE3F2FD)),
+          balance >= 0 ? green : red,
+          isDark ? AppTheme.darkCard : const Color(0xFFE8F5E9),
           isIOS ? CupertinoIcons.money_dollar_circle_fill : Icons.account_balance_wallet,
         ),
       ],
     );
-  }
-
-  Color _getCardColor(BuildContext context, Color lightColor) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return isDark
-        ? Theme.of(context).colorScheme.surfaceContainer
-        : lightColor;
   }
 
   Widget _buildCard(
@@ -244,17 +266,34 @@ class _ReportScreenState extends State<ReportScreen> {
     String value,
     Color textColor,
     Color backgroundColor,
-    IconData icon,
-  ) {
+    IconData icon, {
+    LinearGradient? gradient,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: backgroundColor,
+        gradient: gradient,
+        color: gradient == null ? backgroundColor : null,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.06),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Icon(icon, color: textColor),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: textColor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: textColor),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -262,13 +301,13 @@ class _ReportScreenState extends State<ReportScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF757575)),
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF757575)),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 17,
                     fontWeight: FontWeight.bold,
                     color: textColor,
                   ),
@@ -282,19 +321,35 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Widget _buildPieChart(Map<String, double> categoryTotals, NumberFormat currencyFormat) {
-    final isIOS = Platform.isIOS;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (categoryTotals.isEmpty) {
       return Container(
         height: 200,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.darkCard : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: 0.06),
+            ),
+          ],
+        ),
         alignment: Alignment.center,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              isIOS ? CupertinoIcons.chart_pie : Icons.pie_chart_outline,
-              size: 48,
-              color: Colors.grey,
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.pie_chart_outline, size: 24, color: Color(0xFF4CAF50)),
             ),
             const SizedBox(height: 8),
             const Text(
@@ -339,13 +394,27 @@ class _ReportScreenState extends State<ReportScreen> {
       children: [
         _buildSectionTitle('Pengeluaran per Kategori'),
         const SizedBox(height: 16),
-        SizedBox(
-          height: 200,
-          child: PieChart(
-            PieChartData(
-              sections: sections,
-              centerSpaceRadius: 40,
-              sectionsSpace: 2,
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+                color: Colors.black.withValues(alpha: 0.06),
+              ),
+            ],
+          ),
+          child: SizedBox(
+            height: 200,
+            child: PieChart(
+              PieChartData(
+                sections: sections,
+                centerSpaceRadius: 40,
+                sectionsSpace: 2,
+              ),
             ),
           ),
         ),
@@ -383,6 +452,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Widget _buildBarChart(TransactionProvider provider) {
     final now = DateTime.now();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final List<BarChartGroupData> barGroups = [];
 
     for (int i = 5; i >= 0; i--) {
@@ -396,7 +466,7 @@ class _ReportScreenState extends State<ReportScreen> {
           barRods: [
             BarChartRodData(
               toY: income,
-              color: Colors.green,
+              color: const Color(0xFF4CAF50),
               width: 12,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(4),
@@ -423,59 +493,82 @@ class _ReportScreenState extends State<ReportScreen> {
         _buildSectionTitle('Pemasukan vs Pengeluaran (6 Bulan Terakhir)'),
         const SizedBox(height: 16),
         Container(
-          margin: const EdgeInsets.only(bottom: 32),
-          height: 200,
-          child: BarChart(
-            BarChartData(
-              barGroups: barGroups,
-              titlesData: FlTitlesData(
-                leftTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                topTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                rightTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    getTitlesWidget: (value, meta) {
-                      final now = DateTime.now();
-                      final month = DateTime(now.year, now.month - (5 - value.toInt()));
-                      return Text(
-                        DateFormat('MMM').format(month),
-                        style: const TextStyle(fontSize: 10),
-                      );
-                    },
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? AppTheme.darkCard : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+                color: Colors.black.withValues(alpha: 0.06),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              SizedBox(
+                height: 200,
+                child: BarChart(
+                  BarChartData(
+                    barGroups: barGroups,
+                    titlesData: FlTitlesData(
+                      leftTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          getTitlesWidget: (value, meta) {
+                            final now = DateTime.now();
+                            final month = DateTime(now.year, now.month - (5 - value.toInt()));
+                            return Text(
+                              DateFormat('MMM').format(month),
+                              style: const TextStyle(fontSize: 10),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    borderData: FlBorderData(show: false),
+                    gridData: const FlGridData(show: false),
                   ),
                 ),
               ),
-              borderData: FlBorderData(show: false),
-              gridData: const FlGridData(show: false),
-            ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF4CAF50),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Text('Pemasukan', style: TextStyle(fontSize: 12)),
+                  const SizedBox(width: 16),
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Text('Pengeluaran', style: TextStyle(fontSize: 12)),
+                ],
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 12,
-              height: 12,
-              color: Colors.green,
-            ),
-            const SizedBox(width: 4),
-            const Text('Pemasukan', style: TextStyle(fontSize: 12)),
-            const SizedBox(width: 16),
-            Container(
-              width: 12,
-              height: 12,
-              color: Colors.red,
-            ),
-            const SizedBox(width: 4),
-            const Text('Pengeluaran', style: TextStyle(fontSize: 12)),
-          ],
         ),
       ],
     );
@@ -484,46 +577,63 @@ class _ReportScreenState extends State<ReportScreen> {
   Widget _buildWeeklySummary(TransactionProvider provider) {
     final usageProvider = context.watch<UsageProvider>();
     final isPremium = usageProvider.isPremium;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (!isPremium) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              const Row(
-                children: [
-                  Icon(Icons.lock, color: Colors.amber),
-                  SizedBox(width: 8),
-                  Text(
+      const green = Color(0xFF4CAF50);
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [green.withValues(alpha: 0.08), green.withValues(alpha: 0.03)],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: green.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: green.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.auto_awesome_rounded, color: green),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
                     'Ringkasan Mingguan',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Fitur ini khusus pengguna Premium.\nDapatkan ringkasan naratif keuangan mingguan.',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const UpgradeScreen()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber,
                 ),
-                child: const Text('Upgrade ke Premium'),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Fitur ini khusus pengguna Premium.\nDapatkan ringkasan naratif keuangan mingguan.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const UpgradeScreen()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: green,
               ),
-            ],
-          ),
+              child: const Text('Upgrade ke Premium'),
+            ),
+          ],
         ),
       );
     }
@@ -533,44 +643,47 @@ class _ReportScreenState extends State<ReportScreen> {
         provider.allTransactions,
       ),
       builder: (context, snapshot) {
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.summarize, color: Color(0xFF4CAF50)),
-                    SizedBox(width: 8),
-                    Text(
-                      'Ringkasan Mingguan',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? AppTheme.darkCard : const Color(0xFFF9FBF9),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.summarize, color: const Color(0xFF4CAF50)),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Ringkasan Mingguan',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: isDark ? Colors.white : null,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (snapshot.connectionState == ConnectionState.waiting)
-                  const Center(
-                    child: Column(
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 8),
-                        Text('Menganalisis transaksi...'),
-                      ],
-                    ),
-                  )
-                else if (snapshot.hasError)
-                  Text('Gagal: ${snapshot.error}')
-                else
-                  MarkdownBody(
-                    data: snapshot.data ?? '',
                   ),
-              ],
-            ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (snapshot.connectionState == ConnectionState.waiting)
+                const Center(
+                  child: Column(
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 8),
+                      Text('Menganalisis transaksi...'),
+                    ],
+                  ),
+                )
+              else if (snapshot.hasError)
+                Text('Gagal: ${snapshot.error}')
+              else
+                MarkdownBody(
+                  data: snapshot.data ?? '',
+                ),
+            ],
           ),
         );
       },
@@ -618,6 +731,13 @@ class _ReportScreenState extends State<ReportScreen> {
                 ? const Color(0xFF2A2A2A)
                 : const Color(0xFFF5F9F5),
             borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+                color: Colors.black.withValues(alpha: 0.06),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -673,12 +793,14 @@ class _ReportScreenState extends State<ReportScreen> {
               if (todayTransactions.isEmpty) ...[
                 const SizedBox(height: 12),
                 Center(
-                  child: Text(
-                    'Belum ada transaksi hari ini',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 13,
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
                     ),
+                    child: const Icon(Icons.receipt_long_rounded, size: 24, color: Color(0xFF4CAF50)),
                   ),
                 ),
               ] else ...[
@@ -706,7 +828,7 @@ class _ReportScreenState extends State<ReportScreen> {
                             color: isExpense
                                 ? Colors.red.withValues(alpha: 0.1)
                                 : const Color(0xFF4CAF50).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
+                            shape: BoxShape.circle,
                           ),
                           child: Icon(
                             isExpense
@@ -795,7 +917,15 @@ class _ReportScreenState extends State<ReportScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 18),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
           const SizedBox(height: 6),
           Text(
             label,
@@ -822,60 +952,71 @@ class _ReportScreenState extends State<ReportScreen> {
     final usageProvider = context.watch<UsageProvider>();
     final isPremium = usageProvider.isPremium;
     final isIOS = Platform.isIOS;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (!isPremium) {
-      return Card(
-        shape: RoundedRectangleBorder(
+      const green = Color(0xFF4CAF50);
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [green.withValues(alpha: 0.08), green.withValues(alpha: 0.03)],
+          ),
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: green.withValues(alpha: 0.2)),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    isIOS ? CupertinoIcons.lock_fill : Icons.lock,
-                    color: Colors.amber,
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: green.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(width: 8),
-                  const Text(
+                  child: const Icon(Icons.auto_awesome_rounded, color: green),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
                     'Ringkasan Bulanan AI',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Dapatkan analisis mendalam keuangan bulan ini '
-                'dengan rekomendasi dari AI.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey, fontSize: 13),
-              ),
-              const SizedBox(height: 12),
-              isIOS
-                  ? CupertinoButton.filled(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const UpgradeScreen()),
-                      ),
-                      child: const Text('Upgrade ke Premium'),
-                    )
-                  : ElevatedButton(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const UpgradeScreen()),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber,
-                      ),
-                      child: const Text('Upgrade ke Premium'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Dapatkan analisis mendalam keuangan bulan ini '
+              'dengan rekomendasi dari AI.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            isIOS
+                ? CupertinoButton.filled(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const UpgradeScreen()),
                     ),
-            ],
-          ),
+                    child: const Text('Upgrade ke Premium'),
+                  )
+                : ElevatedButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const UpgradeScreen()),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: green,
+                    ),
+                    child: const Text('Upgrade ke Premium'),
+                  ),
+          ],
         ),
       );
     }
@@ -887,54 +1028,66 @@ class _ReportScreenState extends State<ReportScreen> {
       children: [
         _buildSectionTitle('Ringkasan Bulanan AI'),
         const SizedBox(height: 12),
-        Card(
-          shape: RoundedRectangleBorder(
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? AppTheme.darkCard : const Color(0xFFF9FBF9),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                if (!_showMonthlySummary)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () =>
-                          setState(() => _showMonthlySummary = true),
-                      icon: const Icon(Icons.auto_awesome_rounded),
-                      label: const Text('Generate Ringkasan Bulan Ini'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF4CAF50),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+          child: Column(
+            children: [
+              if (!_showMonthlySummary)
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () =>
+                        setState(() => _showMonthlySummary = true),
+                    icon: const Icon(Icons.auto_awesome_rounded),
+                    label: const Text('Generate Ringkasan Bulan Ini'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4CAF50),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                  )
-                else
-                  FutureBuilder<String>(
-                    key: ValueKey(
-                      'monthly_${_selectedMonth.month}_${_selectedMonth.year}',
-                    ),
-                    future: AiRecommendationService().generateMonthlySummary(
-                      provider.allTransactions
-                          .where((t) =>
-                              t.date.month == _selectedMonth.month &&
-                              t.date.year == _selectedMonth.year)
-                          .toList(),
-                      monthName,
-                    ),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                          child: Column(
+                  ),
+                )
+              else
+                FutureBuilder<String>(
+                  key: ValueKey(
+                    'monthly_${_selectedMonth.month}_${_selectedMonth.year}',
+                  ),
+                  future: AiRecommendationService().generateMonthlySummary(
+                    provider.allTransactions
+                        .where((t) =>
+                            t.date.month == _selectedMonth.month &&
+                            t.date.year == _selectedMonth.year)
+                        .toList(),
+                    monthName,
+                  ),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppTheme.darkCard : const Color(0xFFF9FBF9),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Center(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              CircularProgressIndicator(
-                                color: Color(0xFF4CAF50),
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Color(0xFF4CAF50),
+                                ),
                               ),
-                              SizedBox(height: 8),
+                              SizedBox(width: 12),
                               Text(
                                 'AI sedang menganalisis...',
                                 style: TextStyle(
@@ -944,10 +1097,17 @@ class _ReportScreenState extends State<ReportScreen> {
                               ),
                             ],
                           ),
-                        );
-                      }
-                      if (snapshot.hasError) {
-                        return Column(
+                        ),
+                      );
+                    }
+                    if (snapshot.hasError) {
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
                           children: [
                             const Icon(Icons.error_outline, color: Colors.red),
                             const SizedBox(height: 6),
@@ -973,18 +1133,25 @@ class _ReportScreenState extends State<ReportScreen> {
                               label: const Text('Coba Lagi'),
                             ),
                           ],
-                        );
-                      }
-                      return MarkdownBody(
+                        ),
+                      );
+                    }
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppTheme.darkCard : const Color(0xFFF9FBF9),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: MarkdownBody(
                         data: snapshot.data ?? '',
                         styleSheet: MarkdownStyleSheet(
                           p: const TextStyle(fontSize: 13, height: 1.5),
                         ),
-                      );
-                    },
-                  ),
-              ],
-            ),
+                      ),
+                    );
+                  },
+                ),
+            ],
           ),
         ),
       ],
