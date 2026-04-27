@@ -3,14 +3,14 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:pocketbase/pocketbase.dart';
 
-import '../services/pb_client.dart';
 import '../models/payment_model.dart';
+import 'pb_client.dart';
 
 class MidtransService {
-  String get _pbBaseUrl => PbClient.instance.baseUrl;
-  String get pbBaseUrl => _pbBaseUrl;
-
   PocketBase get _pocketBase => PbClient.instance;
+
+  String get _pbBaseUrl => _pocketBase.baseURL;
+  String get pbBaseUrl => _pbBaseUrl; // Public for debug
 
   bool get isConfigured => _pbBaseUrl.isNotEmpty;
 
@@ -32,23 +32,14 @@ class MidtransService {
       );
     }
 
+    // Verify auth before request
+    final authStore = _pocketBase.authStore;
     if (kDebugMode) {
-      debugPrint(
-        '[Midtrans] Creating snap token for order: $orderId, amount: $amount',
-      );
+      debugPrint('[Midtrans] Auth valid: ${authStore.isValid}');
+      debugPrint('[Midtrans] Creating snap token for order: $orderId, amount: $amount');
     }
 
     try {
-      // Authenticate as admin
-      await _pocketBase.admins.authWithPassword(
-        'admin@uwangku.com',
-        'adminpassword123',
-      );
-
-      if (kDebugMode) {
-        debugPrint('[Midtrans] Admin auth success, sending request...');
-      }
-
       final response = await _pocketBase.send(
         '/api/create-snap-token',
         method: 'POST',
@@ -57,9 +48,6 @@ class MidtransService {
           'amount': amount.toInt(),
           'customer_name': customerName,
           'customer_email': customerEmail,
-        },
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
         },
       );
 
@@ -79,7 +67,7 @@ class MidtransService {
         debugPrint('[Midtrans] Error: $e');
       }
       if (e.toString().contains('401') || e.toString().contains('403')) {
-        throw Exception('Autentikasi gagal. Hubungi administrator!');
+        throw Exception('Autentikasi gagal. Pastikan kamu sudah login!');
       }
       if (e.toString().contains('500')) {
         throw Exception(
