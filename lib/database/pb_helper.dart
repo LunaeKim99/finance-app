@@ -25,7 +25,13 @@ class PbHelper {
     _isInitialized = true;
   }
 
-  PocketBase get pb => _pb;
+  PocketBase get pb {
+    if (!_isInitialized) {
+      _pb = PbClient.instance;
+      _isInitialized = true;
+    }
+    return _pb;
+  }
 
   TransactionModel _recordToTransaction(RecordModel record) {
     return TransactionModel(

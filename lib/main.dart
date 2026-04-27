@@ -18,10 +18,12 @@ import 'screens/report_screen.dart';
 import 'screens/ai_chat_screen.dart';
 import 'screens/budget_screen.dart';
 import 'utils/error_handler.dart';
+import 'database/pb_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
+  await PbHelper().initialize();
   runApp(const FinanceApp());
 }
 
