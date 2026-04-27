@@ -2,8 +2,8 @@ const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
 
-const svgPath = path.join(__dirname, 'assets/images/logo_uwangku.svg');
-const outputDir = path.join(__dirname, 'assets/images');
+const svgPath = path.join(__dirname, '../assets/images/logo_uwangku.svg');
+const outputDir = path.join(__dirname, '../assets/images');
 
 // Android sizes
 const androidSizes = [

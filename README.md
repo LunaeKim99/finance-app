@@ -297,6 +297,17 @@ Pastikan:
 2. Hook `pb_hooks/create_snap_token.pb.js` sudah di-register
 3. Environment variable `MIDTRANS_SERVER_KEY` dan `MIDTRANS_BASE_URL` sudah diset di server
 
+## 🖼️ Generasi Ikon Aplikasi
+
+Untuk membuat ulang ikon aplikasi dari logo sumber:
+
+```bash
+npm install           # install dependencies sekali
+npm run generate-icons
+```
+
+Script tersimpan di folder `scripts/`.
+
 ## Lisensi
 
 MIT

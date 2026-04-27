@@ -1,8 +1,8 @@
 const sharp = require('sharp');
 const path = require('path');
 
-const svgPath = path.join(__dirname, 'assets/images/logo_uwangku.svg');
-const pngPath = path.join(__dirname, 'assets/images/logo_uwangku_icon.png');
+const svgPath = path.join(__dirname, '../assets/images/logo_uwangku.svg');
+const pngPath = path.join(__dirname, '../assets/images/logo_uwangku_icon.png');
 
 sharp(svgPath)
   .resize(1024, 1024)
