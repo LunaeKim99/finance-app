@@ -10,19 +10,10 @@ class PbClient {
   static PocketBase get instance {
     final baseUrl = _baseUrl;
     if (_instance == null || _currentUrl != baseUrl) {
-      _instance = _createClient(baseUrl);
+      _instance = PocketBase(baseUrl);
       _currentUrl = baseUrl;
     }
     return _instance!;
-  }
-
-  static PocketBase _createClient(String url) {
-    final client = PocketBase(url);
-    client.beforeSend = (url, options) {
-      options.headers['ngrok-skip-browser-warning'] = 'true';
-      return options;
-    };
-    return client;
   }
 
   static String get _baseUrl {
