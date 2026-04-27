@@ -1,20 +1,16 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:pocketbase/pocketbase.dart';
 import '../models/transaction_model.dart';
 import '../models/transaction_type.dart';
 import '../models/asset_model.dart';
 import '../models/debt_model.dart';
 import '../models/budget_model.dart';
+import '../services/pb_client.dart';
 
 class PbHelper {
   static PbHelper? _instance;
   late PocketBase _pb;
   bool _isInitialized = false;
-
-  static const String defaultUrl = 'http://192.168.18.6:8090';
-  static const String emulatorUrl = 'http://10.0.2.2:8090';
-  static const String localhostUrl = 'http://127.0.0.1:8090';
 
   factory PbHelper() {
     _instance ??= PbHelper._internal();
@@ -23,29 +19,10 @@ class PbHelper {
 
   PbHelper._internal();
 
-  String _getBaseUrl() {
-    if (kIsWeb) {
-      return defaultUrl;
-    }
-
-    if (Platform.isAndroid) {
-      return emulatorUrl;
-    }
-
-    if (Platform.isIOS) {
-      if (Platform.environment.containsKey('SIMULATOR_DEVICE_NAME')) {
-        return localhostUrl;
-      }
-      return defaultUrl;
-    }
-
-    return defaultUrl;
-  }
-
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    _pb = PocketBase(_getBaseUrl());
+    _pb = PbClient.instance;
     _isInitialized = true;
   }
 

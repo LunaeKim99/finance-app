@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 
 import '../database/pb_helper.dart';
 import '../database/sync_queue_helper.dart';
+import 'pb_client.dart';
 
 class SyncService extends ChangeNotifier {
   final TransactionProvider _transactionProvider;
@@ -66,6 +67,12 @@ class SyncService extends ChangeNotifier {
 
   Future<void> syncPendingItems() async {
     if (_isSyncing || !_isOnline) return;
+    
+    final connected = await PbClient.isConnected();
+    if (!connected) {
+      debugPrint('[SyncService] PocketBase tidak dapat dijangkau, skip sync');
+      return;
+    }
     
     _isSyncing = true;
     notifyListeners();

@@ -229,6 +229,31 @@ Ganti IP jika PocketBase di server/hosting berbeda.
 Buka: http://127.0.0.1:8090/_/
 Pastikan collections `transactions` dan `categories` sudah muncul.
 
+## Development Setup
+
+### Android Emulator (default)
+```bash
+flutter run
+```
+
+### Device Fisik
+1. Cek IP laptop: `ipconfig` (Windows) → cari IPv4 di WiFi adapter
+2. Run dengan:
+```bash
+flutter run --dart-define=PB_BASE_URL=http://192.168.1.xxx:8090
+```
+
+### WSL Ubuntu
+1. Cek IP WSL: `ip addr show eth0 | grep "inet "`
+2. Setup port forwarding di PowerShell (Admin):
+```powershell
+netsh interface portproxy add v4tov4 listenport=8090 listenaddress=0.0.0.0 connectport=8090 connectaddress=WSL_IP
+```
+3. Run Flutter normal:
+```bash
+flutter run
+```
+
 ## Instalasi Flutter
 
 ```bash
