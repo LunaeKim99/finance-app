@@ -1,0 +1,45 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "UWANGKU - Emulator",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "args": [
+        "--dart-define=GROQ_API_KEY=YOUR_GROQ_API_KEY_HERE",
+        "--dart-define=PB_BASE_URL=http://10.0.2.2:8090"
+      ]
+    },
+    {
+      "name": "UWANGKU - Device Fisik (WiFi)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "args": [
+        "--dart-define=GROQ_API_KEY=YOUR_GROQ_API_KEY_HERE",
+        "--dart-define=PB_BASE_URL=http://192.168.1.100:8090"
+      ]
+    },
+    {
+      "name": "UWANGKU - Ngrok Tunnel",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "args": [
+        "--dart-define=GROQ_API_KEY=YOUR_GROQ_API_KEY_HERE",
+        "--dart-define=PB_BASE_URL=https://your-ngrok-url.ngrok-free.dev"
+      ]
+    },
+    {
+      "name": "UWANGKU - Production",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "args": [
+        "--dart-define=GROQ_API_KEY=YOUR_GROQ_API_KEY_HERE",
+        "--dart-define=PB_BASE_URL=https://api.uwangku.com"
+      ]
+    }
+  ]
+}

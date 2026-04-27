@@ -229,6 +229,43 @@ Ganti IP jika PocketBase di server/hosting berbeda.
 Buka: http://127.0.0.1:8090/_/
 Pastikan collections `transactions` dan `categories` sudah muncul.
 
+## ⚡ Quick Start
+
+### 1. Setup VS Code Launch Config
+```bash
+# Copy template launch config
+copy .vscode\launch.json.example .vscode\launch.json
+```
+
+Buka `.vscode/launch.json` dan sesuaikan:
+- `192.168.1.100` → IP laptop kamu (`ipconfig` di Windows)
+- `your-ngrok-url` → URL dari `ngrok http 8090`
+
+### 2. Jalankan PocketBase
+```bash
+cd C:\laragon\pocketbase
+.\pocketbase serve
+```
+
+### 3. Run App
+- Tekan **F5** di VS Code, pilih konfigurasi yang sesuai
+- Atau via terminal:
+```bash
+# Emulator (default)
+flutter run --dart-define=PB_BASE_URL=http://10.0.2.2:8090
+
+# Device fisik
+flutter run --dart-define=PB_BASE_URL=http://192.168.x.x:8090
+
+# Ngrok
+flutter run --dart-define=PB_BASE_URL=https://xxxx.ngrok-free.dev
+```
+
+### 4. Cara Dapat GROQ API Key (Gratis)
+1. Daftar di [console.groq.com](https://console.groq.com)
+2. Klik **API Keys** → **Create API Key**
+3. Copy key (format: `gsk_xxxxxxxxxxxx`)
+
 ## Development Setup
 
 ### Android Emulator (default)

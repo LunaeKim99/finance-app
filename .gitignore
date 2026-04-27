@@ -26,6 +26,9 @@ node_modules/
 # is commented out by default.
 #.vscode/
 
+# VS Code launch config (contains API keys - do NOT commit)
+.vscode/launch.json
+
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id
