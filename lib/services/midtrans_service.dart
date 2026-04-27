@@ -10,6 +10,7 @@ class MidtransService {
   PocketBase? _pb;
 
   String get _pbBaseUrl => PbHelper().pb.baseURL;
+  String get pbBaseUrl => _pbBaseUrl; // Public for debug
 
   PocketBase get _pocketBase {
     _pb ??= PbHelper().pb;
@@ -31,7 +32,9 @@ class MidtransService {
     required String customerEmail,
   }) async {
     if (!isConfigured) {
-      throw Exception('PocketBase belum dikonfigurasi. Pastikan server berjalan!');
+      throw Exception(
+        'PocketBase belum dikonfigurasi. Pastikan server berjalan!',
+      );
     }
 
     if (kDebugMode) {
@@ -71,7 +74,9 @@ class MidtransService {
         throw Exception('Autentikasi gagal. Hubungi administrator!');
       }
       if (e.toString().contains('500')) {
-        throw Exception('Server payment belum dikonfigurasi. Hubungi administrator!');
+        throw Exception(
+          'Server payment belum dikonfigurasi. Hubungi administrator!',
+        );
       }
       rethrow;
     }
@@ -85,8 +90,8 @@ class MidtransService {
   }
 
   static const Map<PremiumPlan, int> planPrices = {
-    PremiumPlan.monthly: 29000,
-    PremiumPlan.yearly: 99000,
+    PremiumPlan.monthly: 49000,
+    PremiumPlan.yearly: 249000,
   };
 
   static const Map<PremiumPlan, String> planNames = {

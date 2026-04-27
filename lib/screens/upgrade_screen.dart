@@ -534,25 +534,44 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
       return;
     }
 
+    setState(() {
+      _isLoading = true;
+      _loadingMessage = 'Menghubungi server pembayaran...';
+    });
+
     try {
       final midtrans = MidtransService();
 
+      debugPrint('[Payment] PocketBase URL: ${midtrans.pbBaseUrl}');
+      debugPrint('[Payment] isConfigured: ${midtrans.isConfigured}');
+
       if (!midtrans.isConfigured) {
-        throw Exception('Midtrans tidak dikonfigurasi');
+        throw Exception('Server pembayaran tidak dikonfigurasi. Hubungi administrator.');
       }
 
+      setState(() => _loadingMessage = 'Membuat sesi pembayaran...');
+
+      final orderId = midtrans.generateOrderId();
+      debugPrint('[Payment] Order ID: $orderId');
+
       final token = await midtrans.createSnapToken(
-        orderId: midtrans.generateOrderId(),
+        orderId: orderId,
         amount: amount.toDouble(),
         customerName: 'User',
         customerEmail: 'user@example.com',
       );
 
+      debugPrint('[Payment] Snap token received: ${token.substring(0, 8)}...');
+
       if (token.isEmpty) {
-        throw Exception('Gagal membuat token pembayaran');
+        throw Exception('Token pembayaran tidak valid. Coba lagi.');
       }
 
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _loadingMessage = null;
+        });
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -561,24 +580,66 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
         );
       }
     } catch (e) {
-      final usageProvider = context.read<UsageProvider>();
-      await usageProvider.upgradeToPremium();
+      debugPrint('[Payment] Error: $e');
 
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('🎉 Selamat! Kamu sekarang Premium! (Demo Mode)'),
-            backgroundColor: const Color(0xFF4CAF50),
-          ),
-        );
-      }
-    } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
           _loadingMessage = null;
         });
+
+        String errorMessage = 'Terjadi kesalahan saat memproses pembayaran.';
+
+        if (e.toString().contains('SocketException') ||
+            e.toString().contains('Connection refused') ||
+            e.toString().contains('Failed host lookup')) {
+          errorMessage = 'Tidak dapat terhubung ke server.\nPastikan koneksi internet kamu aktif.';
+        } else if (e.toString().contains('401') || e.toString().contains('403')) {
+          errorMessage = 'Autentikasi server gagal.\nHubungi administrator.';
+        } else if (e.toString().contains('500')) {
+          errorMessage = 'Server sedang bermasalah.\nCoba lagi beberapa saat.';
+        } else if (e.toString().contains('TimeoutException')) {
+          errorMessage = 'Koneksi timeout.\nCek koneksi internet kamu.';
+        }
+
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Row(
+              children: [
+                Icon(Icons.error_outline_rounded, color: Colors.red, size: 22),
+                SizedBox(width: 8),
+                Text(
+                  'Pembayaran Gagal',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            content: Text(
+              errorMessage,
+              style: const TextStyle(fontSize: 14),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Tutup'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _processPayment(amount);
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF4CAF50),
+                ),
+                child: const Text('Coba Lagi'),
+              ),
+            ],
+          ),
+        );
       }
     }
   }
