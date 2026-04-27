@@ -1,0 +1,53 @@
+// lib/config/app_config.dart.example
+// COPY file ini menjadi app_config.dart
+// lalu isi dengan API key kamu yang asli
+// JANGAN commit app_config.dart ke repo!
+
+class AppConfig {
+  AppConfig._();
+
+  // ===== GROQ AI =====
+  static const String groqApiKey = String.fromEnvironment(
+    'GROQ_API_KEY',
+    defaultValue: 'gsk_YOUR_GROQ_API_KEY_HERE',
+  );
+
+  // ===== POCKETBASE =====
+  // Emulator Android  : http://10.0.2.2:8090
+  // Device fisik      : http://192.168.x.x:8090
+  // Ngrok tunnel      : https://xxxx.ngrok-free.dev
+  // Production        : https://api.uwangku.com
+  static const String pbBaseUrl = String.fromEnvironment(
+    'PB_BASE_URL',
+    defaultValue: 'http://10.0.2.2:8090',
+  );
+
+  // ===== MIDTRANS =====
+  // Sandbox  : SB-Mid-client-xxxxxx
+  // Production: Mid-client-xxxxxx
+  static const String midtransClientKey = String.fromEnvironment(
+    'MIDTRANS_CLIENT_KEY',
+    defaultValue: 'SB-Mid-client-YOUR_KEY_HERE',
+  );
+
+  static const bool isProduction = bool.fromEnvironment(
+    'IS_PRODUCTION',
+    defaultValue: false,
+  );
+
+  // ===== HELPER =====
+  static bool get isGroqConfigured =>
+      groqApiKey.isNotEmpty &&
+      !groqApiKey.contains('YOUR_');
+
+  static bool get isPbConfigured =>
+      pbBaseUrl.isNotEmpty &&
+      !pbBaseUrl.contains('YOUR_');
+
+  // ===== EXISTING CONFIG =====
+  static const bool isDemoBuild = true;
+
+  static String get buildLabel => isDemoBuild ? 'DEMO' : '';
+
+  static bool get allFeaturesUnlocked => isDemoBuild;
+}

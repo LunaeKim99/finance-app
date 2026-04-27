@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:pocketbase/pocketbase.dart';
+import '../config/app_config.dart';
 
 class PbClient {
   static PocketBase? _instance;
@@ -11,8 +12,11 @@ class PbClient {
   }
 
   static String get _baseUrl {
-    const defined = String.fromEnvironment('PB_BASE_URL');
-    if (defined.isNotEmpty) return defined;
+    // Priority: --dart-define > AppConfig > default platform detection
+    final fromDefine = String.fromEnvironment('PB_BASE_URL');
+    if (fromDefine.isNotEmpty) return fromDefine;
+    
+    if (AppConfig.pbBaseUrl.isNotEmpty) return AppConfig.pbBaseUrl;
 
     if (kIsWeb) {
       return 'http://localhost:8090';

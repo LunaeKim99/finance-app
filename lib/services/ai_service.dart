@@ -6,10 +6,11 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
+import '../config/app_config.dart';
 import '../models/transaction_model.dart';
 import '../models/transaction_type.dart';
 
-const String _apiToken = String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
+const String _apiToken = AppConfig.groqApiKey;
 
 const List<Map<String, String>> kGroqModelFallbacks = [
   {'model': 'llama-3.1-8b-instant', 'label': 'Llama 3.1 8B'},
@@ -103,14 +104,14 @@ ATURAN PENTING:
     if (_isInitialized) return true;
 
     if (kDebugMode) {
-      if (_apiToken.isEmpty) {
+      if (!AppConfig.isGroqConfigured) {
         debugPrint('[AiService] ERROR: GROQ_API_KEY tidak ditemukan! Use --dart-define=GROQ_API_KEY=your_key');
       } else {
         debugPrint('[AiService] Groq API Key: ${_apiToken.substring(0, 8)}...');
       }
     }
 
-    if (_apiToken.isEmpty) {
+    if (!AppConfig.isGroqConfigured) {
       _lastError = 'token_empty';
       return false;
     }
@@ -417,7 +418,7 @@ class AiRecommendationService {
     decimalDigits: 0,
   );
 
-  String get _apiKey => String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
+  String get _apiKey => AppConfig.groqApiKey;
 
   Future<String> _sendToGroq(String systemPrompt, String userPrompt) async {
     if (_lastRequestTime != null) {
