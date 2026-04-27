@@ -281,7 +281,6 @@ class _BudgetScreenState extends State<BudgetScreen> {
   }
 
   void _showBudgetDialog(BuildContext context, BudgetModel? budget, {String? preselectedCategory}) {
-    final nameController = TextEditingController(text: budget?.name ?? '');
     final amountController = TextEditingController(
       text: budget?.amount.toStringAsFixed(0) ?? '',
     );

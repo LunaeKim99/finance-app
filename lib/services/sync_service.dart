@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
-import 'package:pocketbase/pocketbase.dart';
 
 import '../database/pb_helper.dart';
 import '../database/sync_queue_helper.dart';
@@ -145,7 +144,7 @@ class SyncService extends ChangeNotifier {
 }
 
 class TransactionProvider extends ChangeNotifier {
-  bool _isSyncing = false;
+  final bool _isSyncing = false;
   
   bool get isSyncing => _isSyncing;
   

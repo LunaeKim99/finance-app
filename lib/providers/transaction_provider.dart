@@ -15,7 +15,7 @@ class TransactionProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   bool _isOnline = true;
-  bool _isSyncing = false;
+  final bool _isSyncing = false;
   bool _isUsingRemoteStorage = false;
 
   void Function(String message)? onError;
