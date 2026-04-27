@@ -10,10 +10,10 @@ class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
 
   @override
-  State<BudgetScreen> createState() => _BudgetScreenState();
+  State<BudgetScreen> createState() => BudgetScreenState();
 }
 
-class _BudgetScreenState extends State<BudgetScreen> {
+class BudgetScreenState extends State<BudgetScreen> {
   int _selectedMonth = DateTime.now().month;
   int _selectedYear = DateTime.now().year;
 
@@ -47,12 +47,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 _buildNoBudgetCard(categoryTotals, budgetProvider),
               ],
             ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddBudgetDialog(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Tambah Budget'),
-      ),
     );
+  }
+
+  void showAddBudgetDialog() {
+    _showAddBudgetDialog(context);
   }
 
   Widget _buildMonthSelector() {

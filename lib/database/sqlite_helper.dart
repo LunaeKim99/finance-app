@@ -27,11 +27,7 @@ class SqliteHelper implements DbInterface {
     final dir = await getApplicationDocumentsDirectory();
     final String dbPath = join(dir.path, 'finance_app.db');
 
-    return openDatabase(
-      dbPath,
-      version: 1,
-      onCreate: _createTables,
-    );
+    return openDatabase(dbPath, version: 1, onCreate: _createTables);
   }
 
   Future<void> _createTables(Database db, int version) async {
@@ -106,7 +102,9 @@ class SqliteHelper implements DbInterface {
   Future<List<TransactionModel>> fetchAllTransactions() async {
     final db = await database;
     final maps = await db.query('transactions', orderBy: 'date DESC');
-    return maps.map((map) => TransactionModel.fromMap(_normalizeDateMap(map))).toList();
+    return maps
+        .map((map) => TransactionModel.fromMap(_normalizeDateMap(map)))
+        .toList();
   }
 
   @override
@@ -129,7 +127,10 @@ class SqliteHelper implements DbInterface {
   }
 
   @override
-  Future<TransactionModel> updateTransaction(String id, TransactionModel t) async {
+  Future<TransactionModel> updateTransaction(
+    String id,
+    TransactionModel t,
+  ) async {
     final db = await database;
     final updatedTransaction = t.copyWith(id: id);
     await db.update(
@@ -142,11 +143,15 @@ class SqliteHelper implements DbInterface {
   }
 
   @override
-  Future<List<TransactionModel>> fetchTransactionsByMonth(int month, int year) async {
+  Future<List<TransactionModel>> fetchTransactionsByMonth(
+    int month,
+    int year,
+  ) async {
     final db = await database;
     final startStr = '$year-${month.toString().padLeft(2, '0')}-01';
     final endDay = DateTime(year, month + 1, 0).day;
-    final endStr = '$year-${month.toString().padLeft(2, '0')}-${endDay.toString().padLeft(2, '0')}';
+    final endStr =
+        '$year-${month.toString().padLeft(2, '0')}-${endDay.toString().padLeft(2, '0')}';
 
     final maps = await db.query(
       'transactions',
@@ -154,7 +159,9 @@ class SqliteHelper implements DbInterface {
       whereArgs: [startStr, endStr],
       orderBy: 'date DESC',
     );
-    return maps.map((map) => TransactionModel.fromMap(_normalizeDateMap(map))).toList();
+    return maps
+        .map((map) => TransactionModel.fromMap(_normalizeDateMap(map)))
+        .toList();
   }
 
   // ============ ASSETS ============
@@ -162,7 +169,9 @@ class SqliteHelper implements DbInterface {
   Future<List<AssetModel>> fetchAllAssets() async {
     final db = await database;
     final maps = await db.query('assets', orderBy: 'purchase_date DESC');
-    return maps.map((map) => AssetModel.fromMap(_normalizeDateMap(map))).toList();
+    return maps
+        .map((map) => AssetModel.fromMap(_normalizeDateMap(map)))
+        .toList();
   }
 
   @override
@@ -202,7 +211,9 @@ class SqliteHelper implements DbInterface {
   Future<List<DebtModel>> fetchAllDebts() async {
     final db = await database;
     final maps = await db.query('debts', orderBy: 'start_date DESC');
-    return maps.map((map) => DebtModel.fromMap(_normalizeDateMap(map))).toList();
+    return maps
+        .map((map) => DebtModel.fromMap(_normalizeDateMap(map)))
+        .toList();
   }
 
   @override
@@ -246,7 +257,9 @@ class SqliteHelper implements DbInterface {
       whereArgs: [0],
       orderBy: 'due_date ASC',
     );
-    return maps.map((map) => DebtModel.fromMap(_normalizeDateMap(map))).toList();
+    return maps
+        .map((map) => DebtModel.fromMap(_normalizeDateMap(map)))
+        .toList();
   }
 
   // ============ BUDGETS ============
@@ -254,7 +267,9 @@ class SqliteHelper implements DbInterface {
   Future<List<BudgetModel>> fetchAllBudgets() async {
     final db = await database;
     final maps = await db.query('budgets', orderBy: 'year DESC, month DESC');
-    return maps.map((map) => BudgetModel.fromMap(_normalizeDateMap(map))).toList();
+    return maps
+        .map((map) => BudgetModel.fromMap(_normalizeDateMap(map)))
+        .toList();
   }
 
   @override
@@ -298,7 +313,9 @@ class SqliteHelper implements DbInterface {
       whereArgs: [month, year],
       orderBy: 'created DESC',
     );
-    return maps.map((map) => BudgetModel.fromMap(_normalizeDateMap(map))).toList();
+    return maps
+        .map((map) => BudgetModel.fromMap(_normalizeDateMap(map)))
+        .toList();
   }
 
   @override
@@ -315,14 +332,22 @@ class SqliteHelper implements DbInterface {
   // ============ HELPERS ============
   Map<String, dynamic> _normalizeDateMap(Map<String, dynamic> map) {
     final normalized = Map<String, dynamic>.from(map);
-    if (normalized['purchase_date'] != null && normalized['purchase_date'] is String) {
-      normalized['purchase_date'] = _parseSqliteDate(normalized['purchase_date'] as String);
+    if (normalized['purchase_date'] != null &&
+        normalized['purchase_date'] is String) {
+      normalized['purchase_date'] = _parseSqliteDate(
+        normalized['purchase_date'] as String,
+      );
     }
     if (normalized['due_date'] != null && normalized['due_date'] is String) {
-      normalized['due_date'] = _parseSqliteDate(normalized['due_date'] as String);
+      normalized['due_date'] = _parseSqliteDate(
+        normalized['due_date'] as String,
+      );
     }
-    if (normalized['start_date'] != null && normalized['start_date'] is String) {
-      normalized['start_date'] = _parseSqliteDate(normalized['start_date'] as String);
+    if (normalized['start_date'] != null &&
+        normalized['start_date'] is String) {
+      normalized['start_date'] = _parseSqliteDate(
+        normalized['start_date'] as String,
+      );
     }
     if (normalized['date'] != null && normalized['date'] is String) {
       normalized['date'] = _parseSqliteDate(normalized['date'] as String);
@@ -349,7 +374,7 @@ class SqliteHelper implements DbInterface {
         'id': model.id,
         'title': model.title,
         'amount': model.amount,
-        'type': model.type,
+        'type': model.type.value,
         'category': model.category,
         'date': model.date.toIso8601String().split('T')[0],
         'note': model.note,

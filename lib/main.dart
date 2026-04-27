@@ -128,14 +128,25 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   int _currentIndex = 0;
+  GlobalKey<BudgetScreenState>? _budgetScreenKey;
+  List<Widget>? _screens;
 
-  final List<Widget> _screens = const [
-    DashboardScreen(),
-    HistoryScreen(),
-    BudgetScreen(),
-    ReportScreen(),
-    AiChatScreen(),
-  ];
+  List<Widget> get _screenList {
+    _screens ??= [
+      const DashboardScreen(),
+      const HistoryScreen(),
+      _budgetScreenKey != null ? BudgetScreen(key: _budgetScreenKey) : const BudgetScreen(),
+      const ReportScreen(),
+      const AiChatScreen(),
+    ];
+    return _screens!;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _budgetScreenKey = GlobalKey<BudgetScreenState>();
+  }
 
   @override
   void didChangeDependencies() {
@@ -196,7 +207,7 @@ class _AppShellState extends State<AppShell> {
               middle: Text(_getTitle(index)),
             ),
             child: SafeArea(
-              child: _screens[index],
+              child: _screenList[index],
             ),
           );
         },
@@ -206,7 +217,7 @@ class _AppShellState extends State<AppShell> {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: _screenList,
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -269,16 +280,9 @@ class _AppShellState extends State<AppShell> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const AddTransactionScreen(),
-            ),
-          );
-        },
-        child: const Icon(Icons.add),
+      floatingActionButton: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        child: _buildTabFab(_currentIndex),
       ),
     );
   }
@@ -338,6 +342,36 @@ class _AppShellState extends State<AppShell> {
         return 'AI Chat';
       default:
         return 'UWANGKU';
+    }
+  }
+
+  Widget _buildTabFab(int index) {
+    switch (index) {
+      case 0:
+        return FloatingActionButton.extended(
+          key: const ValueKey('fab_home'),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const AddTransactionScreen(),
+              ),
+            );
+          },
+          icon: const Icon(Icons.add),
+          label: const Text('Tambah Transaksi'),
+        );
+      case 2:
+        return FloatingActionButton.extended(
+          key: const ValueKey('fab_budget'),
+          onPressed: () {
+            _budgetScreenKey?.currentState?.showAddBudgetDialog();
+          },
+          icon: const Icon(Icons.add),
+          label: const Text('Tambah Budget'),
+        );
+      default:
+        return const SizedBox.shrink(key: ValueKey('fab_hidden'));
     }
   }
 }
