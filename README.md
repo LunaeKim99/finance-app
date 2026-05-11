@@ -1,4 +1,4 @@
-# UWANGKU v1.8.0
+# UWANGKU v1.8.1
 
 Aplikasi Asisten Keuangan Pribadi Berbasis AI menggunakan Flutter dengan dukungan penuh untuk Android dan iOS.
 

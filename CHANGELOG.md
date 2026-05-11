@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.1] - 2026-05-11
+
+### Fixed
+
+- **Google OAuth Login Flow** — Full rewrite of login pipeline
+  - Masalah 1: Google blokir `inAppWebView` → ganti ke `LaunchMode.externalApplication` (Chrome Custom Tabs, tidak diblokir Google)
+  - Masalah 2: `AuthProvider.initialize()` tidak di-await di main.dart → pindah ke splash_screen dengan `Future.wait`
+  - Masalah 3: splash_screen baca state sebelum siap → `Future.wait` jalankan delay + initialize paralel
+  - Masalah 4: login_screen tidak navigasi setelah sukses → `Navigator.pushReplacement` ke AppShell
+  - AndroidManifest: tambah `android:autoVerify="true"` di deep link intent-filter
+  - Redirect URI: `com.example.uangku://oauth` dengan deep link scheme
+
 ## [1.8.0] - 2026-05-11
 
 ### Added
