@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.finance_app"
+    namespace = "com.uwangku.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -27,7 +27,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.finance_app"
+        applicationId = "com.uwangku.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

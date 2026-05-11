@@ -10,8 +10,10 @@ import 'providers/transaction_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/usage_provider.dart';
 import 'providers/budget_provider.dart';
+import 'providers/auth_provider.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/splash_screen.dart';
+import 'screens/login_screen.dart';
 import 'screens/add_transaction_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/report_screen.dart';
@@ -61,6 +63,9 @@ class FinanceApp extends StatelessWidget {
             provider.initialize();
             return provider;
           },
+        ),
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider(),
         ),
       ],
       child: Consumer<ThemeProvider>(
