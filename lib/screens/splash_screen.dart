@@ -53,10 +53,15 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _navigateToHome() async {
-    await Future.delayed(const Duration(milliseconds: 2500));
+    final auth = context.read<AuthProvider>();
+
+    await Future.wait([
+      Future.delayed(const Duration(milliseconds: 2500)),
+      auth.initialize(),
+    ]);
+
     if (!mounted) return;
 
-    final auth = context.read<AuthProvider>();
     final Widget destination = auth.isLoggedIn ? const AppShell() : const LoginScreen();
 
     Navigator.pushReplacement(

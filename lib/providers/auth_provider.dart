@@ -48,11 +48,7 @@ class AuthProvider extends ChangeNotifier {
         (Uri url) async {
           await launchUrl(
             url,
-            mode: LaunchMode.inAppWebView,
-            webViewConfiguration: const WebViewConfiguration(
-              enableJavaScript: true,
-              enableDomStorage: true,
-            ),
+            mode: LaunchMode.externalApplication,
           );
         },
         query: {
