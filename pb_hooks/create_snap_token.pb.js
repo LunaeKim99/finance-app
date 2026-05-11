@@ -28,16 +28,14 @@ routerAdd("POST", "/api/create-snap-token", (e) => {
       return e.json(500, { error: "Konfigurasi Midtrans belum diatur di server" });
     }
 
-    let res, test1;
+    let test1, resA, resB, resC;
     try {
-      // Test 1: $http.send GET to jsonplaceholder
       test1 = $http.send({
         url: "https://jsonplaceholder.typicode.com/todos/1",
         method: "GET",
         timeout: 10,
       });
 
-      // Test 2: $http.send POST to Midtrans
       const encoded = serverKey + ":";
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
       let encodedAuth = "";
@@ -51,42 +49,58 @@ routerAdd("POST", "/api/create-snap-token", (e) => {
       const rem = encoded.length % 3;
       if (rem === 1) encodedAuth = encodedAuth.slice(0, -2) + "==";
       else if (rem === 2) encodedAuth = encodedAuth.slice(0, -1) + "=";
-      res = $http.send({
+
+      // Test A: full headers with lowercase
+      resA = $http.send({
         url: baseUrl,
         method: "POST",
         headers: {
-          "Authorization": "Basic " + encodedAuth,
-          "Content-Type": "application/json",
-          "Accept": "application/json",
+          "authorization": "Basic " + encodedAuth,
+          "content-type": "application/json",
+          "accept": "application/json",
         },
         body: JSON.stringify({
-          transaction_details: {
-            order_id: orderId,
-            gross_amount: parseInt(amount),
-          },
-          customer_details: {
-            first_name: customerName,
-            email: customerEmail,
-          },
-          item_details: [{
-            id: "PREMIUM_PLAN",
-            price: parseInt(amount),
-            quantity: 1,
-            name: "UWANGKU Premium",
-          }],
+          transaction_details: { order_id: orderId, gross_amount: parseInt(amount) },
         }),
-        timeout: 30,
+        timeout: 15,
+      });
+
+      // Test B: no auth, no headers
+      resB = $http.send({
+        url: baseUrl,
+        method: "POST",
+        body: JSON.stringify({
+          transaction_details: { order_id: "TEST-NO-" + orderId, gross_amount: 10000 },
+        }),
+        timeout: 15,
+      });
+
+      // Test C: auth without Content-Type
+      resC = $http.send({
+        url: baseUrl,
+        method: "POST",
+        headers: {
+          "authorization": "Basic " + encodedAuth,
+        },
+        body: JSON.stringify({
+          transaction_details: { order_id: orderId, gross_amount: parseInt(amount) },
+          customer_details: { first_name: customerName, email: customerEmail },
+          item_details: [{ id: "PREMIUM_PLAN", price: parseInt(amount), quantity: 1, name: "UWANGKU Premium" }],
+        }),
+        timeout: 15,
       });
     } catch (err) {
-      return e.json(502, { error: "Gagal terhubung ke Midtrans: " + err.toString() });
+      return e.json(502, { error: "Gagal: " + err.toString() });
     }
 
     return e.json(200, {
-      test1_status: test1.statusCode,
-      test1_body: typeof test1.json,
-      midtrans_status: res.statusCode,
-      midtrans_body: JSON.stringify(res.json),
-      midtrans_type: typeof res.json,
+      test1: test1.statusCode,
+      A_status: resA.statusCode,
+      A_body: typeof resA.json === "object" && resA.json ? Object.keys(resA.json).join(",") : typeof resA.json,
+      B_status: resB.statusCode,
+      B_body: typeof resB.json === "object" && resB.json ? Object.keys(resB.json).join(",") : typeof resB.json,
+      C_status: resC.statusCode,
+      C_body: typeof resC.json === "object" && resC.json ? Object.keys(resC.json).join(",") : typeof resC.json,
     });
   } catch (err) {
     return e.json(500, { error: "Hook error: " + err.toString() });
