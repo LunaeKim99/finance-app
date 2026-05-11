@@ -51,10 +51,6 @@ class AuthProvider extends ChangeNotifier {
             mode: LaunchMode.externalApplication,
           );
         },
-        query: {
-          'redirectUrl':
-              'com.example.uangku://oauth/callback',
-        },
       );
 
       _isLoggedIn = PbClient.instance.authStore.isValid;
@@ -64,6 +60,17 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       _errorMessage = null;
       notifyListeners();
+
+      // bring app back to foreground after OAuth completes via realtime
+      try {
+        await launchUrl(
+          Uri.parse('com.example.uangku://oauth/callback'),
+          mode: LaunchMode.externalApplication,
+        );
+      } catch (_) {
+        // redirect back to app is best-effort
+      }
+
       return true;
     } catch (e) {
       debugPrint('[Auth] signInWithGoogle error: $e');
