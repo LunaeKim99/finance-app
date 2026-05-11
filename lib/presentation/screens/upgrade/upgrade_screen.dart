@@ -559,11 +559,14 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
 
       final authProv = context.read<AuthProvider>();
 
+      final name = authProv.userName;
+      final email = authProv.userEmail;
+
       final token = await midtrans.createSnapToken(
         orderId: orderId,
         amount: amount.toDouble(),
-        customerName: authProv.userName,
-        customerEmail: authProv.userEmail,
+        customerName: name.isNotEmpty ? name : email.split('@').first,
+        customerEmail: email,
       );
 
       debugPrint('[Payment] Snap token received: ${token.substring(0, 8)}...');
