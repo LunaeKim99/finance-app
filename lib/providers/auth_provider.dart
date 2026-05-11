@@ -46,7 +46,7 @@ class AuthProvider extends ChangeNotifier {
       await PbClient.instance.collection('users').authWithOAuth2(
         'google',
         (Uri url) async {
-          await launchUrl(url, mode: LaunchMode.externalApplication);
+          await launchUrl(url, mode: LaunchMode.inAppBrowserView);
         },
       );
 
