@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:pocketbase/pocketbase.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../core/config/app_config.dart';
 
 class _NgrokHttpClient extends http.BaseClient {
@@ -19,18 +20,25 @@ class _NgrokHttpClient extends http.BaseClient {
 
 class PbClient {
   static PocketBase? _instance;
-  static String? _currentUrl;
 
   static PocketBase get instance {
-    final baseUrl = _baseUrl;
-    if (_instance == null || _currentUrl != baseUrl) {
-      _instance = PocketBase(
-        baseUrl,
-        httpClientFactory: () => _NgrokHttpClient(),
-      );
-      _currentUrl = baseUrl;
-    }
+    assert(_instance != null, 'PbClient not initialized. Call PbClient.init() first');
     return _instance!;
+  }
+
+  static Future<void> init() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final store = AsyncAuthStore(
+      save: (String data) async => prefs.setString('pb_auth', data),
+      initial: prefs.getString('pb_auth'),
+    );
+
+    _instance = PocketBase(
+      _baseUrl,
+      httpClientFactory: () => _NgrokHttpClient(),
+      authStore: store,
+    );
   }
 
   static String get _baseUrl {
@@ -65,6 +73,5 @@ class PbClient {
 
   static void reset() {
     _instance = null;
-    _currentUrl = null;
   }
 }
