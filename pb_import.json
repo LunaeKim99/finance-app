@@ -1,5 +1,39 @@
 [
   {
+    "id": "users_collection",
+    "name": "users",
+    "type": "auth",
+    "system": false,
+    "fields": [
+      {
+        "id": "u1",
+        "name": "name",
+        "type": "text",
+        "required": false,
+        "presentable": true,
+        "min": null,
+        "max": null,
+        "pattern": ""
+      },
+      {
+        "id": "u2",
+        "name": "avatarUrl",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "min": null,
+        "max": null,
+        "pattern": ""
+      }
+    ],
+    "indexes": [],
+    "listRule": "id = @request.auth.id",
+    "viewRule": "id = @request.auth.id",
+    "createRule": "",
+    "updateRule": "id = @request.auth.id",
+    "deleteRule": "id = @request.auth.id"
+  },
+  {
     "id": "transactions_collection",
     "name": "transactions",
     "type": "base",
