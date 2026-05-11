@@ -1,4 +1,4 @@
-package com.uwangku.app
+package com.example.uangku
 
 import io.flutter.embedding.android.FlutterActivity
 

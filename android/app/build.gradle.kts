@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.uwangku.app"
+    namespace = "com.example.uangku"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -27,7 +27,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.uwangku.app"
+        applicationId = "com.example.uangku"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
