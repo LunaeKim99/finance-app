@@ -1,4 +1,4 @@
-# UWANGKU v1.7.0
+# UWANGKU v1.8.0
 
 Aplikasi Asisten Keuangan Pribadi Berbasis AI menggunakan Flutter dengan dukungan penuh untuk Android dan iOS.
 
@@ -15,8 +15,11 @@ Aplikasi Asisten Keuangan Pribadi Berbasis AI menggunakan Flutter dengan dukunga
   - **Offline Mode**: Tesseract OCR fallback jika tidak ada internet
   - Auto-detect koneksi → ML Kit (online) atau Tesseract (offline)
 - **Cross-Platform** - Tampilan native untuk Android (Material) dan iOS (Cupertino)
-- **Splash Screen** - Gradient animasi dengan logo UWANGKU
-- **Offline Mode** - Bisa jalan tanpa internet menggunakan SQLite lokal
+- **Splash Screen** - Gradient animasi dengan logo UWANGKU + connection status
+- **Dual Storage** - PocketBase sebagai PRIMARY, SQLite sebagai OFFLINE FALLBACK
+  - Auto-switch: SmartDbHelper otomatis pilih storage berdasarkan koneksi
+  - Write-through cache: data online otomatis disimpan lokal
+  - Auto-sync: data offline otomatis dikirim ke server saat koneksi pulih
 - **Premium** - Unlimited AI, Export PDF/CSV (via Midtrans)
 
 ## Fitur Premium
@@ -40,7 +43,7 @@ Bayar via Midtrans Snap (WebView)
 
 - Flutter SDK ^3.11.4
 - Provider (state management)
-- SQLite + PocketBase (dual storage)
+- SQLite + PocketBase (dual storage with SmartDbHelper auto-switch)
 - fl_chart (charts)
 - intl (formatting mata uang Indonesia)
 - Groq API (Llama 3.1 8B)
@@ -54,22 +57,33 @@ Bayar via Midtrans Snap (WebView)
 ```
 lib/
 ├── main.dart                  # Entry point & routing
+├── config/
+│   ├── app_config.dart        # API keys & environment config
+│   └── app_config.dart.example
 ├── database/
 │   ├── db_interface.dart     # Abstract storage interface
 │   ├── pb_helper.dart        # PocketBase implementation
-│   └── sqlite_helper.dart   # SQLite implementation
+│   ├── sqlite_helper.dart   # SQLite implementation
+│   ├── smart_db_helper.dart # Auto-switch strategy (PRIMARY storage)
+│   └── sync_queue_helper.dart # Offline operation queue
 ├── models/
 │   ├── transaction_model.dart
+│   ├── asset_model.dart
+│   ├── debt_model.dart
+│   ├── budget_model.dart
 │   ├── usage_model.dart      # Usage limit tracking
 │   └── payment_model.dart    # Payment enums
 ├── providers/
 │   ├── transaction_provider.dart
+│   ├── budget_provider.dart
 │   ├── theme_provider.dart  # Dark mode management
 │   └── usage_provider.dart  # Premium status & limits
 ├── screens/
+│   ├── splash_screen.dart   # Animated splash + connection status
 │   ├── dashboard_screen.dart
 │   ├── add_transaction_screen.dart
 │   ├── history_screen.dart
+│   ├── budget_screen.dart
 │   ├── report_screen.dart    # Weekly summary (Premium)
 │   ├── ai_chat_screen.dart  # AI chat with voice & OCR
 │   ├── upgrade_screen.dart   # Premium upgrade UI
@@ -77,6 +91,7 @@ lib/
 │   ├── export_screen.dart  # PDF/CSV export (Premium)
 │   └── receipt_review_screen.dart  # Scan result review
 ├── services/
+│   ├── pb_client.dart        # PocketBase client (Ngrok-aware)
 │   ├── ai_service.dart     # Groq AI integration
 │   ├── voice_service.dart  # Speech-to-text
 │   ├── ocr_service.dart    # ML Kit text recognition
@@ -84,32 +99,55 @@ lib/
 │   ├── export_service.dart   # PDF/CSV export
 │   └── receipt_scan_service.dart  # Receipt OCR + AI
 ├── widgets/
-│   └── transaction_card.dart
+│   ├── transaction_card.dart
+│   └── budget_progress_card.dart
 └── utils/
     ├── app_theme.dart       # Theme colors (light/dark)
+    ├── error_handler.dart
     └── platform_helper.dart
 ```
 
 ## Storage Layer
 
-App menggunakan abstract interface `DbInterface` yang bisa switch antara:
+App menggunakan **SmartDbHelper** — strategy pattern untuk auto-switch storage:
 
-1. **SQLite** (default) - Offline, data tersimpan lokal di device
-2. **PocketBase** - Online, data sync ke server
+### Cara Kerja
 
-> **Mengapa SQLite dulu?**
-> PocketBase membutuhkan server terpisah yang harus di-deploy & di-configure manual.
-> Belum ada backend server yang aktif, jadi untuk saat ini menggunakan SQLite saja.
-> Nanti bisa di-switch ke PocketBase kalau udah ada server yang tersedia.
+1. **SmartDbHelper** mengecek koneksi PocketBase saat startup via `PbClient.isConnected()`
+2. Setiap 30 detik, koneksi dicek ulang secara periodik
+3. **Jika PocketBase reachable:**
+   - Semua baca/tulis → PocketBase (remote primary)
+   - Setiap sukses tulis → juga disimpan ke SQLite (write-through cache)
+4. **Jika PocketBase unreachable:**
+   - Semua baca/tulis → SQLite lokal
+   - Operasi tulis di-queue ke SyncQueueHelper
+5. **Saat koneksi pulih:**
+   - Queue otomatis di-replay ke PocketBase
+   - `connectivityStream` memberitahu UI untuk update
 
-```dart
-// Switch ke PocketBase (online)
-import 'database/pb_helper.dart';
-provider.switchStorage(PbHelper());
+### Arsitektur
 
-// Switch ke SQLite (offline)
-import 'database/sqlite_helper.dart';
-provider.switchStorage(SqliteHelper());
+```
+SmartDbHelper (implements DbInterface)
+├── PocketBase (primary) — PbHelper
+├── SQLite (fallback) — SqliteHelper
+└── Sync Queue — SyncQueueHelper
+```
+
+### Diagram Alur
+
+```
+App Start → SmartDbHelper.initialize()
+                ↓
+        PbClient.isConnected()?
+           ↙           ↘
+        YES              NO
+         ↓               ↓
+  PocketBase           SQLite
+  (primary)          (fallback)
+         ↓               ↓
+  Write-through      Queue ops →
+  → SQLite cache     sync on reconnect
 ```
 
 ## Setup API Keys
@@ -321,8 +359,8 @@ flutter build ios --release --dart-define=GROQ_API_KEY=your_groq_key_here
 
 - Android: API 21+ (Android 5.0)
 - iOS: 13.0+
-- SQLite: included (sqflite)
-- PocketBase: v0.21+ (optional for online mode)
+- SQLite: included (sqflite) — offline fallback
+- PocketBase: v0.23+ (primary storage, auto-fallback ke SQLite)
 - Midtrans: for payment (optional, configure in .env)
 
 ## Configuration
@@ -337,17 +375,18 @@ flutter run --dart-define=GROQ_API_KEY=gsk_xxxxxxxxxx
 
 Lihat section **Setup API Keys** untuk detail lengkap.
 
-### PocketBase (Optional - Online Sync)
+### PocketBase (Primary Storage)
 
-Jika ingin menggunakan PocketBase untuk online sync:
+PocketBase sekarang adalah **PRIMARY storage**. Jika server reachable, app akan otomatis menggunakan PocketBase dan menyimpan cache ke SQLite. Jika server offline, app fallback ke SQLite dan queue perubahan untuk sync otomatis.
 
 ```bash
 # Run PocketBase server
 ./pocketbase serve
 
-# Default URL sudah dikonfigurasi di lib/database/pb_helper.dart
+# Default URL dikonfigurasi di lib/config/app_config.dart
 # Android emulator: http://10.0.2.2:8090
 # iOS simulator: http://127.0.0.1:8090
+# Ngrok tunnel: https://equator-untainted-stank.ngrok-free.dev
 ```
 
 ### Midtrans Payment

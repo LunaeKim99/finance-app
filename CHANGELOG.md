@@ -2,6 +2,52 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.0] - 2026-05-11
+
+### Added
+
+- **SmartDbHelper** — Strategy pattern untuk auto-switch storage
+  - PocketBase sebagai PRIMARY storage (jika reachable)
+  - SQLite sebagai OFFLINE FALLBACK (jika tidak ada koneksi)
+  - Write-through cache: data dari remote langsung disimpan ke SQLite
+  - Periodic connectivity check setiap 30 detik
+  - Auto-sync: queued operations dikirim ke PocketBase saat koneksi pulih
+  - Stream<bool> connectivityStream untuk notify listeners
+
+- **NgrokHttpClient** — Custom http.Client untuk PocketBase SDK v0.23.x
+  - Inject header `ngrok-skip-browser-warning: true` di setiap request
+  - PocketBase SDK menerima via `httpClientFactory` parameter
+  - Tidak perlu `beforeSend` hook (tidak didukung di v0.23.x)
+
+- **Connection Status Indicators**
+  - SplashScreen: green/grey dot + "Tersambung ke server" / "Mode offline"
+  - DashboardScreen: "☁ Online" indicator atau "📴 Offline" banner
+
+### Changed
+
+- **TransactionProvider** — Refactor total
+  - Hapus `switchStorage()`, `setUseRemoteStorage()`, `_requiresOnline()`
+  - Hapus manual queue logic (`_loadFromQueue`, `_parsePayload`, `_queueTransaction`)
+  - Semua offline/online logic otomatis oleh SmartDbHelper
+  - Listener ke `connectivityStream` dan `connectivity_plus`
+
+- **BudgetProvider** — Migrasi ke DbInterface
+  - Dari `SqliteHelper` → `SmartDbHelper` via `DbInterface`
+  - Panggil `_dbHelper.initialize()` di method `initialize()`
+
+- **SyncQueueHelper** — Fix serialization
+  - `payload.toString()` → `jsonEncode(payload)` (proper JSON)
+  - SmartDbHelper menggunakan `jsonDecode` saat replay
+
+- **app_config.dart.example** — Default URL ke Ngrok tunnel
+
+### Fixed
+
+- PbClient tidak pernah mengirim `ngrok-skip-browser-warning` header
+- TransactionProvider selalu default ke SqliteHelper (PocketBase tidak pernah dipakai)
+- Payload serialization di SyncQueueHelper (Dart Map toString tidak bisa di-parse)
+- BudgetProvider tidak ada DbInterface initialize
+
 ## [1.7.0] - 2026-04-27
 
 ### Added
