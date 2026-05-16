@@ -1,26 +1,23 @@
 routerAdd("POST", "/api/create-snap-token", (e) => {
   try {
     const info = e.requestInfo();
-    if (info.auth == null) {
-      return e.json(401, { error: "Unauthorized" });
-    }
+    if (info.auth == null) return e.json(401, { error: "Unauthorized" });
 
     const body = info.body;
-    const orderId = body.order_id;
-    const amount = body.amount;
-    const customerName = body.customer_name;
+    const orderId       = body.order_id;
+    const amount        = body.amount;
+    const customerName  = body.customer_name;
     const customerEmail = body.customer_email;
 
     if (!orderId || !amount || !customerName || !customerEmail) {
-      return e.json(400, {
-        error: "Field order_id, amount, customer_name, customer_email wajib diisi",
-      });
+      return e.json(400, { error: "Field wajib kurang", received: JSON.stringify(body) });
     }
 
     const serverKey = $os.getenv("MIDTRANS_SERVER_KEY");
-    const baseUrl = $os.getenv("MIDTRANS_BASE_URL");
+    const baseUrl   = $os.getenv("MIDTRANS_BASE_URL");
+
     if (!serverKey || !baseUrl) {
-      return e.json(500, { error: "Midtrans config missing on server" });
+      return e.json(500, { error: "Konfigurasi Midtrans belum diatur di server" });
     }
 
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
@@ -37,75 +34,38 @@ routerAdd("POST", "/api/create-snap-token", (e) => {
     if (rem === 1) encodedAuth = encodedAuth.slice(0, -2) + "==";
     else if (rem === 2) encodedAuth = encodedAuth.slice(0, -1) + "=";
 
-    const test1 = $http.send({
-      url: "https://jsonplaceholder.typicode.com/todos/1",
-      method: "GET",
-      timeout: 10,
-    });
-
-    const testA = $http.send({
-      url: baseUrl,
-      method: "POST",
-      headers: {
-        "authorization": "Basic " + encodedAuth,
-        "content-type": "application/json",
-        "accept": "application/json",
-      },
-      body: JSON.stringify({
-        transaction_details: {
-          order_id: orderId,
-          gross_amount: parseInt(amount),
+    let res;
+    try {
+      res = $http.send({
+        url: baseUrl,
+        method: "POST",
+        headers: {
+          "Authorization": "Basic " + encodedAuth,
+          "Content-Type": "application/json",
+          "Accept": "application/json",
         },
-      }),
-      timeout: 15,
-    });
+        body: JSON.stringify({
+          transaction_details: { order_id: orderId, gross_amount: parseInt(amount) },
+          customer_details: { first_name: customerName, email: customerEmail },
+          item_details: [{ id: "PREMIUM_PLAN", price: parseInt(amount), quantity: 1, name: "UWANGKU Premium" }],
+        }),
+        timeout: 30,
+      });
+    } catch (err) {
+      return e.json(502, { error: "Gagal terhubung ke Midtrans: " + err.toString() });
+    }
 
-    const testB = $http.send({
-      url: baseUrl,
-      method: "POST",
-      body: JSON.stringify({
-        transaction_details: {
-          order_id: "TEST-NO-" + orderId,
-          gross_amount: 10000,
-        },
-      }),
-      timeout: 15,
-    });
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      return e.json(res.statusCode, {
+        error: "Midtrans error",
+        midtrans_status: res.statusCode,
+        midtrans_body: res.body,
+        midtrans_json: res.json,
+      });
+    }
 
-    const testC = $http.send({
-      url: baseUrl,
-      method: "POST",
-      headers: {
-        "authorization": "Basic " + encodedAuth,
-      },
-      body: JSON.stringify({
-        transaction_details: {
-          order_id: orderId,
-          gross_amount: parseInt(amount),
-        },
-        customer_details: {
-          first_name: customerName,
-          email: customerEmail,
-        },
-        item_details: [{
-          id: "PREMIUM_PLAN",
-          price: parseInt(amount),
-          quantity: 1,
-          name: "UWANGKU Premium",
-        }],
-      }),
-      timeout: 15,
-    });
+    return e.json(200, res.json);
 
-    return e.json(200, {
-      test1: test1.statusCode,
-      A_status: testA.statusCode,
-      A_body: testA.json ? Object.keys(testA.json).join(",") : typeof testA.json,
-      B_status: testB.statusCode,
-      B_body: testB.json ? Object.keys(testB.json).join(",") : typeof testB.json,
-      C_status: testC.statusCode,
-      C_body: testC.json ? Object.keys(testC.json).join(",") : typeof testC.json,
-    });
   } catch (err) {
     return e.json(500, { error: "Hook error: " + err.toString() });
   }

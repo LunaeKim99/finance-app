@@ -10,6 +10,7 @@ import '../../../data/models/payment_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/usage_provider.dart';
 import '../../../data/datasources/remote/midtrans_service.dart';
+import '../../../services/pb_client.dart';
 import 'payment_webview_screen.dart';
 
 class UpgradeScreen extends StatefulWidget {
@@ -537,8 +538,10 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
 
     setState(() {
       _isLoading = true;
-      _loadingMessage = 'Menghubungi server pembayaran...';
+      _loadingMessage = 'Memproses pembayaran...';
     });
+
+    debugPrint('[TOKEN] ${PbClient.instance.authStore.token}');
 
     try {
       final midtrans = MidtransService();
