@@ -48,6 +48,33 @@ class AiService {
 Kamu adalah asisten keuangan pribadi yang cerdas dalam aplikasi UWANGKU.
 Tugasmu adalah membantu pengguna mencatat transaksi keuangan dari percakapan natural.
 
+BATASAN TOPIK - KAMU HANYA BOLEH MENJAWAB TOPIK KEUANGAN:
+✅ Topik yang DIIZINKAN:
+- Mencatat transaksi pemasukan dan pengeluaran
+- Kategori keuangan (Makanan, Transportasi, Belanja, dll)
+- Budgeting, pengelolaan uang, dan perencanaan keuangan pribadi
+- Tabungan, investasi dasar, dan pengelolaan aset
+- Laporan, ringkasan, dan analisis keuangan
+- Pertanyaan seputar fitur aplikasi UWANGKU yang terkait keuangan
+
+❌ Topik yang DILARANG:
+- Politik, agama, suku, ras, dan isu sensitif lainnya
+- Kesehatan, medis, penyakit, atau obat-obatan (kecuali biaya pengobatan)
+- Teknologi, pemrograman, coding, dan gadget (kecuali biaya pembelian/servis)
+- Hiburan, film, musik, game, dan hobi (kecuali biaya terkait)
+- Hubungan, percintaan, keluarga, dan curhat personal (kecuali konteks keuangan)
+- Resep masakan, tips memasak, atau kuliner (kecuali mencatat pengeluaran makan)
+- Olahraga, berita umum, peristiwa terkini, dan sejarah
+- Apapun yang tidak berhubungan langsung dengan manajemen keuangan pribadi
+
+JIKA USER BERTANYA DI LUAR TOPIK KEUANGAN, balas HANYA dengan format JSON ini:
+{
+  "action": "chat",
+  "message": "Maaf, aku hanya bisa membantu pertanyaan seputar keuangan pribadi dan aplikasi UWANGKU. Ada transaksi yang mau dicatat? 😊"
+}
+
+JANGAN PERNAH menjawab pertanyaan di luar topik keuangan dalam keadaan apapun. Tetaplah menjadi asisten keuangan yang disiplin.
+
 KEMAMPUANMU:
 1. Ekstrak informasi transaksi dari teks natural bahasa Indonesia/Inggris
 2. Tentukan apakah itu pemasukan (income) atau pengeluaran (expense)
@@ -71,25 +98,17 @@ JIKA USER INGIN CATAT TRANSAKSI, balas HANYA dalam format JSON ini:
   "message": "pesan konfirmasi singkat dalam Bahasa Indonesia dengan emoji"
 }
 
-JIKA HANYA PERTANYAAN ATAU PERCAKAPAN BIASA, balas HANYA dalam format JSON ini:
+JIKA HANYA PERTANYAAN KEUANGAN ATAU PERCAKAPAN BIASA (TETAPI MASIH DALAM TOPIK KEUANGAN), balas HANYA dalam format JSON ini:
 {
   "action": "chat",
-  "message": "respons dalam Bahasa Indonesia yang ramah dan helpful"
+  "message": "respons dalam Bahasa Indonesia yang ramah, helpful, dan tetap fokus pada topik keuangan"
 }
 
 CONTOH INPUT → OUTPUT:
-
-Input: "tadi makan siang 35rb"
-Output: {"action":"add_transaction","data":{"type":"expense","amount":35000,"category":"Makanan","note":"makan siang","date":"2026-04-25"},"message":"Oke! Pengeluaran makan siang Rp 35.000 dicatat 🍽️"}
-
-Input: "gajian 5 juta"
-Output: {"action":"add_transaction","data":{"type":"income","amount":5000000,"category":"Gaji","note":"gaji bulanan","date":"2026-04-25"},"message":"Mantap! Pemasukan gaji Rp 5.000.000 dicatat 💰"}
-
-Input: "beli martabak habisnya 55 ribu"
-Output: {"action":"add_transaction","data":{"type":"expense","amount":55000,"category":"Makanan","note":"beli martabak","date":"2026-04-25"},"message":"Catat! Pengeluaran martabak Rp 55.000 tersimpan 🧆"}
-
-Input: "berapa pengeluaran bulan ini?"
-Output: {"action":"chat","message":"Untuk melihat total pengeluaran, buka tab Laporan ya! 📊"}
+  Input: "tadi makan siang 35rb" → { "action":"add_transaction","data":{"type":"expense","amount":35000,"category":"Makanan","note":"makan siang","date":"2026-04-25"},"message":"Oke! Pengeluaran makan siang Rp 35.000 dicatat 🍽️" }
+  Input: "gajian 5 juta" → { "action":"add_transaction","data":{"type":"income","amount":5000000,"category":"Gaji","note":"gaji bulanan","date":"2026-04-25"},"message":"Mantap! Pemasukan gaji Rp 5.000.000 dicatat 💰" }
+  Input: "berapa pengeluaran bulan ini?" → { "action":"chat","message":"Untuk melihat total pengeluaran, buka tab Laporan ya! 📊" }
+  Input: "siapa presiden indonesia?" → { "action":"chat","message":"Maaf, aku hanya bisa membantu pertanyaan seputar keuangan pribadi dan aplikasi UWANGKU. Ada transaksi yang mau dicatat? 😊" }
 
 ATURAN PENTING:
 - Selalu balas HANYA dengan JSON valid, tidak ada teks di luar JSON
@@ -98,6 +117,7 @@ ATURAN PENTING:
 - Tanggal selalu format YYYY-MM-DD
 - Jika ragu antara income/expense, tanya ke user dalam format chat JSON
 ''';
+
 
   Future<bool> initialize() async {
     if (_isInitialized) return true;
@@ -186,10 +206,48 @@ ATURAN PENTING:
     return await initialize();
   }
 
+  bool _isFinanceRelated(String message) {
+    final lowMessage = message.toLowerCase();
+    
+    // Daftar kata kunci yang jelas-jelas bukan keuangan (off-topic)
+    final offTopicKeywords = [
+      'siapa presiden', 'cara masak', 'resep', 'tutorial coding', 'belajar bahasa',
+      'film terbaik', 'lagu favorit', 'politik', 'agama', 'sejarah dunia',
+      'cara membuat website', 'coding python', 'java script', 'apa itu quantum',
+      'hasil pertandingan', 'skor bola', 'berita terkini',
+    ];
+
+    for (final keyword in offTopicKeywords) {
+      if (lowMessage.contains(keyword)) return false;
+    }
+
+    // Daftar kata kunci yang menandakan ini topik keuangan
+    final financeKeywords = [
+      'uang', 'rupiah', 'rb', 'juta', 'ribu', 'harga', 'bayar', 'beli', 'jual', 
+      'gaji', 'tabungan', 'investasi', 'catat', 'pengeluaran', 'pemasukan', 
+      'budget', 'hemat', 'biaya', 'saldo', 'transaksi', 'tabung', 'kredit', 'debet',
+    ];
+
+    for (final keyword in financeKeywords) {
+      if (lowMessage.contains(keyword)) return true;
+    }
+
+    // Jika tidak yakin, biarkan AI yang memutuskan lewat system prompt
+    return true;
+  }
+
   Future<AiResponse> sendMessage(String message, DateTime currentDate) async {
     if (!_isInitialized) {
       final ok = await initialize();
       if (!ok) return _buildErrorResponse(_lastError);
+    }
+
+    // Pre-filter: Cek apakah topik berkaitan dengan keuangan
+    if (!_isFinanceRelated(message)) {
+      return AiResponse(
+        action: AiAction.chat,
+        message: 'Maaf, aku hanya bisa membantu pertanyaan seputar keuangan pribadi dan aplikasi UWANGKU. Ada transaksi yang mau dicatat? 😊',
+      );
     }
 
     if (_lastRequestTime != null) {
@@ -513,7 +571,8 @@ class AiRecommendationService {
     const systemPrompt = '''Kamu adalah asisten keuangan pribadi yang ramah dan berbahasa Indonesia santai.
 Buat ringkasan keuangan mingguan berdasarkan data transaksi berikut.
 Tulis dalam 2-3 paragraf pendek, gunakan bahasa yang mudah dipahami,
-sertakan total pengeluaran, kategori terbesar, dan 1 kalimat motivasi di akhir.''';
+sertakan total pengeluaran, kategori terbesar, dan 1 kalimat motivasi di akhir.
+Fokus hanya pada data keuangan yang diberikan. Jangan bahas topik di luar keuangan pribadi.''';
 
     final userPrompt = 'Data transaksi 7 hari terakhir:\n${buffer.toString()}';
 
@@ -537,7 +596,8 @@ sertakan total pengeluaran, kategori terbesar, dan 1 kalimat motivasi di akhir.'
     const systemPrompt = '''Kamu adalah financial coach yang berbahasa Indonesia. Berikan tepat 3 saran
 keuangan yang konkret dan spesifik berdasarkan data bulan ini.
 Format output: daftar bernomor 1-3, setiap saran maksimal 2 kalimat.
-Saran harus realistis dan menyebutkan nominal jika relevan.''';
+Saran harus realistis dan menyebutkan nominal jika relevan.
+Fokus hanya pada data keuangan yang diberikan. Jangan bahas topik di luar keuangan pribadi.''';
 
     final userPrompt = '''Data keuangan bulan ini:
 Total Pemasukan: ${_currencyFormat.format(totalIncome)}
@@ -587,7 +647,8 @@ Kamu adalah asisten keuangan pribadi yang ramah dan berbicara Bahasa Indonesia.
 Buat ringkasan keuangan bulanan dalam 3-4 paragraf singkat.
 
 Gunakan format markdown dengan bullet points. Singkat, jelas, dan actionable.
-Selalu gunakan emoji di awal setiap bullet point.''';
+Selalu gunakan emoji di awal setiap bullet point.
+Fokus hanya pada data keuangan yang diberikan. Jangan bahas topik di luar keuangan pribadi.''';
 
     final userPrompt = '''
 Data keuangan bulan $monthName:

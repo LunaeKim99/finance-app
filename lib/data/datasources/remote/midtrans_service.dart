@@ -11,7 +11,7 @@ class MidtransService {
   PocketBase get _pocketBase => PbClient.instance;
 
   String get _pbBaseUrl => _pocketBase.baseURL;
-  String get pbBaseUrl => _pbBaseUrl; // Public for debug
+  String get pbBaseUrl => _pbBaseUrl;
 
   bool get isConfigured => _pbBaseUrl.isNotEmpty;
 
@@ -29,14 +29,12 @@ class MidtransService {
   }) async {
     if (!isConfigured) {
       throw Exception(
-        'PocketBase belum dikonfigurasi. Pastikan server berjalan!',
+        'Server tidak terhubung. Pastikan PocketBase berjalan!',
       );
     }
 
-    // Verify auth before request
-    final authStore = _pocketBase.authStore;
     if (kDebugMode) {
-      debugPrint('[Midtrans] Auth valid: ${authStore.isValid}');
+      debugPrint('[Midtrans] Auth valid: ${_pocketBase.authStore.isValid}');
       debugPrint('[Midtrans] Creating snap token for order: $orderId, amount: $amount');
     }
 
@@ -49,6 +47,7 @@ class MidtransService {
           'amount': amount.toInt(),
           'customer_name': customerName,
           'customer_email': customerEmail,
+          'is_production': AppConfig.isProduction,
         },
       );
 
@@ -59,20 +58,37 @@ class MidtransService {
       final token = response['token'] as String?;
 
       if (token == null || token.isEmpty) {
-        throw Exception('Token tidak valid dari server');
+        throw Exception('Token pembayaran tidak valid dari server');
       }
 
       return token;
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[Midtrans] Error: $e');
+    } on ClientException catch (e) {
+      if (kDebugMode) debugPrint('[Midtrans] ClientException: $e');
+      if (e.statusCode == 401 || e.statusCode == 403) {
+        throw Exception('Sesi login habis. Silakan login ulang.');
       }
-      if (e.toString().contains('401') || e.toString().contains('403')) {
-        throw Exception('Autentikasi gagal. Pastikan kamu sudah login!');
+      if (e.statusCode == 502) {
+        final response = e.response;
+        if (response['midtrans_json'] != null) {
+          final messages = response['midtrans_json']['error_messages'];
+          if (messages is List && messages.isNotEmpty) {
+            throw Exception('Midtrans Error: ${messages.first}');
+          }
+        }
+        throw Exception('Gagal terhubung ke Midtrans. Periksa konfigurasi server.');
       }
-      if (e.toString().contains('500')) {
+      if (e.statusCode == 500) {
         throw Exception(
-          'Server payment belum dikonfigurasi. Hubungi administrator!',
+          'Server payment error. Midtrans mungkin belum dikonfigurasi.',
+        );
+      }
+      rethrow;
+    } catch (e) {
+      if (kDebugMode) debugPrint('[Midtrans] Error: $e');
+      if (e.toString().contains('SocketException') ||
+          e.toString().contains('HandshakeException')) {
+        throw Exception(
+          'Tidak dapat terhubung ke server. Periksa koneksi internet.',
         );
       }
       rethrow;

@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2026-05-18
+
+### Added
+
+- **AI Topic Boundary** — Filter percakapan AI hanya seputar keuangan
+  - System prompt diperketat dengan daftar topik yang diizinkan dan dilarang
+  - `_isFinanceRelated()` pre-filter dengan keyword detection
+  - Off-topic langsung direspon dengan pesan standar tanpa diproses AI
+  - Prompt ringkasan mingguan, bulanan, dan saran budget juga diperketat
+
+### Changed
+
+- **Midtrans Error Handling** — Pesan error lebih informatif dalam Bahasa Indonesia
+  - Specific `ClientException` handling untuk kode 401, 403, 500, 502
+  - Deteksi `SocketException` dan `HandshakeException` untuk error jaringan
+  - Throw ulang exception yang tidak tertangani (`rethrow`)
+
+- **PocketBase di .gitignore** — Seluruh folder `pocketbase/` tidak dilacak git
+
+### Removed
+
+- **pb_hooks/create_snap_token.pb.js** — File hook yang tidak terpakai dihapus
+
 ## [2.0.1] - 2026-05-11
 
 ### Fixed
