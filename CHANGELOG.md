@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## InDev [2.3.1] - 2026-05-19
+
+### Changed
+
+- **Google OAuth Redirect** — Ganti dari custom scheme ke loopback redirect
+  - Tidak lagi pakai `com.example.uangku://oauth/callback` (Google tolak custom scheme)
+  - App jalanin HTTP server di `127.0.0.1:8765` via dart:io `HttpServer`
+  - Google redirect ke local server → app extract `code` → `authWithOAuth2Code`
+  - Halaman sukses auto-redirect ke custom scheme untuk balik ke app
+
+- **Logout Navigation** — Tambah `appNavigatorKey` global untuk navigasi dari luar MaterialApp
+  - `BlocListener` di `app.dart` sekarang pake `appNavigatorKey.currentState?.pushNamedAndRemoveUntil` untuk logout
+
+- **Data Reload After Login** — `AppShell.didChangeDependencies` reload data transaksi & budget
+
+### Added
+
+- **LocalOAuthServer** — Service HTTP server loopback untuk tangkap redirect OAuth
+- **Pending Redirect Buffer** — `OAuthHandler._pendingRedirect` untuk cold start scenario
+
 ## InDev [2.3.0] - 2026-05-18
 
 ### Added

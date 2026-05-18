@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import '../presentation/providers/transaction_provider.dart';
+import '../presentation/providers/budget_provider.dart';
 import '../presentation/screens/dashboard/dashboard_screen.dart';
 import '../presentation/screens/transaction/history_screen.dart';
 import '../presentation/screens/transaction/add_transaction_screen.dart';
@@ -24,6 +25,7 @@ class _AppShellState extends State<AppShell> {
   int _currentIndex = 0;
   GlobalKey<BudgetScreenState>? _budgetScreenKey;
   List<Widget>? _screens;
+  bool _dataLoaded = false;
 
   List<Widget> get _screenList {
     _screens ??= [
@@ -55,6 +57,11 @@ class _AppShellState extends State<AppShell> {
     provider.onSuccess = (message) {
       ErrorHandler.showSuccess(context, message);
     };
+    if (!_dataLoaded) {
+      _dataLoaded = true;
+      provider.loadTransactions();
+      context.read<BudgetProvider>().loadBudgets();
+    }
   }
 
   void _onNavTap(int index) {

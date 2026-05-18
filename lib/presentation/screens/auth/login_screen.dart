@@ -34,6 +34,10 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _onGoogleLogin() {
+    context.read<AuthBloc>().add(const AuthGoogleLoginRequested());
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -183,9 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: OutlinedButton.icon(
                           onPressed: state is AuthLoading
                               ? null
-                              : () => context.read<AuthBloc>().add(
-                                    const AuthGoogleLoginRequested(),
-                                  ),
+                              : _onGoogleLogin,
                           style: OutlinedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: Colors.black87,

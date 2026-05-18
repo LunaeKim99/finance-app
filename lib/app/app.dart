@@ -13,6 +13,8 @@ import '../presentation/screens/auth/bloc/auth_state.dart';
 import '../presentation/screens/auth/splash_screen.dart';
 import '../presentation/screens/auth/login_screen.dart';
 
+final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
+
 class FinanceApp extends StatelessWidget {
   const FinanceApp({super.key});
 
@@ -54,7 +56,7 @@ class FinanceApp extends StatelessWidget {
         child: BlocListener<AuthBloc, AuthState>(
           listener: (context, state) {
             if (state is AuthUnauthenticated) {
-              Navigator.of(context).pushNamedAndRemoveUntil(
+              appNavigatorKey.currentState?.pushNamedAndRemoveUntil(
                 '/login',
                 (route) => false,
               );
@@ -83,6 +85,7 @@ class FinanceApp extends StatelessWidget {
               }
 
               return MaterialApp(
+                navigatorKey: appNavigatorKey,
                 debugShowCheckedModeBanner: false,
                 title: 'UWANGKU',
                 themeMode: themeProvider.themeMode,

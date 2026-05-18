@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
+import '../../../../services/local_oauth_server.dart';
 import '../../../../services/pb_client.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
@@ -23,7 +24,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       final isValid = PbClient.instance.authStore.isValid;
       if (isValid) {
-        final user = PbClient.instance.authStore.model as RecordModel;
+        final user = PbClient.instance.authStore.record as RecordModel;
         emit(AuthAuthenticated(user: user));
       } else {
         emit(const AuthUnauthenticated());
@@ -47,7 +48,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       final isValid = PbClient.instance.authStore.isValid;
       if (isValid) {
-        final user = PbClient.instance.authStore.model as RecordModel;
+        final user = PbClient.instance.authStore.record as RecordModel;
         emit(AuthAuthenticated(user: user));
       } else {
         emit(const AuthError(message: 'Login gagal. Silakan coba lagi'));
@@ -79,36 +80,55 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
     try {
-      await PbClient.instance.collection('users').authWithOAuth2(
+      final authMethods = await PbClient.instance
+          .collection('users')
+          .listAuthMethods();
+
+      final provider = authMethods.oauth2.providers
+          .firstWhere((p) => p.name == 'google');
+
+      const loopbackRedirect = 'http://127.0.0.1:8765/';
+
+      // Replace PocketBase redirect_uri with loopback address
+      final uri = Uri.parse(provider.authURL);
+      final params = Map<String, String>.from(uri.queryParameters);
+      params['redirect_uri'] = loopbackRedirect;
+      final url = uri.replace(queryParameters: params);
+
+      // Start local server BEFORE opening browser
+      final resultFuture = LocalOAuthServer.start();
+
+      // Buka di external browser
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+
+      // Tunggu redirect ke local server
+      final result = await resultFuture;
+      final code = result['code'];
+
+      if (code == null || code.isEmpty) {
+        emit(const AuthError(message: 'Login gagal: kode tidak ditemukan'));
+        return;
+      }
+
+      // Tukar code untuk token via PocketBase
+      await PbClient.instance.collection('users').authWithOAuth2Code(
         'google',
-        (Uri url) async {
-          await launchUrl(
-            url,
-            mode: LaunchMode.externalApplication,
-          );
-        },
+        code,
+        provider.codeVerifier,
+        loopbackRedirect,
       );
 
       final isValid = PbClient.instance.authStore.isValid;
       if (isValid) {
-        final user = PbClient.instance.authStore.model as RecordModel;
+        final user = PbClient.instance.authStore.record as RecordModel;
         emit(AuthAuthenticated(user: user));
       } else {
         emit(const AuthUnauthenticated());
       }
-
-      try {
-        await launchUrl(
-          Uri.parse('com.example.uangku://oauth/callback'),
-          mode: LaunchMode.externalApplication,
-        );
-      } catch (_) {}
     } catch (e) {
       debugPrint('[AuthBloc] google login error: $e');
       final msg = e.toString().toLowerCase();
-      if (msg.contains('cancel')) {
-        emit(const AuthError(message: 'Login dibatalkan'));
-      } else if (msg.contains('network') ||
+      if (msg.contains('network') ||
           msg.contains('connection') ||
           msg.contains('socket')) {
         emit(const AuthError(
