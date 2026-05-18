@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +12,8 @@ import '../../providers/transaction_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/usage_provider.dart';
 import '../../../data/datasources/remote/ai_service.dart';
+import '../auth/bloc/auth_bloc.dart';
+import '../auth/bloc/auth_event.dart';
 import '../transaction/add_transaction_screen.dart';
 import '../budget/budget_screen.dart';
 import '../transaction/history_screen.dart';
@@ -540,6 +543,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   onPressed: themeProvider.toggleTheme,
                   tooltip: themeProvider.isDarkMode ? 'Mode Terang' : 'Mode Gelap',
                 ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout, size: 22),
+                tooltip: 'Keluar',
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Konfirmasi Logout'),
+                      content: const Text('Apakah kamu yakin ingin keluar dari akun?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('Batal'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            context.read<AuthBloc>().add(const AuthLogoutRequested());
+                          },
+                          child: const Text('Keluar', style: TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ],
           ),

@@ -1,4 +1,4 @@
-# UWANGKU v2.1.0
+# UWANGKU v2.2.0
 
 Aplikasi Asisten Keuangan Pribadi Berbasis AI menggunakan Flutter dengan dukungan penuh untuk Android dan iOS.
 
@@ -45,7 +45,7 @@ Bayar via Midtrans Snap (WebView)
 
 - Flutter SDK ^3.11.4
 - Clean Architecture (domain/data/presentation layers)
-- Provider (state management)
+- Provider + BLoC (state management)
 - SQLite + PocketBase (dual storage with SmartDbHelper auto-switch)
 - fl_chart (charts)
 - intl (formatting mata uang Indonesia)

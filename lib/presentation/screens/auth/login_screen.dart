@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../app/app_shell.dart';
-import '../../providers/auth_provider.dart';
+import 'bloc/auth_bloc.dart';
+import 'bloc/auth_event.dart';
+import 'bloc/auth_state.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -53,9 +55,17 @@ class LoginScreen extends StatelessWidget {
                 ),
               ),
               const Spacer(flex: 2),
-              Consumer<AuthProvider>(
-                builder: (context, auth, _) {
-                  if (auth.isLoading) {
+              BlocConsumer<AuthBloc, AuthState>(
+                listener: (context, state) {
+                  if (state is AuthAuthenticated) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AppShell()),
+                    );
+                  }
+                },
+                builder: (context, state) {
+                  if (state is AuthLoading) {
                     return const Column(
                       children: [
                         SizedBox(
@@ -79,7 +89,7 @@ class LoginScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 32),
                     child: Column(
                       children: [
-                        if (auth.errorMessage != null)
+                        if (state is AuthError)
                           Container(
                             width: double.infinity,
                             margin: const EdgeInsets.only(bottom: 16),
@@ -95,7 +105,7 @@ class LoginScreen extends StatelessWidget {
                               ),
                             ),
                             child: Text(
-                              auth.errorMessage!,
+                              state.message,
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: Colors.red.shade700,
@@ -107,16 +117,10 @@ class LoginScreen extends StatelessWidget {
                           width: double.infinity,
                           height: 52,
                           child: OutlinedButton.icon(
-                            onPressed: () async {
-                              final success = await auth.signInWithGoogle();
-                              if (success && context.mounted) {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const AppShell(),
-                                  ),
-                                );
-                              }
+                            onPressed: () {
+                              context.read<AuthBloc>().add(
+                                const AuthGoogleLoginRequested(),
+                              );
                             },
                             style: OutlinedButton.styleFrom(
                               backgroundColor: Colors.white,

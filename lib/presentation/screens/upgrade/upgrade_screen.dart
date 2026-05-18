@@ -586,7 +586,10 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => PaymentWebviewScreen(snapToken: token),
+            builder: (_) => PaymentWebviewScreen(
+              snapToken: token,
+              planName: _selectedPlan == PremiumPlan.monthly ? 'Bulanan' : 'Tahunan',
+            ),
           ),
         );
       }

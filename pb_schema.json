@@ -67,6 +67,25 @@
     "deleteRule": ""
   },
   {
+    "name": "midtrans_logs",
+    "type": "base",
+    "schema": [
+      {"name": "order_id", "type": "text", "required": true},
+      {"name": "transaction_id", "type": "text"},
+      {"name": "status", "type": "select", "required": true, "options": {"maxSelect": 1, "values": ["pending", "paid", "failed", "expired", "cancel", "refund"]}},
+      {"name": "payment_type", "type": "text"},
+      {"name": "gross_amount", "type": "number"},
+      {"name": "currency", "type": "text"},
+      {"name": "user_id", "type": "relation", "required": true, "options": {"collectionId": "_pb_users_auth_", "cascadeDelete": false}},
+      {"name": "raw_payload", "type": "json"},
+      {"name": "created_at", "type": "date"}
+    ],
+    "listRule": "@request.auth.id != ''",
+    "createRule": "",
+    "updateRule": "@request.auth.id != ''",
+    "deleteRule": null
+  },
+  {
     "name": "budgets",
     "type": "base",
     "schema": [

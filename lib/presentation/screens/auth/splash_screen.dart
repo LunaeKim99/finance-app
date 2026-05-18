@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../app/app_shell.dart';
 import '../../providers/transaction_provider.dart';
-import '../../providers/auth_provider.dart';
+import 'bloc/auth_bloc.dart';
+import 'bloc/auth_event.dart';
+import 'bloc/auth_state.dart';
 import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -53,16 +56,16 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _navigateToHome() async {
-    final auth = context.read<AuthProvider>();
+    context.read<AuthBloc>().add(const AuthCheckStatus());
 
-    await Future.wait([
-      Future.delayed(const Duration(milliseconds: 2500)),
-      auth.initialize(),
-    ]);
+    await Future.delayed(const Duration(milliseconds: 2500));
 
     if (!mounted) return;
 
-    final Widget destination = auth.isLoggedIn ? const AppShell() : const LoginScreen();
+    final state = context.read<AuthBloc>().state;
+    final Widget destination = state is AuthAuthenticated
+        ? const AppShell()
+        : const LoginScreen();
 
     Navigator.pushReplacement(
       context,

@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.0] - 2026-05-18
+
+### Added
+
+- **Fitur Logout** — Tombol keluar di Dashboard dengan konfirmasi dialog
+  - `AuthBloc`, `AuthEvent`, `AuthState` — BLoC untuk autentikasi (login Google + logout)
+  - `AuthLogoutRequested` → clear auth store + SharedPreferences
+  - `BlocListener` di `app.dart` navigasi ke `/login` saat logout
+  - Login & Splash screen migrasi dari `AuthProvider` ke `AuthBloc`
+
+- **BLoC Pattern per Fitur** — Setiap fitur sekarang punya BLoC sendiri
+  - `auth/bloc/` — autentikasi (login, logout, check status)
+  - `transaction/bloc/` — CRUD transaksi via `SmartDbHelper`
+  - `budget/bloc/` — CRUD budget via `SmartDbHelper`
+  - `ai_chat/bloc/` — AI chat dengan finance-only filter
+  - `dashboard/bloc/` — state dashboard
+  - `upgrade/bloc/` — proses pembayaran Premium
+  - Subfolder `widgets/` dan `bloc/` di setiap folder fitur (9 fitur)
+
+- **Collection `midtrans_logs`** — Log transaksi Midtrans di PocketBase
+  - Schema: order_id, transaction_id, status, payment_type, gross_amount, currency, user_id, raw_payload
+  - Tersimpan otomatis saat pembayaran sukses/pending/failed
+
+- **Premium Transaction otomatis** — Pembayaran Premium tercatat di `transactions`
+  - Record baru dibuat dengan title "Pembayaran Premium - [paket]", type expense, kategori "Premium / Subscription"
+
+### Changed
+
+- **Dependencies** — Tambah `flutter_bloc` ^8.1.6 dan `equatable` ^2.0.7
+- **PaymentWebviewScreen** — Refactor untuk simpan midtrans_logs + transaction record
+- **UpgradeScreen** — Kirim `planName` ke PaymentWebviewScreen
+
 ## [2.1.0] - 2026-05-18
 
 ### Added
