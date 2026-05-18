@@ -1,3 +1,5 @@
+import 'package:pocketbase/pocketbase.dart';
+
 class BudgetModel {
   final String? id;
   final String name;
@@ -8,6 +10,7 @@ class BudgetModel {
   final int year;
   final String note;
   final bool isActive;
+  final String? user;
 
   BudgetModel({
     this.id,
@@ -19,6 +22,7 @@ class BudgetModel {
     required this.year,
     this.note = '',
     this.isActive = true,
+    this.user,
   });
 
   String get safeId => id ?? '';
@@ -26,6 +30,21 @@ class BudgetModel {
   double get remaining => amount - spent;
 
   double get percentage => amount > 0 ? (spent / amount) * 100 : 0;
+
+  factory BudgetModel.fromRecord(RecordModel record) {
+    return BudgetModel(
+      id: record.id,
+      name: record.data['name'] as String,
+      amount: (record.data['amount'] as num).toDouble(),
+      spent: (record.data['spent'] as num?)?.toDouble() ?? 0,
+      category: (record.data['category'] as String?) ?? '',
+      month: record.data['month'] as int,
+      year: record.data['year'] as int,
+      note: (record.data['note'] as String?) ?? '',
+      isActive: (record.data['is_active'] as bool?) ?? true,
+      user: record.data['user'] as String?,
+    );
+  }
 
   factory BudgetModel.fromMap(Map<String, dynamic> map) {
     return BudgetModel(
@@ -38,6 +57,7 @@ class BudgetModel {
       year: map['year'] as int,
       note: (map['note'] as String?) ?? '',
       isActive: (map['is_active'] as bool?) ?? true,
+      user: map['user'] as String?,
     );
   }
 
@@ -51,6 +71,7 @@ class BudgetModel {
       'year': year,
       'note': note,
       'is_active': isActive,
+      if (user != null) 'user': user,
     };
   }
 
@@ -64,6 +85,7 @@ class BudgetModel {
     int? year,
     String? note,
     bool? isActive,
+    String? user,
   }) {
     return BudgetModel(
       id: id ?? this.id,
@@ -75,6 +97,7 @@ class BudgetModel {
       year: year ?? this.year,
       note: note ?? this.note,
       isActive: isActive ?? this.isActive,
+      user: user ?? this.user,
     );
   }
 }

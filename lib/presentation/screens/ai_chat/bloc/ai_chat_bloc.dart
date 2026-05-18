@@ -7,7 +7,6 @@ import '../../../../data/models/transaction_model.dart';
 import '../../../../data/datasources/remote/ai_service.dart';
 import '../../../../data/datasources/remote/voice_service.dart';
 import '../../../../data/datasources/remote/ocr_service.dart';
-import '../ai_chat_screen.dart';
 
 const String kFinanceSystemPrompt = """
 Kamu adalah asisten keuangan personal bernama "FinBot" yang terintegrasi dalam aplikasi keuangan.
@@ -22,8 +21,7 @@ ATURAN KETAT yang HARUS kamu ikuti:
    - Saran alokasi keuangan (misal: 50/30/20 rule)
    - Pertanyaan seputar fitur aplikasi keuangan ini
 
-2. Jika user menanyakan hal di LUAR topik keuangan (misalnya: resep masakan, hiburan, teknologi umum, politik, dll), kamu WAJIB menolak dengan sopan dan mengarahkan kembali ke topik keuangan. Gunakan respons seperti:
-   "Maaf, saya hanya bisa membantu terkait pertanyaan seputar keuangan. Ada yang bisa saya bantu terkait keuangan Anda hari ini? 😊"
+2. Jika user menanyakan hal di LUAR topik keuangan (misalnya: resep masakan, hiburan, teknologi umum, politik, dll), kamu WAJIB menolak dengan sopan dan mengarahkan kembali ke topik keuangan.
 
 3. Gunakan Bahasa Indonesia yang ramah dan mudah dipahami.
 4. Berikan jawaban yang konkret, praktis, dan berbasis data jika memungkinkan.
@@ -139,7 +137,6 @@ class AiChatBloc extends Bloc<AiChatEvent, AiChatState> {
       isUser: true,
       timestamp: DateTime.now(),
     ));
-    emit(AiChatLoading(messages: List.from(_messages)));
 
     _appendMessage(ChatMessage(
       text: '',
@@ -147,7 +144,6 @@ class AiChatBloc extends Bloc<AiChatEvent, AiChatState> {
       isLoading: true,
       timestamp: DateTime.now(),
     ));
-    emit(AiChatMessageAdded(messages: List.from(_messages)));
 
     try {
       final response = await _aiService.sendMessage(event.message, DateTime.now());
@@ -206,7 +202,6 @@ class AiChatBloc extends Bloc<AiChatEvent, AiChatState> {
       isLoading: true,
       timestamp: DateTime.now(),
     ));
-    emit(AiChatMessageAdded(messages: List.from(_messages)));
 
     try {
       final ocrResult = await _ocrService.extractText(file.path);

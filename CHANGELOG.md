@@ -2,7 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.2.0] - 2026-05-18
+## InDev [2.3.0] - 2026-05-18
+
+### Added
+
+- **User-PocketBase Relation** — Semua data sekarang terikat ke user PocketBase
+  - `user` field di model: TransactionModel, AssetModel, DebtModel, BudgetModel
+  - PbHelper auto-inject `userId` saat create dan filter `user = @request.auth.id` saat fetch
+  - `pb_schema.json`: relasi `user` + cascadeDelete + locked rules (`listRule`, `createRule`, `updateRule`, `deleteRule`)
+  - 4 collections: transactions, assets, debts, budgets
+
+- **Datasource Layer per Fitur** — 6 thin wrapper datasource files
+  - `transaction/data/transaction_datasource.dart`
+  - `budget/data/budget_datasource.dart`
+  - `dashboard/data/dashboard_datasource.dart`
+  - `receipt/data/receipt_datasource.dart`
+  - `report/data/report_datasource.dart`
+  - `export_import/data/export_datasource.dart`
+
+- **3 BLoC Baru** — export_import, receipt, report
+  - Masing-masing dengan event, state, dan bloc file
+  - ExportImportBloc: load, export PDF/Excel
+  - ReceiptBloc: save receipt scan sebagai transaksi
+  - ReportBloc: load laporan dengan aggregasi income/expense/category
+
+### Changed
+
+- **AI Chat Refactor** — Full migration dari Provider ke BLoC
+  - `ChatMessage` class pindah dari `ai_chat_screen.dart` ke `ai_chat_state.dart`
+  - `ai_chat_screen.dart` sekarang hanya render UI + dispatch events
+  - Semua service logic (AiService, VoiceService, OcrService) di BLoC
+  - `AiChatBloc` diprovide via `BlocProvider` di `app_shell.dart`
+  - `TransactionBloc` & `BudgetBloc` — Kini menggunakan local datasource (TransactionDatasource, BudgetDatasource) bukan SmartDbHelper langsung
+
+### Version Scheme
+
+- **Naming Scheme** — Semua versi sekarang pakai prefix `InDev`
+
+## InDev [2.2.0] - 2026-05-18
 
 ### Added
 
@@ -34,7 +71,7 @@ All notable changes to this project will be documented in this file.
 - **PaymentWebviewScreen** — Refactor untuk simpan midtrans_logs + transaction record
 - **UpgradeScreen** — Kirim `planName` ke PaymentWebviewScreen
 
-## [2.1.0] - 2026-05-18
+## InDev [2.1.0] - 2026-05-18
 
 ### Added
 
@@ -57,7 +94,7 @@ All notable changes to this project will be documented in this file.
 
 - **pb_hooks/create_snap_token.pb.js** — File hook yang tidak terpakai dihapus
 
-## [2.0.1] - 2026-05-11
+## InDev [2.0.1] - 2026-05-11
 
 ### Fixed
 
@@ -79,7 +116,7 @@ All notable changes to this project will be documented in this file.
 
 - **Harga Premium Tahunan** — Rp 399.000 → Rp 249.000
 
-## [2.0.0] - 2026-05-11
+## InDev [2.0.0] - 2026-05-11
 
 ### Changed
 
@@ -95,7 +132,7 @@ All notable changes to this project will be documented in this file.
   - Semua import paths diupdate, 0 error flutter analyze
   - Tidak ada perubahan fungsionalitas — murni refactor struktur
 
-## [1.8.1] - 2026-05-11
+## InDev [1.8.1] - 2026-05-11
 
 ### Fixed
 
@@ -107,7 +144,7 @@ All notable changes to this project will be documented in this file.
   - AndroidManifest: tambah `android:autoVerify="true"` di deep link intent-filter
   - Redirect URI: `com.example.uangku://oauth` dengan deep link scheme
 
-## [1.8.0] - 2026-05-11
+## InDev [1.8.0] - 2026-05-11
 
 ### Added
 
@@ -153,7 +190,7 @@ All notable changes to this project will be documented in this file.
 - Payload serialization di SyncQueueHelper (Dart Map toString tidak bisa di-parse)
 - BudgetProvider tidak ada DbInterface initialize
 
-## [1.7.0] - 2026-04-27
+## InDev [1.7.0] - 2026-04-27
 
 ### Added
 
@@ -207,7 +244,7 @@ All notable changes to this project will be documented in this file.
 - Analyzer issues (unused variables, prefer_final_fields)
 - Budget provider initialization di main.dart
 
-## [1.6.0] - 2026-04-26
+## InDev [1.6.0] - 2026-04-26
 
 ### Changed
 
@@ -239,7 +276,7 @@ All notable changes to this project will be documented in this file.
 - Pie chart container color in dark mode
 - Bar chart bottomTitles showTitles parameter
 
-## [1.5.0] - 2026-04-25
+## InDev [1.5.0] - 2026-04-25
 
 ### Changed
 
@@ -253,7 +290,7 @@ All notable changes to this project will be documented in this file.
   - AppBar transparan dengan delete button (edit mode)
   - Dark mode support
 
-## [1.4.0] - 2026-04-25
+## InDev [1.4.0] - 2026-04-25
 
 ### Added
 
@@ -316,7 +353,7 @@ All notable changes to this project will be documented in this file.
   - Rebuild saat bulan berubah
   - Premium gate dengan upgrade button
 
-## [1.3.0] - 2026-04-25
+## InDev [1.3.0] - 2026-04-25
 
 ### Added
 
@@ -350,7 +387,7 @@ All notable changes to this project will be documented in this file.
 - Badge status FREE/PREMIUM di dashboard AppBar
 - Semua Premium gate navigasi ke UpgradeScreen
 
-## [1.2.0] - 2026-04-25
+## InDev [1.2.0] - 2026-04-25
 
 ### Changed
 
@@ -360,7 +397,7 @@ All notable changes to this project will be documented in this file.
   - Lebih stabil untuk usage tinggi
   - hapus .env dari git tracking
 
-## [1.1.0] - 2026-04-24
+## InDev [1.1.0] - 2026-04-24
 
 ### Added
 
@@ -391,7 +428,7 @@ All notable changes to this project will be documented in this file.
 - All screens updated with dark mode support
 - TransactionCard now uses Theme.of(context).brightness
 
-## [1.0.0] - 2026-04-23
+## InDev [1.0.0] - 2026-04-23
 
 ### Added
 
@@ -412,7 +449,7 @@ All notable changes to this project will be documented in this file.
 - **Storage** - Default SQLite (offline mode)
   - Belum ada backend server, jadi SQLite dulu
 
-## [0.2.0] - 2026-04-XX
+## InDev [0.2.0] - 2026-04-XX
 
 ### Added
 
@@ -424,7 +461,7 @@ All notable changes to this project will be documented in this file.
 - PocketBase URL per platform
 - Date formatting Indonesian localization
 
-## [0.1.0] - 2026-04-XX
+## InDev [0.1.0] - 2026-04-XX
 
 ### Added
 

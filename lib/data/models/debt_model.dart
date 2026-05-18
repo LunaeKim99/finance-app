@@ -1,3 +1,5 @@
+import 'package:pocketbase/pocketbase.dart';
+
 class DebtModel {
   final String? id;
   final String title;
@@ -9,6 +11,7 @@ class DebtModel {
   final DateTime? startDate;
   final bool isPaid;
   final String note;
+  final String? user;
 
   DebtModel({
     this.id,
@@ -21,11 +24,34 @@ class DebtModel {
     this.startDate,
     this.isPaid = false,
     this.note = '',
+    this.user,
   });
 
   String get safeId => id ?? '';
 
   double get remaining => remainingAmount ?? amount;
+
+  factory DebtModel.fromRecord(RecordModel record) {
+    return DebtModel(
+      id: record.id,
+      title: record.data['title'] as String,
+      type: record.data['type'] as String,
+      amount: (record.data['amount'] as num).toDouble(),
+      remainingAmount: record.data['remaining_amount'] != null
+          ? (record.data['remaining_amount'] as num).toDouble()
+          : null,
+      personName: (record.data['person_name'] as String?) ?? '',
+      dueDate: record.data['due_date'] != null
+          ? DateTime.parse(record.data['due_date'] as String)
+          : null,
+      startDate: record.data['start_date'] != null
+          ? DateTime.parse(record.data['start_date'] as String)
+          : null,
+      isPaid: (record.data['is_paid'] as bool?) ?? false,
+      note: (record.data['note'] as String?) ?? '',
+      user: record.data['user'] as String?,
+    );
+  }
 
   factory DebtModel.fromMap(Map<String, dynamic> map) {
     return DebtModel(
@@ -45,6 +71,7 @@ class DebtModel {
           : null,
       isPaid: (map['is_paid'] as bool?) ?? false,
       note: (map['note'] as String?) ?? '',
+      user: map['user'] as String?,
     );
   }
 
@@ -59,6 +86,7 @@ class DebtModel {
       'start_date': startDate?.toIso8601String(),
       'is_paid': isPaid,
       'note': note,
+      if (user != null) 'user': user,
     };
   }
 
@@ -73,6 +101,7 @@ class DebtModel {
     DateTime? startDate,
     bool? isPaid,
     String? note,
+    String? user,
   }) {
     return DebtModel(
       id: id ?? this.id,
@@ -85,6 +114,7 @@ class DebtModel {
       startDate: startDate ?? this.startDate,
       isPaid: isPaid ?? this.isPaid,
       note: note ?? this.note,
+      user: user ?? this.user,
     );
   }
 

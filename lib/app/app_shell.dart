@@ -1,12 +1,14 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import '../presentation/providers/transaction_provider.dart';
 import '../presentation/screens/dashboard/dashboard_screen.dart';
 import '../presentation/screens/transaction/history_screen.dart';
 import '../presentation/screens/transaction/add_transaction_screen.dart';
 import '../presentation/screens/report/report_screen.dart';
+import '../presentation/screens/ai_chat/bloc/ai_chat_bloc.dart';
 import '../presentation/screens/ai_chat/ai_chat_screen.dart';
 import '../presentation/screens/budget/budget_screen.dart';
 import '../core/error/error_handler.dart';
@@ -29,7 +31,10 @@ class _AppShellState extends State<AppShell> {
       const HistoryScreen(),
       _budgetScreenKey != null ? BudgetScreen(key: _budgetScreenKey) : const BudgetScreen(),
       const ReportScreen(),
-      const AiChatScreen(),
+      BlocProvider(
+        create: (_) => AiChatBloc(),
+        child: const AiChatScreen(),
+      ),
     ];
     return _screens!;
   }

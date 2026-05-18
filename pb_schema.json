@@ -8,12 +8,13 @@
       {"name": "type", "type": "select", "required": true, "options": {"maxSelect": 1, "values": ["income", "expense"]}},
       {"name": "category", "type": "text", "required": true},
       {"name": "date", "type": "date", "required": true},
-      {"name": "note", "type": "text"}
+      {"name": "note", "type": "text"},
+      {"name": "user", "type": "relation", "required": true, "options": {"collectionId": "_pb_users_auth_", "cascadeDelete": true, "maxSelect": 1}}
     ],
-    "listRule": "",
-    "createRule": "",
-    "updateRule": "",
-    "deleteRule": ""
+    "listRule": "@request.auth.id != '' && user = @request.auth.id",
+    "createRule": "@request.auth.id != '' && user = @request.auth.id",
+    "updateRule": "@request.auth.id != '' && user = @request.auth.id",
+    "deleteRule": "@request.auth.id != '' && user = @request.auth.id"
   },
   {
     "name": "categories",
@@ -40,12 +41,13 @@
       {"name": "currency", "type": "text"},
       {"name": "purchase_date", "type": "date"},
       {"name": "note", "type": "text"},
-      {"name": "is_active", "type": "bool"}
+      {"name": "is_active", "type": "bool"},
+      {"name": "user", "type": "relation", "required": true, "options": {"collectionId": "_pb_users_auth_", "cascadeDelete": true, "maxSelect": 1}}
     ],
-    "listRule": "",
-    "createRule": "",
-    "updateRule": "",
-    "deleteRule": ""
+    "listRule": "@request.auth.id != '' && user = @request.auth.id",
+    "createRule": "@request.auth.id != '' && user = @request.auth.id",
+    "updateRule": "@request.auth.id != '' && user = @request.auth.id",
+    "deleteRule": "@request.auth.id != '' && user = @request.auth.id"
   },
   {
     "name": "debts",
@@ -59,12 +61,13 @@
       {"name": "due_date", "type": "date"},
       {"name": "start_date", "type": "date"},
       {"name": "is_paid", "type": "bool"},
-      {"name": "note", "type": "text"}
+      {"name": "note", "type": "text"},
+      {"name": "user", "type": "relation", "required": true, "options": {"collectionId": "_pb_users_auth_", "cascadeDelete": true, "maxSelect": 1}}
     ],
-    "listRule": "",
-    "createRule": "",
-    "updateRule": "",
-    "deleteRule": ""
+    "listRule": "@request.auth.id != '' && user = @request.auth.id",
+    "createRule": "@request.auth.id != '' && user = @request.auth.id",
+    "updateRule": "@request.auth.id != '' && user = @request.auth.id",
+    "deleteRule": "@request.auth.id != '' && user = @request.auth.id"
   },
   {
     "name": "midtrans_logs",
@@ -76,7 +79,7 @@
       {"name": "payment_type", "type": "text"},
       {"name": "gross_amount", "type": "number"},
       {"name": "currency", "type": "text"},
-      {"name": "user_id", "type": "relation", "required": true, "options": {"collectionId": "_pb_users_auth_", "cascadeDelete": false}},
+      {"name": "user_id", "type": "relation", "required": true, "options": {"collectionId": "_pb_users_auth_", "cascadeDelete": false, "maxSelect": 1}},
       {"name": "raw_payload", "type": "json"},
       {"name": "created_at", "type": "date"}
     ],
@@ -96,11 +99,12 @@
       {"name": "month", "type": "number", "required": true},
       {"name": "year", "type": "number", "required": true},
       {"name": "note", "type": "text"},
-      {"name": "is_active", "type": "bool"}
+      {"name": "is_active", "type": "bool"},
+      {"name": "user", "type": "relation", "required": true, "options": {"collectionId": "_pb_users_auth_", "cascadeDelete": true, "maxSelect": 1}}
     ],
-    "listRule": "",
-    "createRule": "",
-    "updateRule": "",
-    "deleteRule": ""
+    "listRule": "@request.auth.id != '' && user = @request.auth.id",
+    "createRule": "@request.auth.id != '' && user = @request.auth.id",
+    "updateRule": "@request.auth.id != '' && user = @request.auth.id",
+    "deleteRule": "@request.auth.id != '' && user = @request.auth.id"
   }
 ]

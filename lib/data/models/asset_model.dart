@@ -1,3 +1,5 @@
+import 'package:pocketbase/pocketbase.dart';
+
 class AssetModel {
   final String? id;
   final String name;
@@ -7,6 +9,7 @@ class AssetModel {
   final DateTime? purchaseDate;
   final String note;
   final bool isActive;
+  final String? user;
 
   AssetModel({
     this.id,
@@ -17,9 +20,26 @@ class AssetModel {
     this.purchaseDate,
     this.note = '',
     this.isActive = true,
+    this.user,
   });
 
   String get safeId => id ?? '';
+
+  factory AssetModel.fromRecord(RecordModel record) {
+    return AssetModel(
+      id: record.id,
+      name: record.data['name'] as String,
+      type: record.data['type'] as String,
+      amount: (record.data['amount'] as num).toDouble(),
+      currency: (record.data['currency'] as String?) ?? 'IDR',
+      purchaseDate: record.data['purchase_date'] != null
+          ? DateTime.parse(record.data['purchase_date'] as String)
+          : null,
+      note: (record.data['note'] as String?) ?? '',
+      isActive: (record.data['is_active'] as bool?) ?? true,
+      user: record.data['user'] as String?,
+    );
+  }
 
   factory AssetModel.fromMap(Map<String, dynamic> map) {
     return AssetModel(
@@ -33,6 +53,7 @@ class AssetModel {
           : null,
       note: (map['note'] as String?) ?? '',
       isActive: (map['is_active'] as bool?) ?? true,
+      user: map['user'] as String?,
     );
   }
 
@@ -45,6 +66,7 @@ class AssetModel {
       'purchase_date': purchaseDate?.toIso8601String(),
       'note': note,
       'is_active': isActive,
+      if (user != null) 'user': user,
     };
   }
 
@@ -57,6 +79,7 @@ class AssetModel {
     DateTime? purchaseDate,
     String? note,
     bool? isActive,
+    String? user,
   }) {
     return AssetModel(
       id: id ?? this.id,
@@ -67,6 +90,7 @@ class AssetModel {
       purchaseDate: purchaseDate ?? this.purchaseDate,
       note: note ?? this.note,
       isActive: isActive ?? this.isActive,
+      user: user ?? this.user,
     );
   }
 

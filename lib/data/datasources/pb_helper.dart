@@ -1,6 +1,5 @@
 import 'package:pocketbase/pocketbase.dart';
 import '../../data/models/transaction_model.dart';
-import '../../data/models/transaction_type.dart';
 import '../../data/models/asset_model.dart';
 import '../../data/models/debt_model.dart';
 import '../../data/models/budget_model.dart';
@@ -33,73 +32,17 @@ class PbHelper {
     return _pb;
   }
 
-  TransactionModel _recordToTransaction(RecordModel record) {
-    return TransactionModel(
-      id: record.id,
-      title: record.data['title'] as String,
-      amount: (record.data['amount'] as num).toDouble(),
-      type: TransactionType.fromString(record.data['type'] as String),
-      category: record.data['category'] as String,
-      date: DateTime.parse(record.data['date'] as String),
-      note: (record.data['note'] as String?) ?? '',
-    );
-  }
-
-  AssetModel _recordToAsset(RecordModel record) {
-    return AssetModel(
-      id: record.id,
-      name: record.data['name'] as String,
-      type: record.data['type'] as String,
-      amount: (record.data['amount'] as num).toDouble(),
-      currency: (record.data['currency'] as String?) ?? 'IDR',
-      purchaseDate: record.data['purchase_date'] != null
-          ? DateTime.parse(record.data['purchase_date'] as String)
-          : null,
-      note: (record.data['note'] as String?) ?? '',
-      isActive: (record.data['is_active'] as bool?) ?? true,
-    );
-  }
-
-  DebtModel _recordToDebt(RecordModel record) {
-    return DebtModel(
-      id: record.id,
-      title: record.data['title'] as String,
-      type: record.data['type'] as String,
-      amount: (record.data['amount'] as num).toDouble(),
-      remainingAmount: record.data['remaining_amount'] != null
-          ? (record.data['remaining_amount'] as num).toDouble()
-          : null,
-      personName: (record.data['person_name'] as String?) ?? '',
-      dueDate: record.data['due_date'] != null
-          ? DateTime.parse(record.data['due_date'] as String)
-          : null,
-      startDate: record.data['start_date'] != null
-          ? DateTime.parse(record.data['start_date'] as String)
-          : null,
-      isPaid: (record.data['is_paid'] as bool?) ?? false,
-      note: (record.data['note'] as String?) ?? '',
-    );
-  }
-
-  BudgetModel _recordToBudget(RecordModel record) {
-    return BudgetModel(
-      id: record.id,
-      name: record.data['name'] as String,
-      amount: (record.data['amount'] as num).toDouble(),
-      spent: (record.data['spent'] as num?)?.toDouble() ?? 0,
-      category: (record.data['category'] as String?) ?? '',
-      month: record.data['month'] as int,
-      year: record.data['year'] as int,
-      note: (record.data['note'] as String?) ?? '',
-      isActive: (record.data['is_active'] as bool?) ?? true,
-    );
-  }
+  String? get _userId => _pb.authStore.model?.id;
 
   // ============ TRANSACTIONS ============
   Future<List<TransactionModel>> fetchAllTransactions() async {
     try {
-      final result = await _pb.collection('transactions').getList(sort: '-date');
-      return result.items.map((record) => _recordToTransaction(record)).toList();
+      final filter = _userId != null ? 'user = "$_userId"' : '';
+      final result = await _pb.collection('transactions').getList(
+        filter: filter,
+        sort: '-date',
+      );
+      return result.items.map((r) => TransactionModel.fromRecord(r)).toList();
     } catch (e) {
       throw Exception('Gagal mengambil data: ${e.toString()}');
     }
@@ -107,8 +50,10 @@ class PbHelper {
 
   Future<TransactionModel> createTransaction(TransactionModel t) async {
     try {
-      final result = await _pb.collection('transactions').create(body: t.toJson());
-      return _recordToTransaction(result);
+      final body = t.toJson();
+      if (_userId != null) body['user'] = _userId;
+      final result = await _pb.collection('transactions').create(body: body);
+      return TransactionModel.fromRecord(result);
     } catch (e) {
       throw Exception('Gagal membuat transaksi: ${e.toString()}');
     }
@@ -124,8 +69,10 @@ class PbHelper {
 
   Future<TransactionModel> updateTransaction(String id, TransactionModel t) async {
     try {
-      final result = await _pb.collection('transactions').update(id, body: t.toJson());
-      return _recordToTransaction(result);
+      final body = t.toJson();
+      if (_userId != null) body['user'] = _userId;
+      final result = await _pb.collection('transactions').update(id, body: body);
+      return TransactionModel.fromRecord(result);
     } catch (e) {
       throw Exception('Gagal mengupdate transaksi: ${e.toString()}');
     }
@@ -137,11 +84,14 @@ class PbHelper {
       final startStr = '$year-${month.toString().padLeft(2, '0')}-01';
       final endStr = '$year-${month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
 
+      final filter = 'date >= "$startStr" && date <= "$endStr"';
+      final userFilter = _userId != null ? ' && user = "$_userId"' : '';
+
       final result = await _pb.collection('transactions').getList(
-        filter: 'date >= "$startStr" && date <= "$endStr"',
+        filter: filter + userFilter,
         sort: '-date',
       );
-      return result.items.map((record) => _recordToTransaction(record)).toList();
+      return result.items.map((r) => TransactionModel.fromRecord(r)).toList();
     } catch (e) {
       throw Exception('Gagal mengambil data bulan: ${e.toString()}');
     }
@@ -150,8 +100,12 @@ class PbHelper {
   // ============ ASSETS ============
   Future<List<AssetModel>> fetchAllAssets() async {
     try {
-      final result = await _pb.collection('assets').getList(sort: '-created');
-      return result.items.map((record) => _recordToAsset(record)).toList();
+      final filter = _userId != null ? 'user = "$_userId"' : '';
+      final result = await _pb.collection('assets').getList(
+        filter: filter,
+        sort: '-created',
+      );
+      return result.items.map((r) => AssetModel.fromRecord(r)).toList();
     } catch (e) {
       throw Exception('Gagal mengambil data aset: ${e.toString()}');
     }
@@ -159,8 +113,10 @@ class PbHelper {
 
   Future<AssetModel> createAsset(AssetModel a) async {
     try {
-      final result = await _pb.collection('assets').create(body: a.toJson());
-      return _recordToAsset(result);
+      final body = a.toJson();
+      if (_userId != null) body['user'] = _userId;
+      final result = await _pb.collection('assets').create(body: body);
+      return AssetModel.fromRecord(result);
     } catch (e) {
       throw Exception('Gagal membuat aset: ${e.toString()}');
     }
@@ -176,8 +132,10 @@ class PbHelper {
 
   Future<AssetModel> updateAsset(String id, AssetModel a) async {
     try {
-      final result = await _pb.collection('assets').update(id, body: a.toJson());
-      return _recordToAsset(result);
+      final body = a.toJson();
+      if (_userId != null) body['user'] = _userId;
+      final result = await _pb.collection('assets').update(id, body: body);
+      return AssetModel.fromRecord(result);
     } catch (e) {
       throw Exception('Gagal mengupdate aset: ${e.toString()}');
     }
@@ -186,8 +144,12 @@ class PbHelper {
   // ============ DEBTS ============
   Future<List<DebtModel>> fetchAllDebts() async {
     try {
-      final result = await _pb.collection('debts').getList(sort: '-created');
-      return result.items.map((record) => _recordToDebt(record)).toList();
+      final filter = _userId != null ? 'user = "$_userId"' : '';
+      final result = await _pb.collection('debts').getList(
+        filter: filter,
+        sort: '-created',
+      );
+      return result.items.map((r) => DebtModel.fromRecord(r)).toList();
     } catch (e) {
       throw Exception('Gagal mengambil data hutang/piutang: ${e.toString()}');
     }
@@ -195,8 +157,10 @@ class PbHelper {
 
   Future<DebtModel> createDebt(DebtModel d) async {
     try {
-      final result = await _pb.collection('debts').create(body: d.toJson());
-      return _recordToDebt(result);
+      final body = d.toJson();
+      if (_userId != null) body['user'] = _userId;
+      final result = await _pb.collection('debts').create(body: body);
+      return DebtModel.fromRecord(result);
     } catch (e) {
       throw Exception('Gagal membuat hutang/piutang: ${e.toString()}');
     }
@@ -212,8 +176,10 @@ class PbHelper {
 
   Future<DebtModel> updateDebt(String id, DebtModel d) async {
     try {
-      final result = await _pb.collection('debts').update(id, body: d.toJson());
-      return _recordToDebt(result);
+      final body = d.toJson();
+      if (_userId != null) body['user'] = _userId;
+      final result = await _pb.collection('debts').update(id, body: body);
+      return DebtModel.fromRecord(result);
     } catch (e) {
       throw Exception('Gagal mengupdate hutang/piutang: ${e.toString()}');
     }
@@ -221,11 +187,13 @@ class PbHelper {
 
   Future<List<DebtModel>> fetchUnpaidDebts() async {
     try {
+      final filter = 'is_paid = false';
+      final userFilter = _userId != null ? ' && user = "$_userId"' : '';
       final result = await _pb.collection('debts').getList(
-        filter: 'is_paid = false',
+        filter: filter + userFilter,
         sort: '-created',
       );
-      return result.items.map((record) => _recordToDebt(record)).toList();
+      return result.items.map((r) => DebtModel.fromRecord(r)).toList();
     } catch (e) {
       throw Exception('Gagal mengambil data hutang/piutang: ${e.toString()}');
     }
@@ -234,8 +202,12 @@ class PbHelper {
   // ============ BUDGETS ============
   Future<List<BudgetModel>> fetchAllBudgets() async {
     try {
-      final result = await _pb.collection('budgets').getList(sort: '-year, -month');
-      return result.items.map((record) => _recordToBudget(record)).toList();
+      final filter = _userId != null ? 'user = "$_userId"' : '';
+      final result = await _pb.collection('budgets').getList(
+        filter: filter,
+        sort: '-year, -month',
+      );
+      return result.items.map((r) => BudgetModel.fromRecord(r)).toList();
     } catch (e) {
       throw Exception('Gagal mengambil data budget: ${e.toString()}');
     }
@@ -243,8 +215,10 @@ class PbHelper {
 
   Future<BudgetModel> createBudget(BudgetModel b) async {
     try {
-      final result = await _pb.collection('budgets').create(body: b.toJson());
-      return _recordToBudget(result);
+      final body = b.toJson();
+      if (_userId != null) body['user'] = _userId;
+      final result = await _pb.collection('budgets').create(body: body);
+      return BudgetModel.fromRecord(result);
     } catch (e) {
       throw Exception('Gagal membuat budget: ${e.toString()}');
     }
@@ -260,8 +234,10 @@ class PbHelper {
 
   Future<BudgetModel> updateBudget(String id, BudgetModel b) async {
     try {
-      final result = await _pb.collection('budgets').update(id, body: b.toJson());
-      return _recordToBudget(result);
+      final body = b.toJson();
+      if (_userId != null) body['user'] = _userId;
+      final result = await _pb.collection('budgets').update(id, body: body);
+      return BudgetModel.fromRecord(result);
     } catch (e) {
       throw Exception('Gagal mengupdate budget: ${e.toString()}');
     }
@@ -269,11 +245,13 @@ class PbHelper {
 
   Future<List<BudgetModel>> fetchBudgetsByMonth(int month, int year) async {
     try {
+      final filter = 'month = $month && year = $year';
+      final userFilter = _userId != null ? ' && user = "$_userId"' : '';
       final result = await _pb.collection('budgets').getList(
-        filter: 'month = $month && year = $year',
+        filter: filter + userFilter,
         sort: '-created',
       );
-      return result.items.map((record) => _recordToBudget(record)).toList();
+      return result.items.map((r) => BudgetModel.fromRecord(r)).toList();
     } catch (e) {
       throw Exception('Gagal mengambil data budget: ${e.toString()}');
     }

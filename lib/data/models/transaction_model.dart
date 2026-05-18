@@ -9,6 +9,7 @@ class TransactionModel {
   final String category;
   final DateTime date;
   final String note;
+  final String? user;
   final bool isSynced;
 
   TransactionModel({
@@ -19,6 +20,7 @@ class TransactionModel {
     required this.category,
     required this.date,
     required this.note,
+    this.user,
     this.isSynced = true,
   });
 
@@ -33,6 +35,7 @@ class TransactionModel {
       category: record.data['category'] as String,
       date: DateTime.parse(record.data['date'] as String),
       note: (record.data['note'] as String?) ?? '',
+      user: record.data['user'] as String?,
     );
   }
 
@@ -44,6 +47,7 @@ class TransactionModel {
       'category': category,
       'date': date.toIso8601String(),
       'note': note,
+      if (user != null) 'user': user,
     };
   }
 
@@ -56,6 +60,7 @@ class TransactionModel {
       category: map['category'] as String,
       date: DateTime.parse(map['date'] as String),
       note: (map['note'] as String?) ?? '',
+      user: map['user'] as String?,
       isSynced: map['isSynced'] as bool? ?? true,
     );
   }
@@ -69,6 +74,7 @@ class TransactionModel {
       'category': category,
       'date': date.toIso8601String(),
       'note': note,
+      'user': user,
       'isSynced': isSynced,
     };
   }
@@ -81,6 +87,7 @@ class TransactionModel {
     String? category,
     DateTime? date,
     String? note,
+    String? user,
     bool? isSynced,
   }) {
     return TransactionModel(
@@ -91,6 +98,7 @@ class TransactionModel {
       category: category ?? this.category,
       date: date ?? this.date,
       note: note ?? this.note,
+      user: user ?? this.user,
       isSynced: isSynced ?? this.isSynced,
     );
   }
