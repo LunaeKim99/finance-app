@@ -100,4 +100,13 @@ class SyncQueueHelper {
     );
     return Sqflite.firstIntValue(result) ?? 0;
   }
+
+  Future<int> getPendingCountForCollection(String collection) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM sync_queue WHERE synced = 0 AND collection = ?',
+      [collection],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
 }

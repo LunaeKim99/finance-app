@@ -80,8 +80,13 @@ class SmartDbHelper implements DbInterface {
     bool isWrite = false,
     Future<void> Function()? queueOp,
     Future<void> Function(T)? writeThrough,
+    String? collection,
   }) async {
     if (!_initialized) await initialize();
+    if (collection != null) {
+      final pending = await _syncQueue.getPendingCountForCollection(collection);
+      if (pending > 0) return localOp();
+    }
     if (_isRemoteAvailable) {
       try {
         final result = await remoteOp();
@@ -296,6 +301,7 @@ class SmartDbHelper implements DbInterface {
     return _exec(
       remoteOp: () => remote.fetchAllTransactions(),
       localOp: () => local.fetchAllTransactions(),
+      collection: 'transactions',
     );
   }
 
@@ -343,6 +349,7 @@ class SmartDbHelper implements DbInterface {
     return _exec(
       remoteOp: () => remote.fetchTransactionsByMonth(month, year),
       localOp: () => local.fetchTransactionsByMonth(month, year),
+      collection: 'transactions',
     );
   }
 
@@ -353,6 +360,7 @@ class SmartDbHelper implements DbInterface {
     return _exec(
       remoteOp: () => remote.fetchAllAssets(),
       localOp: () => local.fetchAllAssets(),
+      collection: 'assets',
     );
   }
 
@@ -395,6 +403,7 @@ class SmartDbHelper implements DbInterface {
     return _exec(
       remoteOp: () => remote.fetchAllDebts(),
       localOp: () => local.fetchAllDebts(),
+      collection: 'debts',
     );
   }
 
@@ -435,6 +444,7 @@ class SmartDbHelper implements DbInterface {
     return _exec(
       remoteOp: () => remote.fetchUnpaidDebts(),
       localOp: () => local.fetchUnpaidDebts(),
+      collection: 'debts',
     );
   }
 
@@ -445,6 +455,7 @@ class SmartDbHelper implements DbInterface {
     return _exec(
       remoteOp: () => remote.fetchAllBudgets(),
       localOp: () => local.fetchAllBudgets(),
+      collection: 'budgets',
     );
   }
 
@@ -518,6 +529,7 @@ class SmartDbHelper implements DbInterface {
     return _exec(
       remoteOp: () => remote.fetchAllCategories(),
       localOp: () => local.fetchAllCategories(),
+      collection: 'categories',
     );
   }
 

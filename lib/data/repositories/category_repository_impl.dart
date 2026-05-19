@@ -46,6 +46,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
   @override
   Future<Category> update(String id, Category category) async {
     final model = CategoryModel(
+      id: id,
       name: category.name,
       type: category.type,
       icon: category.icon,
