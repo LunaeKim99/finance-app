@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -37,6 +38,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
   final _amountFocusNode = FocusNode();
+  StreamSubscription<CategoryState>? _catSubscription;
 
   TransactionType _transactionType = TransactionType.expense;
   String? _selectedCategoryId;
@@ -52,6 +54,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     _amountController.addListener(() => setState(() {}));
     context.read<CategoryBloc>().add(const CategoryLoadRequested());
     _syncCategoriesFromBloc();
+    _catSubscription = context.read<CategoryBloc>().stream.listen((state) {
+      if (state is CategoryLoaded && mounted) {
+        setState(() => _syncCategoriesFromBloc());
+      }
+    });
     final existing = widget.existingTransaction;
     if (existing != null) {
       _amountController.text = existing.amount.toStringAsFixed(0);
@@ -68,6 +75,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   @override
   void dispose() {
+    _catSubscription?.cancel();
     _titleController.dispose();
     _amountController.dispose();
     _noteController.dispose();
