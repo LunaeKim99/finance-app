@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.7.0] - 2026-05-19
+
+### Added
+
+- **AI Multi-Currency Detection** — AI chat sekarang deteksi mata uang asing dari input user
+  - System prompt: instruksi untuk tidak konversi ke IDR, simpan nominal asli + field `currency`
+  - Contoh: "500 dolar" → currency USD amount 500, "100 SGD" → currency SGD amount 100
+  - `_parseResponse` baca `currency` dari JSON, set `exchangeRateToIdr` dari `ExchangeRateService`
+  - Pending transaction card tampilkan amount asli + nilai IDR jika bukan IDR
+
+### Changed
+
+- `lib/data/datasources/remote/ai_service.dart` — system prompt + currency-aware parsing
+- `lib/presentation/screens/ai_chat/ai_chat_screen.dart` — tampilkan currency symbol + IDR equivalent
+
 ## [2.6.0] - 2026-05-19
 
 ### Added

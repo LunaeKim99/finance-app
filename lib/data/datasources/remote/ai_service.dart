@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import '../../../core/config/app_config.dart';
+import '../../../core/services/exchange_rate_service.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction_type.dart';
 import '../../../data/datasources/smart_db_helper.dart';
@@ -91,17 +92,32 @@ KATEGORI YANG TERSEDIA:
 - Pengeluaran: $expenseStr
 - Pemasukan: $incomeStr
 
+PENTING! DETEKSI MATA UANG:
+Jika user menyebut mata uang asing (dolar, dollar, USD, SGD, euro, yen, pound, dll), maka:
+- JANGAN konversi nominal ke IDR!
+- Simpan nominal dalam mata uang asli yang disebut
+- Sertakan field "currency" dengan kode mata uang (USD, SGD, EUR, JPY, GBP, dll)
+
+Contoh deteksi mata uang:
+- "500 dolar" → currency: "USD", amount: 500
+- "100 SGD" → currency: "SGD", amount: 100
+- "makan siang 35rb" → currency: "IDR", amount: 35000
+- "gaji 50 euro" → currency: "EUR", amount: 50
+- "belanja 200 ribu" → currency: "IDR", amount: 200000
+- Jika tidak menyebut satuan mata uang, anggap IDR
+
 JIKA USER INGIN CATAT TRANSAKSI, balas HANYA dalam format JSON ini:
 {
   "action": "add_transaction",
   "data": {
     "type": "expense" atau "income",
     "amount": angka bulat tanpa titik atau koma,
+    "currency": "kode mata uang (IDR/USD/SGD/EUR/etc)",
     "category": "nama kategori dari list di atas",
     "note": "deskripsi singkat transaksi",
     "date": "YYYY-MM-DD"
   },
-  "message": "pesan konfirmasi singkat dalam Bahasa Indonesia dengan emoji"
+  "message": "pesan konfirmasi singkat dalam Bahasa Indonesia dengan emoji, sebutkan mata uang jika bukan IDR"
 }
 
 JIKA HANYA PERTANYAAN KEUANGAN ATAU PERCAKAPAN BIASA (TETAPI MASIH DALAM TOPIK KEUANGAN), balas HANYA dalam format JSON ini:
@@ -111,8 +127,9 @@ JIKA HANYA PERTANYAAN KEUANGAN ATAU PERCAKAPAN BIASA (TETAPI MASIH DALAM TOPIK K
 }
 
 CONTOH INPUT → OUTPUT:
-  Input: "tadi makan siang 35rb" → { "action":"add_transaction","data":{"type":"expense","amount":35000,"category":"Makanan","note":"makan siang","date":"2026-04-25"},"message":"Oke! Pengeluaran makan siang Rp 35.000 dicatat 🍽️" }
-  Input: "gajian 5 juta" → { "action":"add_transaction","data":{"type":"income","amount":5000000,"category":"Gaji","note":"gaji bulanan","date":"2026-04-25"},"message":"Mantap! Pemasukan gaji Rp 5.000.000 dicatat 💰" }
+  Input: "tadi makan siang 35rb" → { "action":"add_transaction","data":{"type":"expense","amount":35000,"currency":"IDR","category":"Makanan","note":"makan siang","date":"2026-04-25"},"message":"Oke! Pengeluaran makan siang Rp 35.000 dicatat 🍽️" }
+  Input: "gajian 5 juta" → { "action":"add_transaction","data":{"type":"income","amount":5000000,"currency":"IDR","category":"Gaji","note":"gaji bulanan","date":"2026-04-25"},"message":"Mantap! Pemasukan gaji Rp 5.000.000 dicatat 💰" }
+  Input: "gaji 500 dolar" → { "action":"add_transaction","data":{"type":"income","amount":500,"currency":"USD","category":"Gaji","note":"gaji","date":"2026-04-25"},"message":"Oke! Pemasukan \$500 USD dicatat. Nilai dalam IDR: Rp 8.125.000 💰" }
   Input: "berapa pengeluaran bulan ini?" → { "action":"chat","message":"Untuk melihat total pengeluaran, buka tab Laporan ya! 📊" }
   Input: "siapa presiden indonesia?" → { "action":"chat","message":"Maaf, aku hanya bisa membantu pertanyaan seputar keuangan pribadi dan aplikasi UWANGKU. Ada transaksi yang mau dicatat? 😊" }
 
@@ -434,6 +451,11 @@ ATURAN PENTING:
           );
         }
 
+        final currency = data['currency'] as String? ?? 'IDR';
+        final exchangeRate = currency != 'IDR'
+            ? ExchangeRateService.instance.getRate(currency)
+            : 1.0;
+
         final transaction = TransactionModel(
           title: data['category'] as String? ?? 'Lainnya',
           amount: amount,
@@ -441,7 +463,8 @@ ATURAN PENTING:
           category: data['category'] as String? ?? 'Lainnya',
           date: DateTime.tryParse(data['date'] as String? ?? '') ?? DateTime.now(),
           note: data['note'] as String? ?? '',
-          currency: 'IDR',
+          currency: currency,
+          exchangeRateToIdr: exchangeRate,
         );
 
         return AiResponse(

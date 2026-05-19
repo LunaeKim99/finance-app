@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/transaction_type.dart';
+import '../../../core/constants/currencies.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../blocs/usage/usage_bloc.dart';
 import '../../blocs/usage/usage_event.dart';
@@ -318,7 +319,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                       children: [
                         Text(transaction.category, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                         const SizedBox(height: 2),
-                        Text(currencyFormat.format(transaction.amount), style: TextStyle(color: txColor, fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text(transaction.currency != 'IDR' ? '${AppCurrencies.symbolFor(transaction.currency)} ${NumberFormat('#,###', 'id_ID').format(transaction.amount.ceil())} (${currencyFormat.format(transaction.amountInIdr)})' : currencyFormat.format(transaction.amount), style: TextStyle(color: txColor, fontWeight: FontWeight.bold, fontSize: 16)),
                         Text(dateFormat.format(transaction.date), style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
                       ],
                     ),
