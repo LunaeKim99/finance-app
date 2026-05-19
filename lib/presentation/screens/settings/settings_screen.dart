@@ -11,6 +11,7 @@ import '../auth/bloc/auth_state.dart';
 import '../upgrade/upgrade_screen.dart';
 import '../export_import/export_screen.dart';
 import '../export_import/import_screen.dart';
+import '../../../core/constants/currencies.dart';
 import '../categories/category_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -311,9 +312,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showCurrencyPicker(BuildContext context) {
-    final currencies = ['IDR', 'USD', 'EUR', 'SGD', 'MYR', 'JPY', 'GBP', 'AUD'];
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -326,26 +327,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const Divider(height: 1),
-            ...currencies.map((c) => ListTile(
-              title: Text(c),
-              trailing: context
-                      .read<SettingsBloc>()
-                      .state
-                      is SettingsLoaded
-                  ? ((state) {
-                      final s = state as SettingsLoaded;
-                      return s.settings.preferredCurrency == c
-                          ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
-                          : null;
-                    })(context.read<SettingsBloc>().state)
-                  : null,
-              onTap: () {
-                context
-                    .read<SettingsBloc>()
-                    .add(SettingsSetCurrency(currency: c));
-                Navigator.pop(ctx);
-              },
-            )),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: AppCurrencies.supported.map((c) => ListTile(
+                  title: Text(c.code),
+                  subtitle: Text(c.name, style: const TextStyle(fontSize: 12)),
+                  trailing: context
+                          .read<SettingsBloc>()
+                          .state
+                          is SettingsLoaded
+                      ? ((state) {
+                          final s = state as SettingsLoaded;
+                          return s.settings.preferredCurrency == c.code
+                              ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
+                              : null;
+                        })(context.read<SettingsBloc>().state)
+                      : null,
+                  onTap: () {
+                    context
+                        .read<SettingsBloc>()
+                        .add(SettingsSetCurrency(currency: c.code));
+                    Navigator.pop(ctx);
+                  },
+                )).toList(),
+              ),
+            ),
           ],
         ),
       ),

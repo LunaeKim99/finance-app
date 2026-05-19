@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/constants/icon_registry.dart';
 import '../../../domain/entities/category.dart';
 import '../../blocs/category/category_bloc.dart';
 import '../../blocs/category/category_event.dart';
@@ -57,14 +58,33 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Ikon (nama icon Material)',
-                  border: OutlineInputBorder(),
-                  hintText: 'contoh: food_bank, shopping_cart',
+              InkWell(
+                onTap: () => _showIconPicker(ctx, setDialogState, (icon) {
+                  selectedIcon = icon;
+                  setDialogState(() {});
+                }),
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Ikon',
+                    border: OutlineInputBorder(),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(CategoryIconRegistry.get(selectedIcon), size: 24),
+                      const SizedBox(width: 12),
+                      Text(
+                        selectedIcon == 'category' ? 'Pilih ikon...' : selectedIcon,
+                        style: TextStyle(
+                          color: selectedIcon == 'category'
+                              ? Colors.grey
+                              : null,
+                        ),
+                      ),
+                      const Spacer(),
+                      const Icon(Icons.arrow_drop_down, size: 20),
+                    ],
+                  ),
                 ),
-                controller: TextEditingController(text: selectedIcon),
-                onChanged: (v) => selectedIcon = v.isEmpty ? 'category' : v,
               ),
             ],
           ),
@@ -97,6 +117,73 @@ class _CategoryScreenState extends State<CategoryScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showIconPicker(
+    BuildContext dialogCtx,
+    void Function(VoidCallback) setDialogState,
+    void Function(String) onSelect,
+  ) {
+    showModalBottomSheet(
+      context: dialogCtx,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetCtx) {
+        final entries = CategoryIconRegistry.all;
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          maxChildSize: 0.85,
+          minChildSize: 0.4,
+          expand: false,
+          builder: (_, scrollCtrl) => Column(
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Text(
+                  'Pilih Ikon',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: GridView.builder(
+                  controller: scrollCtrl,
+                  padding: const EdgeInsets.all(12),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 6,
+                    crossAxisSpacing: 4,
+                    mainAxisSpacing: 4,
+                  ),
+                  itemCount: entries.length,
+                  itemBuilder: (_, i) {
+                    final entry = entries[i];
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          onSelect(entry.key);
+                          Navigator.pop(sheetCtx);
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(entry.value, size: 24),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -248,30 +335,5 @@ class _CategoryScreenState extends State<CategoryScreen> {
     );
   }
 
-  IconData _iconData(String icon) {
-    switch (icon) {
-      case 'food_bank':
-        return Icons.food_bank;
-      case 'shopping_cart':
-        return Icons.shopping_cart;
-      case 'directions_car':
-        return Icons.directions_car;
-      case 'flight':
-        return Icons.flight;
-      case 'medical_services':
-        return Icons.medical_services;
-      case 'school':
-        return Icons.school;
-      case 'home':
-        return Icons.home;
-      case 'work':
-        return Icons.work;
-      case 'savings':
-        return Icons.savings;
-      case 'payments':
-        return Icons.payments;
-      default:
-        return Icons.category;
-    }
-  }
+  IconData _iconData(String icon) => CategoryIconRegistry.get(icon);
 }

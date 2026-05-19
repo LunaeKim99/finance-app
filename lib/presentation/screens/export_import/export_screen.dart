@@ -77,7 +77,7 @@ class _ExportScreenState extends State<ExportScreen> {
   Widget _buildExportContent(bool isPremium, int filteredCount) {
     final isIOS = Platform.isIOS;
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,9 +141,8 @@ class _ExportScreenState extends State<ExportScreen> {
           if (!isPremium)
             _buildPremiumGate(),
           const SizedBox(height: 16),
-          Expanded(
-            child: _buildExportButtons(isPremium, filteredCount),
-          ),
+          _buildExportButtons(isPremium, filteredCount),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -341,7 +340,7 @@ class _ExportScreenState extends State<ExportScreen> {
 
     return Column(
       children: [
-        const Spacer(),
+        const SizedBox(height: 24),
         isIOS
             ? CupertinoButton(
                 padding: const EdgeInsets.symmetric(vertical: 16),

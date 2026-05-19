@@ -671,6 +671,7 @@ color: _transactionType == TransactionType.expense
   void _showCurrencyPickerAndroid() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -698,29 +699,34 @@ color: _transactionType == TransactionType.expense
                   ),
                 ),
               ),
-              ...AppCurrencies.supported.map((currency) {
-                final isSelected = currency.code == _selectedCurrency;
-                return ListTile(
-                  leading: Text(
-                    currency.symbol,
-                    style: const TextStyle(fontSize: 20),
-                  ),
-                  title: Text(
-                    '${currency.code} - ${currency.name}',
-                    style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected ? Colors.blue : null,
-                    ),
-                  ),
-                  trailing: isSelected
-                      ? const Icon(Icons.check, color: Colors.blue)
-                      : null,
-                  onTap: () {
-                    setState(() => _selectedCurrency = currency.code);
-                    Navigator.pop(context);
-                  },
-                );
-              }),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: AppCurrencies.supported.map((currency) {
+                    final isSelected = currency.code == _selectedCurrency;
+                    return ListTile(
+                      leading: Text(
+                        currency.symbol,
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                      title: Text(
+                        '${currency.code} - ${currency.name}',
+                        style: TextStyle(
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: isSelected ? Colors.blue : null,
+                        ),
+                      ),
+                      trailing: isSelected
+                          ? const Icon(Icons.check, color: Colors.blue)
+                          : null,
+                      onTap: () {
+                        setState(() => _selectedCurrency = currency.code);
+                        Navigator.pop(context);
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
               const SizedBox(height: 8),
             ],
           ),

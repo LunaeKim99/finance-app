@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.6.0] - 2026-05-19
+
+### Added
+
+- **Live Exchange Rates** — Fetch otomatis dari `open.er-api.com` (gratis, tanpa API key)
+  - `ExchangeRateService` singleton: fetch → cache SharedPreferences → refresh tiap 30 menit
+  - Inisialisasi di SplashScreen, fallback ke hardcoded rates jika offline
+  - `CurrencyHelper.convert()` & `format()` otomatis pakai live rate
+
+- **Hybrid Categories** — Seed 22 kategori default + user tetap bisa kustom
+  - `DefaultCategories` — 16 expense + 6 income kategori umum (Makanan, Transport, Gaji, dll)
+  - `CategoryBloc` auto-seed saat `CategoryLoadRequested` pertama (flag `categories_seeded_v1` di SharedPreferences)
+  - Kategori lama (sebelum update) tidak terpengaruh
+
+- **Visual Icon Picker** — Pilih ikon kategori via grid, bukan teks manual
+  - `CategoryIconRegistry` — 70+ Material Icons mapping string → `IconData`
+  - Bottom sheet `DraggableScrollableSheet` dengan grid 6 kolom
+  - Preview ikon di dialog add/edit kategori
+
+### Changed
+
+- `lib/presentation/screens/categories/category_screen.dart` — `TextField` ikon diganti `InkWell` + icon picker bottom sheet
+- `lib/presentation/blocs/category/category_bloc.dart` — auto-seed default categories
+
+### Added Files
+
+- `lib/core/services/exchange_rate_service.dart`
+- `lib/core/constants/icon_registry.dart`
+- `lib/core/constants/default_categories.dart`
+
 ## [2.5.0] - 2026-05-19
 
 ### Added

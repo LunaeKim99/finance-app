@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 import '../constants/currencies.dart';
+import '../services/exchange_rate_service.dart';
 
 class CurrencyHelper {
   CurrencyHelper._();
@@ -31,9 +32,17 @@ class CurrencyHelper {
     Map<String, double>? rates,
   }) {
     if (fromCurrency == toCurrency) return amount;
-    final effectiveRates = rates ?? AppCurrencies.defaultRates;
+    final effectiveRates = rates ?? _getLiveRates();
     final amountInIdr = amount * (effectiveRates[fromCurrency] ?? 1.0);
     return amountInIdr / (effectiveRates[toCurrency] ?? 1.0);
+  }
+
+  static Map<String, double> _getLiveRates() {
+    final Map<String, double> live = {};
+    for (final c in AppCurrencies.supported) {
+      live[c.code] = ExchangeRateService.instance.getRate(c.code);
+    }
+    return live;
   }
 
   static String _formatWithCode(double amount, String currencyCode) {

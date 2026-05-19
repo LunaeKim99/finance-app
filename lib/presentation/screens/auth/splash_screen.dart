@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../app/app_shell.dart';
+import '../../../core/services/exchange_rate_service.dart';
 import '../transaction/bloc/transaction_bloc.dart';
 import '../transaction/bloc/transaction_state.dart';
 import 'bloc/auth_bloc.dart';
@@ -58,6 +59,7 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _navigateToHome() async {
     context.read<AuthBloc>().add(const AuthCheckStatus());
     await context.read<TransactionBloc>().ensureInitialized();
+    await ExchangeRateService.instance.initialize();
 
     await Future.delayed(const Duration(milliseconds: 2500));
 
