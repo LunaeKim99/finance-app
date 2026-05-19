@@ -390,6 +390,7 @@ class _ReceiptReviewScreenState extends State<ReceiptReviewScreen> {
           category: _items.isNotEmpty ? _items.first.category : 'Lainnya',
           date: widget.scanResult.date ?? DateTime.now(),
           note: 'Dari scan struk',
+          currency: 'IDR',
         );
         await txProvider.addTransaction(transaction);
       } else {
@@ -401,6 +402,7 @@ class _ReceiptReviewScreenState extends State<ReceiptReviewScreen> {
             category: item.category,
             date: widget.scanResult.date ?? DateTime.now(),
             note: 'Dari scan struk',
+            currency: 'IDR',
           );
           await txProvider.addTransaction(transaction);
         }

@@ -1,10 +1,15 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../../../core/constants/currencies.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction_type.dart';
+import '../../blocs/category/category_bloc.dart';
+import '../../blocs/category/category_event.dart';
+import '../../blocs/category/category_state.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/usage_provider.dart';
 import '../../../data/datasources/remote/receipt_scan_service.dart';
@@ -31,39 +36,25 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   TransactionType _transactionType = TransactionType.expense;
   String _selectedCategory = 'Makanan';
+  String _selectedCurrency = 'IDR';
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
-
-  final List<String> _expenseCategories = [
-    'Makanan',
-    'Transportasi',
-    'Belanja',
-    'Hiburan',
-    'Kesehatan',
-    'Pendidikan',
-    'Tagihan',
-    'Lainnya',
-  ];
-
-  final List<String> _incomeCategories = [
-    'Gaji',
-    'Bonus',
-    'Usaha',
-    'Investasi',
-    'Hadiah',
-    'Lainnya',
-  ];
+  List<String> _expenseCatNames = ['Makanan', 'Transportasi', 'Belanja', 'Hiburan', 'Kesehatan', 'Pendidikan', 'Tagihan', 'Lainnya'];
+  List<String> _incomeCatNames = ['Gaji', 'Bonus', 'Usaha', 'Investasi', 'Hadiah', 'Lainnya'];
 
   @override
   void initState() {
     super.initState();
     _amountController.addListener(() => setState(() {}));
+    context.read<CategoryBloc>().add(const CategoryLoadRequested());
+    _syncCategoriesFromBloc();
     final existing = widget.existingTransaction;
     if (existing != null) {
       _amountController.text = existing.amount.toStringAsFixed(0);
       _noteController.text = existing.note;
       _transactionType = existing.type;
       _selectedCategory = existing.category;
+      _selectedCurrency = existing.currency;
       _selectedDate = existing.date;
     }
   }
@@ -81,7 +72,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   List<String> get _currentCategories =>
-      _transactionType == TransactionType.expense ? _expenseCategories : _incomeCategories;
+      _transactionType == TransactionType.expense ? _expenseCatNames : _incomeCatNames;
+
+  void _syncCategoriesFromBloc() {
+    final state = context.read<CategoryBloc>().state;
+    if (state is CategoryLoaded) {
+      _expenseCatNames = state.expenseCategories.map((c) => c.name).toList();
+      _incomeCatNames = state.incomeCategories.map((c) => c.name).toList();
+      if (!_expenseCatNames.contains(_selectedCategory) && !_incomeCatNames.contains(_selectedCategory)) {
+        _selectedCategory = _currentCategories.isNotEmpty ? _currentCategories.first : 'Lainnya';
+      }
+    }
+  }
 
   String _formatNumberWithDot(String text) {
     final cleanText = text.replaceAll(RegExp(r'[^\d]'), '');
@@ -180,6 +182,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 _buildDivider(),
                 _buildDateRow(accentColor),
                 _buildDivider(),
+                _buildCurrencyRow(),
+                _buildDivider(),
                 _buildNoteRow(),
                 const SizedBox(height: 24),
                 _buildScanReceiptButton(),
@@ -223,7 +227,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
-                  'Rp ',
+                  AppCurrencies.symbolFor(_selectedCurrency),
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w500,
@@ -296,7 +300,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             icon: isIOS ? CupertinoIcons.arrow_up_circle_fill : Icons.arrow_upward_rounded,
             onTap: () => setState(() {
               _transactionType = TransactionType.expense;
-              _selectedCategory = _expenseCategories.first;
+              _syncCategoriesFromBloc();
+              _selectedCategory = _expenseCatNames.isNotEmpty ? _expenseCatNames.first : 'Lainnya';
             }),
           ),
           _buildTypeOption(
@@ -306,7 +311,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             icon: isIOS ? CupertinoIcons.arrow_down_circle_fill : Icons.arrow_downward_rounded,
             onTap: () => setState(() {
               _transactionType = TransactionType.income;
-              _selectedCategory = _incomeCategories.first;
+              _syncCategoriesFromBloc();
+              _selectedCategory = _incomeCatNames.isNotEmpty ? _incomeCatNames.first : 'Lainnya';
             }),
           ),
         ],
@@ -606,6 +612,166 @@ color: _transactionType == TransactionType.expense
     );
   }
 
+  Widget _buildCurrencyRow() {
+    final isIOS = Platform.isIOS;
+    final currencyInfo = AppCurrencies.getById(_selectedCurrency);
+
+    return InkWell(
+      onTap: isIOS ? _showCurrencyPickerIOS : _showCurrencyPickerAndroid,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: Colors.blue.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.attach_money_rounded,
+                size: 18,
+                color: Colors.blue,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Mata Uang',
+                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${currencyInfo.symbol} ${currencyInfo.code} - ${currencyInfo.name}',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              isIOS ? CupertinoIcons.chevron_right : Icons.chevron_right,
+              size: 18,
+              color: Colors.grey.shade400,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCurrencyPickerAndroid() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'Pilih Mata Uang',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              ...AppCurrencies.supported.map((currency) {
+                final isSelected = currency.code == _selectedCurrency;
+                return ListTile(
+                  leading: Text(
+                    currency.symbol,
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                  title: Text(
+                    '${currency.code} - ${currency.name}',
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected ? Colors.blue : null,
+                    ),
+                  ),
+                  trailing: isSelected
+                      ? const Icon(Icons.check, color: Colors.blue)
+                      : null,
+                  onTap: () {
+                    setState(() => _selectedCurrency = currency.code);
+                    Navigator.pop(context);
+                  },
+                );
+              }),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showCurrencyPickerIOS() {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) => Container(
+        height: 250,
+        color: CupertinoColors.systemBackground,
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CupertinoButton(
+                    child: const Text('Batal'),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  CupertinoButton(
+                    child: const Text('Pilih'),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: CupertinoPicker(
+                itemExtent: 40,
+                onSelectedItemChanged: (index) {
+                  setState(() {
+                    _selectedCurrency = AppCurrencies.supported[index].code;
+                  });
+                },
+                children: AppCurrencies.supported.map((currency) {
+                  return Center(
+                    child: Text('${currency.symbol} ${currency.code} - ${currency.name}'),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildNoteRow() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -895,6 +1061,8 @@ color: _transactionType == TransactionType.expense
       category: _selectedCategory,
       date: _selectedDate,
       note: _noteController.text,
+      currency: _selectedCurrency,
+      exchangeRateToIdr: AppCurrencies.defaultRates[_selectedCurrency] ?? 1.0,
     );
 
     final provider = context.read<TransactionProvider>();

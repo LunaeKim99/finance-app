@@ -5,6 +5,7 @@ import '../../../data/models/transaction_model.dart';
 import '../../../data/models/asset_model.dart';
 import '../../../data/models/debt_model.dart';
 import '../../../data/models/budget_model.dart';
+import '../../../data/models/category_model.dart';
 import '../db_interface.dart';
 
 class SqliteHelper implements DbInterface {
@@ -27,7 +28,8 @@ class SqliteHelper implements DbInterface {
     final dir = await getApplicationDocumentsDirectory();
     final String dbPath = join(dir.path, 'finance_app.db');
 
-    return openDatabase(dbPath, version: 1, onCreate: _createTables);
+    return openDatabase(dbPath, version: 3,
+        onCreate: _createTables, onUpgrade: _upgradeTables);
   }
 
   Future<void> dropAllData() async {
@@ -36,6 +38,27 @@ class SqliteHelper implements DbInterface {
     await db.delete('assets');
     await db.delete('debts');
     await db.delete('budgets');
+    await db.delete('categories');
+  }
+
+  Future<void> _upgradeTables(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE transactions ADD COLUMN currency TEXT');
+      await db.execute('ALTER TABLE transactions ADD COLUMN exchange_rate_to_idr REAL');
+      await db.execute('ALTER TABLE debts ADD COLUMN currency TEXT');
+      await db.execute('ALTER TABLE debts ADD COLUMN exchange_rate_to_idr REAL');
+      await db.execute('ALTER TABLE budgets ADD COLUMN currency TEXT');
+    }
+    if (oldVersion < 3) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS categories (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          type TEXT NOT NULL,
+          icon TEXT
+        )
+      ''');
+    }
   }
 
   Future<void> _createTables(Database db, int version) async {
@@ -47,7 +70,9 @@ class SqliteHelper implements DbInterface {
         type TEXT NOT NULL,
         category TEXT NOT NULL,
         date TEXT NOT NULL,
-        note TEXT
+        note TEXT,
+        currency TEXT,
+        exchange_rate_to_idr REAL
       )
     ''');
 
@@ -75,7 +100,9 @@ class SqliteHelper implements DbInterface {
         due_date TEXT,
         start_date TEXT,
         is_paid INTEGER,
-        note TEXT
+        note TEXT,
+        currency TEXT,
+        exchange_rate_to_idr REAL
       )
     ''');
 
@@ -89,7 +116,17 @@ class SqliteHelper implements DbInterface {
         month INTEGER NOT NULL,
         year INTEGER NOT NULL,
         note TEXT,
-        is_active INTEGER
+        is_active INTEGER,
+        currency TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS categories (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL,
+        icon TEXT
       )
     ''');
   }
@@ -337,6 +374,46 @@ class SqliteHelper implements DbInterface {
     );
   }
 
+  // ============ CATEGORIES ============
+  @override
+  Future<List<CategoryModel>> fetchAllCategories() async {
+    final db = await database;
+    final maps = await db.query('categories', orderBy: 'name ASC');
+    return maps.map((map) => CategoryModel.fromMap(map)).toList();
+  }
+
+  @override
+  Future<CategoryModel> createCategory(CategoryModel c) async {
+    final db = await database;
+    final newId = _generateId();
+    final categoryWithId = c.copyWith(id: newId);
+    await db.insert(
+      'categories',
+      _toMapSqlite(categoryWithId),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return categoryWithId;
+  }
+
+  @override
+  Future<void> deleteCategory(String id) async {
+    final db = await database;
+    await db.delete('categories', where: 'id = ?', whereArgs: [id]);
+  }
+
+  @override
+  Future<CategoryModel> updateCategory(String id, CategoryModel c) async {
+    final db = await database;
+    final updatedCategory = c.copyWith(id: id);
+    await db.update(
+      'categories',
+      _toMapSqlite(updatedCategory),
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    return updatedCategory;
+  }
+
   // ============ HELPERS ============
   Map<String, dynamic> _normalizeDateMap(Map<String, dynamic> map) {
     final normalized = Map<String, dynamic>.from(map);
@@ -386,6 +463,8 @@ class SqliteHelper implements DbInterface {
         'category': model.category,
         'date': model.date.toIso8601String().split('T')[0],
         'note': model.note,
+        'currency': model.currency != 'IDR' ? model.currency : null,
+        'exchange_rate_to_idr': model.exchangeRateToIdr != 1.0 ? model.exchangeRateToIdr : null,
       };
     }
     if (model is AssetModel) {
@@ -412,6 +491,8 @@ class SqliteHelper implements DbInterface {
         'start_date': model.startDate?.toIso8601String().split('T')[0],
         'is_paid': model.isPaid ? 1 : 0,
         'note': model.note,
+        'currency': model.currency != 'IDR' ? model.currency : null,
+        'exchange_rate_to_idr': model.exchangeRateToIdr != 1.0 ? model.exchangeRateToIdr : null,
       };
     }
     if (model is BudgetModel) {
@@ -425,6 +506,15 @@ class SqliteHelper implements DbInterface {
         'year': model.year,
         'note': model.note,
         'is_active': model.isActive ? 1 : 0,
+        'currency': model.currency != 'IDR' ? model.currency : null,
+      };
+    }
+    if (model is CategoryModel) {
+      return {
+        'id': model.id,
+        'name': model.name,
+        'type': model.type,
+        'icon': model.icon,
       };
     }
     throw Exception('Unknown model type');

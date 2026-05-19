@@ -8,6 +8,9 @@ import 'package:intl/intl.dart';
 import '../../../core/config/app_config.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction_type.dart';
+import '../../../data/datasources/smart_db_helper.dart';
+import '../../../data/datasources/pb_helper.dart';
+import '../../../data/datasources/local/sqlite_helper.dart';
 
 const String _apiToken = AppConfig.groqApiKey;
 
@@ -44,14 +47,17 @@ class AiService {
   bool get isInitialized => _isInitialized;
   String? get lastError => _lastError;
 
-  static const String _systemPrompt = '''
+  static String _buildSystemPrompt(List<String> expenseCategories, List<String> incomeCategories) {
+    final expenseStr = expenseCategories.join(', ');
+    final incomeStr = incomeCategories.join(', ');
+    return '''
 Kamu adalah asisten keuangan pribadi yang cerdas dalam aplikasi UWANGKU.
 Tugasmu adalah membantu pengguna mencatat transaksi keuangan dari percakapan natural.
 
 BATASAN TOPIK - KAMU HANYA BOLEH MENJAWAB TOPIK KEUANGAN:
 ✅ Topik yang DIIZINKAN:
 - Mencatat transaksi pemasukan dan pengeluaran
-- Kategori keuangan (Makanan, Transportasi, Belanja, dll)
+- Kategori keuangan ($expenseStr, $incomeStr, dll)
 - Budgeting, pengelolaan uang, dan perencanaan keuangan pribadi
 - Tabungan, investasi dasar, dan pengelolaan aset
 - Laporan, ringkasan, dan analisis keuangan
@@ -82,8 +88,8 @@ KEMAMPUANMU:
 4. Berikan saran keuangan sederhana jika diminta
 
 KATEGORI YANG TERSEDIA:
-- Pengeluaran: Makanan, Transportasi, Belanja, Hiburan, Kesehatan, Pendidikan, Tagihan, Lainnya
-- Pemasukan: Gaji, Bonus, Usaha, Investasi, Hadiah, Lainnya
+- Pengeluaran: $expenseStr
+- Pemasukan: $incomeStr
 
 JIKA USER INGIN CATAT TRANSAKSI, balas HANYA dalam format JSON ini:
 {
@@ -117,7 +123,7 @@ ATURAN PENTING:
 - Tanggal selalu format YYYY-MM-DD
 - Jika ragu antara income/expense, tanya ke user dalam format chat JSON
 ''';
-
+  }
 
   Future<bool> initialize() async {
     if (_isInitialized) return true;
@@ -264,6 +270,17 @@ ATURAN PENTING:
 
     final dateStr = currentDate.toIso8601String().split('T')[0];
 
+    // Load user categories for dynamic prompt
+    List<String> expenseCats = ['Makanan', 'Transportasi', 'Belanja', 'Hiburan', 'Kesehatan', 'Pendidikan', 'Tagihan', 'Lainnya'];
+    List<String> incomeCats = ['Gaji', 'Bonus', 'Usaha', 'Investasi', 'Hadiah', 'Lainnya'];
+    try {
+      final allCats = await SmartDbHelper(remote: PbHelper(), local: SqliteHelper()).fetchAllCategories();
+      if (allCats.isNotEmpty) {
+        expenseCats = allCats.where((c) => c.type == 'expense').map((c) => c.name).toList();
+        incomeCats = allCats.where((c) => c.type == 'income').map((c) => c.name).toList();
+      }
+    } catch (_) {}
+
     try {
       _tryResetModel();
 
@@ -272,7 +289,7 @@ ATURAN PENTING:
         'messages': [
           {
             'role': 'system',
-            'content': _systemPrompt,
+            'content': _buildSystemPrompt(expenseCats, incomeCats),
           },
           {
             'role': 'user',
@@ -424,6 +441,7 @@ ATURAN PENTING:
           category: data['category'] as String? ?? 'Lainnya',
           date: DateTime.tryParse(data['date'] as String? ?? '') ?? DateTime.now(),
           note: data['note'] as String? ?? '',
+          currency: 'IDR',
         );
 
         return AiResponse(

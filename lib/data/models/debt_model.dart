@@ -12,6 +12,8 @@ class DebtModel {
   final bool isPaid;
   final String note;
   final String? user;
+  final String currency;
+  final double exchangeRateToIdr;
 
   DebtModel({
     this.id,
@@ -25,11 +27,14 @@ class DebtModel {
     this.isPaid = false,
     this.note = '',
     this.user,
+    this.currency = 'IDR',
+    this.exchangeRateToIdr = 1.0,
   });
 
   String get safeId => id ?? '';
 
   double get remaining => remainingAmount ?? amount;
+  double get remainingInIdr => remaining * exchangeRateToIdr;
 
   factory DebtModel.fromRecord(RecordModel record) {
     return DebtModel(
@@ -50,6 +55,8 @@ class DebtModel {
       isPaid: (record.data['is_paid'] as bool?) ?? false,
       note: (record.data['note'] as String?) ?? '',
       user: record.data['user'] as String?,
+      currency: (record.data['currency'] as String?) ?? 'IDR',
+      exchangeRateToIdr: ((record.data['exchange_rate_to_idr'] as num?) ?? 1.0).toDouble(),
     );
   }
 
@@ -72,6 +79,8 @@ class DebtModel {
       isPaid: (map['is_paid'] as bool?) ?? false,
       note: (map['note'] as String?) ?? '',
       user: map['user'] as String?,
+      currency: (map['currency'] as String?) ?? 'IDR',
+      exchangeRateToIdr: ((map['exchange_rate_to_idr'] as num?) ?? 1.0).toDouble(),
     );
   }
 
@@ -86,6 +95,8 @@ class DebtModel {
       'start_date': startDate?.toIso8601String(),
       'is_paid': isPaid,
       'note': note,
+      'currency': currency,
+      'exchange_rate_to_idr': exchangeRateToIdr,
       if (user != null) 'user': user,
     };
   }
@@ -102,6 +113,8 @@ class DebtModel {
     bool? isPaid,
     String? note,
     String? user,
+    String? currency,
+    double? exchangeRateToIdr,
   }) {
     return DebtModel(
       id: id ?? this.id,
@@ -115,6 +128,8 @@ class DebtModel {
       isPaid: isPaid ?? this.isPaid,
       note: note ?? this.note,
       user: user ?? this.user,
+      currency: currency ?? this.currency,
+      exchangeRateToIdr: exchangeRateToIdr ?? this.exchangeRateToIdr,
     );
   }
 

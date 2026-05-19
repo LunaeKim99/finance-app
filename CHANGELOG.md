@@ -2,6 +2,58 @@
 
 All notable changes to this project will be documented in this file.
 
+## InDev [2.4.1] - 2026-05-19
+
+### Added
+
+- **Multi-Currency Support** — Setiap transaksi/aset/utang/budget bisa dalam mata uang berbeda
+  - Domain entities: `currency` (default `'IDR'`) + `exchangeRateToIdr` (default `1.0`)
+  - Field di Transaction, Budget (domain + model), Asset, Debt entity baru
+  - `Asset` dan `Debt` domain entities resmi dibuat
+  - SQLite schema v3: kolom `currency` + `exchange_rate_to_idr` di transactions, debts, budgets
+  - Migration v1→v2→v3 via `ALTER TABLE` di `_upgradeTables`
+  - `AppCurrencies`: 10 mata uang (IDR, USD, EUR, SGD, MYR, JPY, GBP, AUD, SAR, CNY) + default rates
+  - `CurrencyHelper.format/convert` — format locale-aware + konversi antar mata uang
+  - Currency selector di `AddTransactionScreen` (bottom sheet Android / CupertinoPicker iOS)
+  - Dynamic currency symbol di field nominal (tidak hardcoded `Rp`)
+
+- **Category Management** — CRUD kategori kustom
+  - `Category` domain entity + `CategoryModel` data model
+  - `CategoryRepository` + `CategoryRepositoryImpl`
+  - SQLite: tabel `categories` + CRUD di SqliteHelper
+  - PocketBase: CRUD via `categories` collection di PbHelper
+  - SmartDbHelper: write-through cache + sync queue + routing
+  - `CategoryBloc` (event/state/bloc) teregister di `MultiBlocProvider`
+  - `CategoryScreen` — add/edit/delete kategori dengan ikon Material, grouped by type
+  - Menu "Kelola Kategori" di SettingsScreen
+
+- **AI Chat Custom Categories** — System prompt dinamis
+  - `_buildSystemPrompt(expenseCats, incomeCats)` — kategorinya diambil dari database
+  - `sendMessage()` fetch kategori user sebelum build prompt
+  - AI sekarang tahu kategori kustom user, bukan cuma default
+
+### Changed
+
+- **AddTransactionScreen** — Load kategori dari `CategoryBloc` bukan hardcoded list
+  - `initState()` dispatch `CategoryLoadRequested`
+  - Toggle tipe transaksi sync kategori via `_syncCategoriesFromBloc()`
+- **SqliteHelper** — db version 3 dengan migrasi kumulatif
+- **SmartDbHelper** — imports diperbaiki (PbClient + ConflictAlgorithm)
+- **MockDbHelper** — ditambah category CRUD methods
+
+### New Files
+
+- `lib/core/constants/currencies.dart` — AppCurrencies constants
+- `lib/core/utils/currency_helper.dart` — CurrencyHelper format/convert
+- `lib/domain/entities/asset.dart` — Asset entity
+- `lib/domain/entities/debt.dart` — Debt entity
+- `lib/domain/entities/category.dart` — Category entity
+- `lib/domain/repositories/category_repository.dart` — abstract repo
+- `lib/data/models/category_model.dart` — data model
+- `lib/data/repositories/category_repository_impl.dart` — impl
+- `lib/presentation/blocs/category/` — CategoryBloc (event/state/bloc)
+- `lib/presentation/screens/categories/category_screen.dart` — management screen
+
 ## InDev [2.4.0] - 2026-05-19
 
 ### Added

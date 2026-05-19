@@ -3,6 +3,7 @@ import '../../data/models/transaction_model.dart';
 import '../../data/models/asset_model.dart';
 import '../../data/models/debt_model.dart';
 import '../../data/models/budget_model.dart';
+import '../../data/models/category_model.dart';
 import '../../services/pb_client.dart';
 
 class PbHelper {
@@ -262,6 +263,50 @@ class PbHelper {
       await _pb.collection('budgets').update(id, body: {'spent': spent});
     } catch (e) {
       throw Exception('Gagal update spent budget: ${e.toString()}');
+    }
+  }
+
+  // ============ CATEGORIES ============
+  Future<List<CategoryModel>> fetchAllCategories() async {
+    try {
+      final filter = _userId != null ? 'user = "$_userId"' : '';
+      final result = await _pb.collection('categories').getList(
+        filter: filter,
+        sort: 'name',
+      );
+      return result.items.map((r) => CategoryModel.fromRecord(r)).toList();
+    } catch (e) {
+      throw Exception('Gagal mengambil kategori: ${e.toString()}');
+    }
+  }
+
+  Future<CategoryModel> createCategory(CategoryModel c) async {
+    try {
+      final body = c.toJson();
+      if (_userId != null) body['user'] = _userId;
+      final result = await _pb.collection('categories').create(body: body);
+      return CategoryModel.fromRecord(result);
+    } catch (e) {
+      throw Exception('Gagal membuat kategori: ${e.toString()}');
+    }
+  }
+
+  Future<void> deleteCategory(String id) async {
+    try {
+      await _pb.collection('categories').delete(id);
+    } catch (e) {
+      throw Exception('Gagal menghapus kategori: ${e.toString()}');
+    }
+  }
+
+  Future<CategoryModel> updateCategory(String id, CategoryModel c) async {
+    try {
+      final body = c.toJson();
+      if (_userId != null) body['user'] = _userId;
+      final result = await _pb.collection('categories').update(id, body: body);
+      return CategoryModel.fromRecord(result);
+    } catch (e) {
+      throw Exception('Gagal mengupdate kategori: ${e.toString()}');
     }
   }
 }

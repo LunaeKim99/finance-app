@@ -6,11 +6,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import '../data/repositories/auth_repository_impl.dart';
 import '../data/repositories/settings_repository_impl.dart';
+import '../data/repositories/category_repository_impl.dart';
 import '../presentation/providers/transaction_provider.dart';
 import '../presentation/providers/theme_provider.dart';
 import '../presentation/providers/usage_provider.dart';
 import '../presentation/providers/budget_provider.dart';
 import '../presentation/blocs/settings/settings_bloc.dart';
+import '../presentation/blocs/category/category_bloc.dart';
 import '../presentation/screens/auth/bloc/auth_bloc.dart';
 import '../presentation/screens/auth/bloc/auth_state.dart';
 import '../presentation/screens/auth/splash_screen.dart';
@@ -64,6 +66,11 @@ class FinanceApp extends StatelessWidget {
           BlocProvider<SettingsBloc>(
             create: (_) => SettingsBloc(
               settingsRepository: SettingsRepositoryImpl(),
+            ),
+          ),
+          BlocProvider<CategoryBloc>(
+            create: (_) => CategoryBloc(
+              repository: CategoryRepositoryImpl(),
             ),
           ),
         ],

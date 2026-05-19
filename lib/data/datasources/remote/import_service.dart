@@ -178,6 +178,7 @@ class ImportService {
         category: category,
         date: date,
         note: note,
+        currency: 'IDR',
       );
     } catch (e) {
       debugPrint('Error parse row $rowNumber: $e');

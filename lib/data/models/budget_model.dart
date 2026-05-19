@@ -11,6 +11,7 @@ class BudgetModel {
   final String note;
   final bool isActive;
   final String? user;
+  final String currency;
 
   BudgetModel({
     this.id,
@@ -23,6 +24,7 @@ class BudgetModel {
     this.note = '',
     this.isActive = true,
     this.user,
+    this.currency = 'IDR',
   });
 
   String get safeId => id ?? '';
@@ -43,6 +45,7 @@ class BudgetModel {
       note: (record.data['note'] as String?) ?? '',
       isActive: (record.data['is_active'] as bool?) ?? true,
       user: record.data['user'] as String?,
+      currency: (record.data['currency'] as String?) ?? 'IDR',
     );
   }
 
@@ -58,6 +61,7 @@ class BudgetModel {
       note: (map['note'] as String?) ?? '',
       isActive: (map['is_active'] as bool?) ?? true,
       user: map['user'] as String?,
+      currency: (map['currency'] as String?) ?? 'IDR',
     );
   }
 
@@ -71,6 +75,7 @@ class BudgetModel {
       'year': year,
       'note': note,
       'is_active': isActive,
+      'currency': currency,
       if (user != null) 'user': user,
     };
   }
@@ -86,6 +91,7 @@ class BudgetModel {
     String? note,
     bool? isActive,
     String? user,
+    String? currency,
   }) {
     return BudgetModel(
       id: id ?? this.id,
@@ -98,6 +104,7 @@ class BudgetModel {
       note: note ?? this.note,
       isActive: isActive ?? this.isActive,
       user: user ?? this.user,
+      currency: currency ?? this.currency,
     );
   }
 }

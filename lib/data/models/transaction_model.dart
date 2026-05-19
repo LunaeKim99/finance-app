@@ -11,6 +11,8 @@ class TransactionModel {
   final String note;
   final String? user;
   final bool isSynced;
+  final String currency;
+  final double exchangeRateToIdr;
 
   TransactionModel({
     this.id,
@@ -22,9 +24,12 @@ class TransactionModel {
     required this.note,
     this.user,
     this.isSynced = true,
+    this.currency = 'IDR',
+    this.exchangeRateToIdr = 1.0,
   });
 
   String get safeId => id ?? '';
+  double get amountInIdr => amount * exchangeRateToIdr;
 
   factory TransactionModel.fromRecord(RecordModel record) {
     return TransactionModel(
@@ -36,6 +41,8 @@ class TransactionModel {
       date: DateTime.parse(record.data['date'] as String),
       note: (record.data['note'] as String?) ?? '',
       user: record.data['user'] as String?,
+      currency: (record.data['currency'] as String?) ?? 'IDR',
+      exchangeRateToIdr: ((record.data['exchange_rate_to_idr'] as num?) ?? 1.0).toDouble(),
     );
   }
 
@@ -47,6 +54,8 @@ class TransactionModel {
       'category': category,
       'date': date.toIso8601String(),
       'note': note,
+      'currency': currency,
+      'exchange_rate_to_idr': exchangeRateToIdr,
       if (user != null) 'user': user,
     };
   }
@@ -62,6 +71,8 @@ class TransactionModel {
       note: (map['note'] as String?) ?? '',
       user: map['user'] as String?,
       isSynced: map['isSynced'] as bool? ?? true,
+      currency: (map['currency'] as String?) ?? 'IDR',
+      exchangeRateToIdr: ((map['exchange_rate_to_idr'] as num?) ?? 1.0).toDouble(),
     );
   }
 
@@ -76,6 +87,8 @@ class TransactionModel {
       'note': note,
       'user': user,
       'isSynced': isSynced,
+      'currency': currency,
+      'exchange_rate_to_idr': exchangeRateToIdr,
     };
   }
 
@@ -89,6 +102,8 @@ class TransactionModel {
     String? note,
     String? user,
     bool? isSynced,
+    String? currency,
+    double? exchangeRateToIdr,
   }) {
     return TransactionModel(
       id: id ?? this.id,
@@ -100,6 +115,8 @@ class TransactionModel {
       note: note ?? this.note,
       user: user ?? this.user,
       isSynced: isSynced ?? this.isSynced,
+      currency: currency ?? this.currency,
+      exchangeRateToIdr: exchangeRateToIdr ?? this.exchangeRateToIdr,
     );
   }
 }

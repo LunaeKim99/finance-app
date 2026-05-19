@@ -54,6 +54,7 @@ class BudgetProvider extends ChangeNotifier {
           month: month,
           year: year,
           note: note,
+          currency: 'IDR',
         );
         await _dbHelper.updateBudget(id, updated);
       } else {
@@ -64,6 +65,7 @@ class BudgetProvider extends ChangeNotifier {
           month: month,
           year: year,
           note: note,
+          currency: 'IDR',
         );
         await _dbHelper.createBudget(budget);
       }

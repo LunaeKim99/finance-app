@@ -8,6 +8,7 @@ class Budget {
   final int year;
   final String? note;
   final bool isActive;
+  final String currency;
 
   const Budget({
     this.id,
@@ -19,6 +20,7 @@ class Budget {
     required this.year,
     this.note,
     this.isActive = true,
+    this.currency = 'IDR',
   });
 
   String get safeId => id ?? '';
@@ -35,6 +37,7 @@ class Budget {
     int? year,
     String? note,
     bool? isActive,
+    String? currency,
   }) {
     return Budget(
       id: id ?? this.id,
@@ -46,6 +49,7 @@ class Budget {
       year: year ?? this.year,
       note: note ?? this.note,
       isActive: isActive ?? this.isActive,
+      currency: currency ?? this.currency,
     );
   }
 }

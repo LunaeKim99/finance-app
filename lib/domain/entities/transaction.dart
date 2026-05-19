@@ -9,6 +9,8 @@ class Transaction {
   final DateTime date;
   final String? note;
   final bool isSynced;
+  final String currency;
+  final double exchangeRateToIdr;
 
   const Transaction({
     this.id,
@@ -19,9 +21,13 @@ class Transaction {
     required this.date,
     this.note,
     this.isSynced = false,
+    this.currency = 'IDR',
+    this.exchangeRateToIdr = 1.0,
   });
 
   String get safeId => id ?? '';
+
+  double get amountInIdr => amount * exchangeRateToIdr;
 
   Transaction copyWith({
     String? id,
@@ -32,6 +38,8 @@ class Transaction {
     DateTime? date,
     String? note,
     bool? isSynced,
+    String? currency,
+    double? exchangeRateToIdr,
   }) {
     return Transaction(
       id: id ?? this.id,
@@ -42,6 +50,8 @@ class Transaction {
       date: date ?? this.date,
       note: note ?? this.note,
       isSynced: isSynced ?? this.isSynced,
+      currency: currency ?? this.currency,
+      exchangeRateToIdr: exchangeRateToIdr ?? this.exchangeRateToIdr,
     );
   }
 }

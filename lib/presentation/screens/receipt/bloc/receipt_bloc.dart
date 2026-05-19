@@ -32,6 +32,7 @@ class ReceiptBloc extends Bloc<ReceiptEvent, ReceiptState> {
           category: event.items.isNotEmpty ? event.items.first.category : 'Lainnya',
           date: event.scanResult.date ?? DateTime.now(),
           note: 'Dari scan struk',
+          currency: 'IDR',
         );
         await _datasource.createTransaction(transaction);
       } else {
@@ -43,6 +44,7 @@ class ReceiptBloc extends Bloc<ReceiptEvent, ReceiptState> {
             category: item.category,
             date: event.scanResult.date ?? DateTime.now(),
             note: 'Dari scan struk',
+            currency: 'IDR',
           );
           await _datasource.createTransaction(transaction);
         }

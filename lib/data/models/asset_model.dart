@@ -6,6 +6,7 @@ class AssetModel {
   final String type;
   final double amount;
   final String currency;
+  final double exchangeRateToIdr;
   final DateTime? purchaseDate;
   final String note;
   final bool isActive;
@@ -17,6 +18,7 @@ class AssetModel {
     required this.type,
     required this.amount,
     this.currency = 'IDR',
+    this.exchangeRateToIdr = 1.0,
     this.purchaseDate,
     this.note = '',
     this.isActive = true,
@@ -32,6 +34,7 @@ class AssetModel {
       type: record.data['type'] as String,
       amount: (record.data['amount'] as num).toDouble(),
       currency: (record.data['currency'] as String?) ?? 'IDR',
+      exchangeRateToIdr: ((record.data['exchange_rate_to_idr'] as num?) ?? 1.0).toDouble(),
       purchaseDate: record.data['purchase_date'] != null
           ? DateTime.parse(record.data['purchase_date'] as String)
           : null,
@@ -48,6 +51,7 @@ class AssetModel {
       type: map['type'] as String,
       amount: (map['amount'] as num).toDouble(),
       currency: (map['currency'] as String?) ?? 'IDR',
+      exchangeRateToIdr: ((map['exchange_rate_to_idr'] as num?) ?? 1.0).toDouble(),
       purchaseDate: map['purchase_date'] != null
           ? DateTime.parse(map['purchase_date'] as String)
           : null,
@@ -63,6 +67,7 @@ class AssetModel {
       'type': type,
       'amount': amount,
       'currency': currency,
+      'exchange_rate_to_idr': exchangeRateToIdr,
       'purchase_date': purchaseDate?.toIso8601String(),
       'note': note,
       'is_active': isActive,
@@ -76,6 +81,7 @@ class AssetModel {
     String? type,
     double? amount,
     String? currency,
+    double? exchangeRateToIdr,
     DateTime? purchaseDate,
     String? note,
     bool? isActive,
@@ -87,6 +93,7 @@ class AssetModel {
       type: type ?? this.type,
       amount: amount ?? this.amount,
       currency: currency ?? this.currency,
+      exchangeRateToIdr: exchangeRateToIdr ?? this.exchangeRateToIdr,
       purchaseDate: purchaseDate ?? this.purchaseDate,
       note: note ?? this.note,
       isActive: isActive ?? this.isActive,
