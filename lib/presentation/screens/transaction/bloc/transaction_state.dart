@@ -69,8 +69,8 @@ class TransactionLoaded extends TransactionState {
         t.date.month == month &&
         t.date.year == year);
     for (final t in filtered) {
-      categoryTotals[t.category] =
-          (categoryTotals[t.category] ?? 0) + t.amount;
+      final cat = t.categoryName ?? t.categoryId;
+      categoryTotals[cat] = (categoryTotals[cat] ?? 0) + t.amount;
     }
     return categoryTotals;
   }

@@ -61,7 +61,7 @@ class ReportBloc extends Bloc<ReportEvent, ReportState> {
       } else {
         expense += t.amount;
         categoryTotals.update(
-          t.category,
+          t.categoryName ?? t.categoryId,
           (v) => v + t.amount,
           ifAbsent: () => t.amount,
         );

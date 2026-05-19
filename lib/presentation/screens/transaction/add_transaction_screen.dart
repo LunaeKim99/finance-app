@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/currencies.dart';
+import '../../../core/constants/icon_registry.dart';
+import '../../../domain/entities/category.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction_type.dart';
 import '../../blocs/category/category_bloc.dart';
@@ -37,12 +39,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final _amountFocusNode = FocusNode();
 
   TransactionType _transactionType = TransactionType.expense;
-  String _selectedCategory = 'Makanan';
+  String? _selectedCategoryId;
   String _selectedCurrency = 'IDR';
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
-  List<String> _expenseCatNames = ['Makanan', 'Transportasi', 'Belanja', 'Hiburan', 'Kesehatan', 'Pendidikan', 'Tagihan', 'Lainnya'];
-  List<String> _incomeCatNames = ['Gaji', 'Bonus', 'Usaha', 'Investasi', 'Hadiah', 'Lainnya'];
+  List<Category> _expenseCats = [];
+  List<Category> _incomeCats = [];
 
   @override
   void initState() {
@@ -55,7 +57,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       _amountController.text = existing.amount.toStringAsFixed(0);
       _noteController.text = existing.note;
       _transactionType = existing.type;
-      _selectedCategory = existing.category;
+      _selectedCategoryId = existing.categoryId;
       _selectedCurrency = existing.currency;
       _selectedDate = existing.date;
     }
@@ -73,16 +75,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     super.dispose();
   }
 
-  List<String> get _currentCategories =>
-      _transactionType == TransactionType.expense ? _expenseCatNames : _incomeCatNames;
+  List<Category> get _currentCategories =>
+      _transactionType == TransactionType.expense ? _expenseCats : _incomeCats;
 
   void _syncCategoriesFromBloc() {
     final state = context.read<CategoryBloc>().state;
     if (state is CategoryLoaded) {
-      _expenseCatNames = state.expenseCategories.map((c) => c.name).toList();
-      _incomeCatNames = state.incomeCategories.map((c) => c.name).toList();
-      if (!_expenseCatNames.contains(_selectedCategory) && !_incomeCatNames.contains(_selectedCategory)) {
-        _selectedCategory = _currentCategories.isNotEmpty ? _currentCategories.first : 'Lainnya';
+      _expenseCats = state.expenseCategories;
+      _incomeCats = state.incomeCategories;
+
+      if (_selectedCategoryId == null && _currentCategories.isNotEmpty) {
+        _selectedCategoryId = _currentCategories.first.id;
       }
     }
   }
@@ -303,7 +306,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             onTap: () => setState(() {
               _transactionType = TransactionType.expense;
               _syncCategoriesFromBloc();
-              _selectedCategory = _expenseCatNames.isNotEmpty ? _expenseCatNames.first : 'Lainnya';
+              if (_expenseCats.isNotEmpty) {
+                _selectedCategoryId = _expenseCats.first.id;
+              }
             }),
           ),
           _buildTypeOption(
@@ -314,7 +319,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             onTap: () => setState(() {
               _transactionType = TransactionType.income;
               _syncCategoriesFromBloc();
-              _selectedCategory = _incomeCatNames.isNotEmpty ? _incomeCatNames.first : 'Lainnya';
+              if (_incomeCats.isNotEmpty) {
+                _selectedCategoryId = _incomeCats.first.id;
+              }
             }),
           ),
         ],
@@ -374,6 +381,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   Widget _buildCategoryRow(Color accentColor) {
     final isIOS = Platform.isIOS;
+    final selectedCat = _currentCategories.firstWhere(
+      (c) => c.id == _selectedCategoryId,
+      orElse: () => Category(name: 'Lainnya', type: 'expense'),
+    );
 
     return InkWell(
       onTap: isIOS ? _showCategoryPickerIOS : _showCategoryPickerAndroid,
@@ -389,7 +400,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
-                _getCategoryIcon(_selectedCategory),
+                _getCategoryIcon(selectedCat.name),
                 size: 18,
                 color: accentColor,
               ),
@@ -405,7 +416,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    _selectedCategory,
+                    selectedCat.name,
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
@@ -433,68 +444,70 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       ),
       builder: (context) {
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.only(bottom: 8),
-                child: Text(
-                  'Pilih Kategori',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-              ),
-              ..._currentCategories.map((category) {
-                final isSelected = category == _selectedCategory;
-                return ListTile(
-                  leading: Icon(
-                    _getCategoryIcon(category),
-                    color: isSelected
-                        ? (_transactionType == TransactionType.expense
-                            ? Colors.red
-                            : const Color(0xFF4CAF50))
-                        : Colors.grey,
-                  ),
-                  title: Text(
-                    category,
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    'Pilih Kategori',
                     style: TextStyle(
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.normal,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                ..._currentCategories.map((category) {
+                  final isSelected = category.id == _selectedCategoryId;
+                  return ListTile(
+                    leading: Icon(
+                      _getCategoryIcon(category.name),
                       color: isSelected
                           ? (_transactionType == TransactionType.expense
                               ? Colors.red
                               : const Color(0xFF4CAF50))
-                          : null,
+                          : Colors.grey,
                     ),
-                  ),
-                  trailing: isSelected
-                      ? Icon(
-                          Icons.check,
-color: _transactionType == TransactionType.expense
+                    title: Text(
+                      category.name,
+                      style: TextStyle(
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        color: isSelected
+                            ? (_transactionType == TransactionType.expense
+                                ? Colors.red
+                                : const Color(0xFF4CAF50))
+                            : null,
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? Icon(
+                            Icons.check,
+                            color: _transactionType == TransactionType.expense
                                 ? Colors.red
                                 : const Color(0xFF4CAF50),
-                        )
-                      : null,
-                  onTap: () {
-                    setState(() => _selectedCategory = category);
-                    Navigator.pop(context);
-                  },
-                );
-              }),
-              const SizedBox(height: 8),
-            ],
+                          )
+                        : null,
+                    onTap: () {
+                      setState(() => _selectedCategoryId = category.id);
+                      Navigator.pop(context);
+                    },
+                  );
+                }),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
         );
       },
@@ -530,11 +543,11 @@ color: _transactionType == TransactionType.expense
                 itemExtent: 40,
                 onSelectedItemChanged: (index) {
                   setState(() {
-                    _selectedCategory = _currentCategories[index];
+                    _selectedCategoryId = _currentCategories[index].id;
                   });
                 },
                 children: _currentCategories.map((category) {
-                  return Center(child: Text(category));
+                  return Center(child: Text(category.name));
                 }).toList(),
               ),
             ),
@@ -1060,12 +1073,18 @@ color: _transactionType == TransactionType.expense
 
     final cleanAmount = _amountController.text.replaceAll(RegExp(r'[^\d]'), '');
     final amount = double.tryParse(cleanAmount) ?? 0;
+
+    final selectedCat = _currentCategories.firstWhere(
+      (c) => c.id == _selectedCategoryId,
+      orElse: () => Category(name: 'Lainnya', type: 'expense'),
+    );
+
     final transaction = TransactionModel(
       id: _isEditMode ? widget.existingTransaction?.id : null,
-      title: _selectedCategory,
+      title: selectedCat.name,
       amount: amount,
       type: _transactionType,
-      category: _selectedCategory,
+      categoryId: _selectedCategoryId ?? selectedCat.id!,
       date: _selectedDate,
       note: _noteController.text,
       currency: _selectedCurrency,
@@ -1117,34 +1136,16 @@ color: _transactionType == TransactionType.expense
     );
   }
 
-  IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case 'Makanan':
-        return Platform.isIOS ? CupertinoIcons.bag_fill : Icons.restaurant;
-      case 'Transportasi':
-        return Platform.isIOS ? CupertinoIcons.car_fill : Icons.directions_car;
-      case 'Belanja':
-        return Platform.isIOS ? CupertinoIcons.bag : Icons.shopping_bag;
-      case 'Hiburan':
-        return Platform.isIOS ? CupertinoIcons.game_controller_solid : Icons.movie;
-      case 'Kesehatan':
-        return Platform.isIOS ? CupertinoIcons.heart_fill : Icons.local_hospital;
-      case 'Pendidikan':
-        return Platform.isIOS ? CupertinoIcons.book_fill : Icons.school;
-      case 'Tagihan':
-        return Platform.isIOS ? CupertinoIcons.doc_text_fill : Icons.receipt;
-      case 'Gaji':
-        return Platform.isIOS ? CupertinoIcons.money_dollar : Icons.work;
-      case 'Bonus':
-        return Platform.isIOS ? CupertinoIcons.gift_fill : Icons.card_giftcard;
-      case 'Usaha':
-        return Platform.isIOS ? CupertinoIcons.briefcase_fill : Icons.business;
-      case 'Investasi':
-        return Platform.isIOS ? CupertinoIcons.chart_bar_fill : Icons.trending_up;
-      case 'Hadiah':
-        return Platform.isIOS ? CupertinoIcons.gift : Icons.card_giftcard;
-      default:
-        return Platform.isIOS ? CupertinoIcons.ellipsis : Icons.more_horiz;
+  IconData _getCategoryIcon(String categoryName) {
+    final state = context.read<CategoryBloc>().state;
+    if (state is CategoryLoaded) {
+      final allCats = [...state.expenseCategories, ...state.incomeCategories];
+      final cat = allCats.firstWhere(
+        (c) => c.name == categoryName,
+        orElse: () => Category(name: 'Lainnya', type: 'expense', icon: 'category'),
+      );
+      return CategoryIconRegistry.resolve(cat.icon, cat.name);
     }
+    return CategoryIconRegistry.resolve(null, categoryName);
   }
 }

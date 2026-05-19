@@ -460,7 +460,7 @@ class SqliteHelper implements DbInterface {
         'title': model.title,
         'amount': model.amount,
         'type': model.type.value,
-        'category': model.category,
+        'category': model.categoryId,
         'date': model.date.toIso8601String().split('T')[0],
         'note': model.note,
         'currency': model.currency != 'IDR' ? model.currency : null,

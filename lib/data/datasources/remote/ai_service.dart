@@ -460,7 +460,7 @@ ATURAN PENTING:
           title: data['category'] as String? ?? 'Lainnya',
           amount: amount,
           type: TransactionType.fromString(data['type'] as String? ?? 'expense'),
-          category: data['category'] as String? ?? 'Lainnya',
+          categoryId: data['category'] as String? ?? 'Lainnya',
           date: DateTime.tryParse(data['date'] as String? ?? '') ?? DateTime.now(),
           note: data['note'] as String? ?? '',
           currency: currency,
@@ -606,7 +606,7 @@ class AiRecommendationService {
     for (final tx in weeklyTx) {
       final dateStr = DateFormat('dd/MM').format(tx.date);
       final amountStr = _currencyFormat.format(tx.amount);
-      buffer.writeln('$dateStr | ${tx.category} | ${tx.type} | $amountStr');
+      buffer.writeln('$dateStr | ${tx.categoryName ?? tx.categoryId} | ${tx.type} | $amountStr');
     }
 
     const systemPrompt = '''Kamu adalah asisten keuangan pribadi yang ramah dan berbahasa Indonesia santai.
@@ -670,7 +670,7 @@ ${buffer.toString()}''';
         totalIncome += tx.amount;
       } else {
         totalExpense += tx.amount;
-        categoryMap[tx.category] = (categoryMap[tx.category] ?? 0) + tx.amount;
+        categoryMap[tx.categoryName ?? tx.categoryId] = (categoryMap[tx.categoryName ?? tx.categoryId] ?? 0) + tx.amount;
       }
     }
 

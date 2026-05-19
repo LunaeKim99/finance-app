@@ -3,6 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/budget_model.dart';
 import '../../../core/error/error_handler.dart';
+import '../../../core/constants/icon_registry.dart';
+import '../../../domain/entities/category.dart';
+import '../../blocs/category/category_bloc.dart';
+import '../../blocs/category/category_state.dart';
 import '../transaction/bloc/transaction_bloc.dart';
 import '../transaction/bloc/transaction_state.dart';
 import 'bloc/budget_bloc.dart';
@@ -316,49 +320,123 @@ class BudgetScreenState extends State<BudgetScreen> {
     final amountController = TextEditingController(
       text: budget?.amount.toStringAsFixed(0) ?? '',
     );
-    final categoryController = TextEditingController(text: budget?.category ?? preselectedCategory ?? '');
+    String selectedCategory = budget?.category ?? preselectedCategory ?? 'Lainnya';
 
-    final expenseCategories = [
-      'Makanan',
-      'Transportasi',
-      'Belanja',
-      'Hiburan',
-      'Kesehatan',
-      'Pendidikan',
-      'Tagihan',
-      'Lainnya',
-    ];
-
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(budget == null ? 'Tambah Budget' : 'Edit Budget'),
-        content: SingleChildScrollView(
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setBottomSheetState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            left: 24,
+            right: 24,
+            top: 24,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Autocomplete<String>(
-                initialValue: TextEditingValue(text: categoryController.text),
-                optionsBuilder: (textEditingValue) {
-                  if (textEditingValue.text.isEmpty) {
-                    return expenseCategories;
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Text(
+                budget == null ? 'Tambah Budget' : 'Edit Budget',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              InkWell(
+                onTap: () {
+                  final state = context.read<CategoryBloc>().state;
+                  List<String> categories = [];
+                  if (state is CategoryLoaded) {
+                    categories = state.expenseCategories.map((c) => c.name).toList();
                   }
-                  return expenseCategories.where((c) => c.toLowerCase().contains(textEditingValue.text.toLowerCase()));
-                },
-                onSelected: (selection) {
-                  categoryController.text = selection;
-                },
-                fieldViewBuilder: (context, controller, focusNode, onSubmitted) {
-                  return TextField(
-                    controller: controller,
-                    focusNode: focusNode,
-                    decoration: const InputDecoration(
-                      labelText: 'Kategori',
-                      border: OutlineInputBorder(),
+                  if (categories.isEmpty) {
+                    categories = ['Makanan', 'Transportasi', 'Belanja', 'Hiburan', 'Kesehatan', 'Pendidikan', 'Tagihan', 'Lainnya'];
+                  }
+
+                  showModalBottomSheet(
+                    context: ctx,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                     ),
-                    onChanged: (value) => categoryController.text = value,
+                    builder: (catCtx) => SafeArea(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 4,
+                              margin: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade300,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 8),
+                              child: Text(
+                                'Pilih Kategori',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                            ),
+                            ...categories.map((category) {
+                              final isSelected = category == selectedCategory;
+                              return ListTile(
+                                leading: Icon(
+                                  _getCategoryIcon(category),
+                                  color: isSelected ? Colors.red : Colors.grey,
+                                ),
+                                title: Text(
+                                  category,
+                                  style: TextStyle(
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isSelected ? Colors.red : null,
+                                  ),
+                                ),
+                                trailing: isSelected ? const Icon(Icons.check, color: Colors.red) : null,
+                                onTap: () {
+                                  setBottomSheetState(() => selectedCategory = category);
+                                  Navigator.pop(catCtx);
+                                },
+                              );
+                            }),
+                            const SizedBox(height: 8),
+                          ],
+                        ),
+                      ),
+                    ),
                   );
                 },
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Kategori',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.category_outlined),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(_getCategoryIcon(selectedCategory), size: 24, color: Colors.red),
+                      const SizedBox(width: 12),
+                      Text(selectedCategory),
+                      const Spacer(),
+                      const Icon(Icons.arrow_drop_down, size: 20),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -367,46 +445,58 @@ class BudgetScreenState extends State<BudgetScreen> {
                   labelText: 'Limit Budget',
                   prefixText: 'Rp ',
                   border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.account_balance_wallet_outlined),
                 ),
                 keyboardType: TextInputType.number,
               ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: FilledButton(
+                  onPressed: () async {
+                    final amount = double.tryParse(amountController.text.replaceAll('.', '')) ?? 0;
+
+                    if (selectedCategory.isEmpty || amount <= 0) {
+                      ErrorHandler.showError(ctx, 'Masukkan kategori dan nominal yang valid');
+                      return;
+                    }
+
+                    context.read<BudgetBloc>().add(BudgetSetRequested(
+                      id: budget?.id,
+                      name: '$selectedCategory Budget',
+                      category: selectedCategory,
+                      amount: amount,
+                      month: _selectedMonth,
+                      year: _selectedYear,
+                    ));
+
+                    if (ctx.mounted) {
+                      Navigator.pop(ctx);
+                      ErrorHandler.showSuccess(ctx, 'Budget berhasil disimpan');
+                    }
+                  },
+                  child: Text(budget == null ? 'Simpan Budget' : 'Simpan Perubahan'),
+                ),
+              ),
+              const SizedBox(height: 32),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final category = categoryController.text.trim();
-              final amount = double.tryParse(amountController.text.replaceAll('.', '')) ?? 0;
-
-              if (category.isEmpty || amount <= 0) {
-                ErrorHandler.showError(context, 'Masukkan kategori dan nominal yang valid');
-                return;
-              }
-
-              context.read<BudgetBloc>().add(BudgetSetRequested(
-                id: budget?.id,
-                name: '$category Budget',
-                category: category,
-                amount: amount,
-                month: _selectedMonth,
-                year: _selectedYear,
-              ));
-
-              if (context.mounted) {
-                Navigator.pop(context);
-                ErrorHandler.showSuccess(context, 'Budget berhasil disimpan');
-              }
-            },
-            child: const Text('Simpan'),
-          ),
-        ],
       ),
     );
+  }
+
+  IconData _getCategoryIcon(String categoryName) {
+    final state = context.read<CategoryBloc>().state;
+    if (state is CategoryLoaded) {
+      final cat = state.expenseCategories.firstWhere(
+        (c) => c.name == categoryName,
+        orElse: () => Category(name: 'Lainnya', type: 'expense', icon: 'category'),
+      );
+      return CategoryIconRegistry.resolve(cat.icon, cat.name);
+    }
+    return CategoryIconRegistry.resolve(null, categoryName);
   }
 
   Future<void> _deleteBudget(String id) async {

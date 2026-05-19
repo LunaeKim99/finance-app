@@ -175,7 +175,7 @@ class ImportService {
         title: category,
         amount: amount,
         type: type,
-        category: category,
+        categoryId: category,
         date: date,
         note: note,
         currency: 'IDR',

@@ -82,7 +82,31 @@ class CategoryIconRegistry {
     'terrain': Icons.terrain,
   };
 
+  static final Map<String, String> _nameToIconKey = {
+    'makanan': 'restaurant',
+    'transportasi': 'directions_car',
+    'belanja': 'shopping_bag',
+    'hiburan': 'movie',
+    'kesehatan': 'local_hospital',
+    'pendidikan': 'school',
+    'tagihan': 'receipt',
+    'gaji': 'work',
+    'bonus': 'card_giftcard',
+    'usaha': 'business_center',
+    'investasi': 'trending_up',
+    'hadiah': 'card_giftcard',
+    'lainnya': 'category',
+  };
+
   static IconData get(String key) => icons[key] ?? Icons.category;
+
+  static IconData resolve(String? key, String name) {
+    if (key != null && key.isNotEmpty && icons.containsKey(key)) {
+      return icons[key]!;
+    }
+    final fallbackKey = _nameToIconKey[name.toLowerCase()];
+    return icons[fallbackKey ?? 'category'] ?? Icons.category;
+  }
 
   static List<MapEntry<String, IconData>> get all => icons.entries.toList();
 }

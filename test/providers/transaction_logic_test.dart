@@ -1,79 +1,26 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uwangku/data/models/transaction_model.dart';
 import 'package:uwangku/data/models/transaction_type.dart';
-
-TransactionModel makeTransaction({
-  String? id,
-  String title = 'Test Transaction',
-  double amount = 100000,
-  TransactionType type = TransactionType.expense,
-  String category = 'Makanan',
-  DateTime? date,
-  String note = '',
-  bool isSynced = true,
-}) {
-  return TransactionModel(
-    id: id,
-    title: title,
-    amount: amount,
-    type: type,
-    category: category,
-    date: date ?? DateTime.now(),
-    note: note,
-    isSynced: isSynced,
-  );
-}
-
-TransactionModel makeIncome(double amount, {
-  String title = 'Test Income',
-  String category = 'Gaji',
-  DateTime? date,
-  String note = '',
-}) {
-  return makeTransaction(
-    title: title,
-    amount: amount,
-    type: TransactionType.income,
-    category: category,
-    date: date,
-    note: note,
-  );
-}
-
-TransactionModel makeExpense(double amount, {
-  String title = 'Test Expense',
-  String category = 'Makanan',
-  DateTime? date,
-  String note = '',
-}) {
-  return makeTransaction(
-    title: title,
-    amount: amount,
-    type: TransactionType.expense,
-    category: category,
-    date: date,
-    note: note,
-  );
-}
+import '../helpers/transaction_factory.dart';
 
 void main() {
   group('TransactionModel', () {
     test('creates income transaction correctly', () {
-      final income = makeIncome(500000, category: 'Gaji');
+      final income = makeIncome(500000, categoryId: 'Gaji');
       expect(income.type, TransactionType.income);
       expect(income.amount, 500000);
-      expect(income.category, 'Gaji');
+      expect(income.categoryId, 'Gaji');
     });
 
     test('creates expense transaction correctly', () {
-      final expense = makeExpense(200000, category: 'Makanan');
+      final expense = makeExpense(200000, categoryId: 'Makanan');
       expect(expense.type, TransactionType.expense);
       expect(expense.amount, 200000);
-      expect(expense.category, 'Makanan');
+      expect(expense.categoryId, 'Makanan');
     });
   });
 
-  group('Balance Calculation', () {
+  group('calculateTotalBalance', () {
     double calculateTotalBalance(List<TransactionModel> transactions) {
       double income = 0;
       double expense = 0;
@@ -138,7 +85,8 @@ void main() {
           t.date.year == year);
 
       for (final t in filtered) {
-        categoryTotals[t.category] = (categoryTotals[t.category] ?? 0) + t.amount;
+        final cat = t.categoryName ?? t.categoryId;
+        categoryTotals[cat] = (categoryTotals[cat] ?? 0) + t.amount;
       }
       return categoryTotals;
     }
@@ -146,9 +94,9 @@ void main() {
     test('groups expenses by category correctly', () {
       final now = DateTime.now();
       final transactions = <TransactionModel>[
-        makeExpense(80000, category: 'Makanan', date: now),
-        makeExpense(30000, category: 'Makanan', date: now),
-        makeExpense(50000, category: 'Transport', date: now),
+        makeExpense(80000, categoryId: 'Makanan', date: now),
+        makeExpense(30000, categoryId: 'Makanan', date: now),
+        makeExpense(50000, categoryId: 'Transport', date: now),
       ];
 
       final totals = calculateCategoryTotals(transactions, now.month, now.year);
@@ -159,7 +107,7 @@ void main() {
     test('excludes income from category totals', () {
       final now = DateTime.now();
       final transactions = <TransactionModel>[
-        makeIncome(500000, category: 'Gaji', date: now),
+        makeIncome(500000, categoryId: 'Gaji', date: now),
       ];
 
       final totals = calculateCategoryTotals(transactions, now.month, now.year);

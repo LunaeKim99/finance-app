@@ -314,15 +314,15 @@ class _AiChatScreenState extends State<AiChatScreen> {
                       child: Icon(isIncome ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded, color: txColor, size: 18),
                     ),
                     const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(transaction.category, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        const SizedBox(height: 2),
-                        Text(transaction.currency != 'IDR' ? '${AppCurrencies.symbolFor(transaction.currency)} ${NumberFormat('#,###', 'id_ID').format(transaction.amount.ceil())} (${currencyFormat.format(transaction.amountInIdr)})' : currencyFormat.format(transaction.amount), style: TextStyle(color: txColor, fontWeight: FontWeight.bold, fontSize: 16)),
-                        Text(dateFormat.format(transaction.date), style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
-                      ],
-                    ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(transaction.categoryName ?? transaction.categoryId, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                            const SizedBox(height: 2),
+                            Text(transaction.currency != 'IDR' ? '${AppCurrencies.symbolFor(transaction.currency)} ${NumberFormat('#,###', 'id_ID').format(transaction.amount.ceil())} (${currencyFormat.format(transaction.amountInIdr)})' : currencyFormat.format(transaction.amount), style: TextStyle(color: txColor, fontWeight: FontWeight.bold, fontSize: 16)),
+                            Text(dateFormat.format(transaction.date), style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                          ],
+                        ),
                   ],
                 ),
               ),

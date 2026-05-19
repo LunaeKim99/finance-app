@@ -121,7 +121,7 @@ class ExportService {
             data: filteredTx.map((tx) => [
               _dateFormat.format(tx.date),
               tx.title,
-              tx.category,
+              tx.categoryName ?? tx.categoryId,
               tx.type == TransactionType.income ? _currencyFormat.format(tx.amount) : '-',
               tx.type == TransactionType.expense ? _currencyFormat.format(tx.amount) : '-',
             ]).toList(),
@@ -157,7 +157,7 @@ class ExportService {
       final tx = filteredTx[i];
       final row = i + 1;
       final tipe = tx.type == TransactionType.income ? 'Pemasukan' : 'Pengeluaran';
-      buffer.writeln('$row,${_dateFormat.format(tx.date)},${tx.title},${tx.category},$tipe,${tx.amount},${tx.note}');
+      buffer.writeln('$row,${_dateFormat.format(tx.date)},${tx.title},${tx.categoryName ?? tx.categoryId},$tipe,${tx.amount},${tx.note}');
     }
 
     final tempDir = await getTemporaryDirectory();

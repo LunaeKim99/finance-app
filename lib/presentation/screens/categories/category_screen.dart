@@ -27,19 +27,46 @@ class _CategoryScreenState extends State<CategoryScreen> {
     String selectedType = existing?.type ?? 'expense';
     String selectedIcon = existing?.icon ?? 'category';
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: Text(existing != null ? 'Edit Kategori' : 'Tambah Kategori'),
-          content: Column(
+        builder: (ctx, setDialogState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            left: 24,
+            right: 24,
+            top: 24,
+          ),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Text(
+                existing != null ? 'Edit Kategori' : 'Tambah Kategori',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
               TextField(
                 controller: nameCtrl,
                 decoration: const InputDecoration(
                   labelText: 'Nama Kategori',
                   border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.label_outline),
                 ),
               ),
               const SizedBox(height: 16),
@@ -48,6 +75,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Tipe',
                   border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.category_outlined),
                 ),
                 items: const [
                   DropdownMenuItem(value: 'expense', child: Text('Pengeluaran')),
@@ -67,6 +95,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Ikon',
                     border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.image_outlined),
                   ),
                   child: Row(
                     children: [
@@ -86,35 +115,35 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: FilledButton(
+                  onPressed: () {
+                    final name = nameCtrl.text.trim();
+                    if (name.isEmpty) return;
+                    final cat = Category(
+                      id: existing?.id,
+                      name: name,
+                      type: selectedType,
+                      icon: selectedIcon,
+                    );
+                    if (existing != null) {
+                      context.read<CategoryBloc>().add(
+                        CategoryUpdated(id: existing.safeId, category: cat),
+                      );
+                    } else {
+                      context.read<CategoryBloc>().add(CategoryCreated(category: cat));
+                    }
+                    Navigator.pop(ctx);
+                  },
+                  child: Text(existing != null ? 'Simpan Perubahan' : 'Tambah Kategori'),
+                ),
+              ),
+              const SizedBox(height: 32),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Batal'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final name = nameCtrl.text.trim();
-                if (name.isEmpty) return;
-                final cat = Category(
-                  id: existing?.id,
-                  name: name,
-                  type: selectedType,
-                  icon: selectedIcon,
-                );
-                if (existing != null) {
-                  context.read<CategoryBloc>().add(
-                    CategoryUpdated(id: existing.safeId, category: cat),
-                  );
-                } else {
-                  context.read<CategoryBloc>().add(CategoryCreated(category: cat));
-                }
-                Navigator.pop(ctx);
-              },
-              child: Text(existing != null ? 'Simpan' : 'Tambah'),
-            ),
-          ],
         ),
       ),
     );
@@ -307,7 +336,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
             color: accentColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(_iconData(cat.icon), size: 20, color: accentColor),
+          child: Icon(CategoryIconRegistry.resolve(cat.icon, cat.name), size: 20, color: accentColor),
         ),
         title: Text(cat.name),
         trailing: Row(

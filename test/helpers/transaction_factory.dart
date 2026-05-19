@@ -6,7 +6,7 @@ TransactionModel makeTransaction({
   String title = 'Test Transaction',
   double amount = 100000,
   TransactionType type = TransactionType.expense,
-  String category = 'Makanan',
+  String categoryId = 'cat_123',
   DateTime? date,
   String note = '',
   bool isSynced = true,
@@ -16,7 +16,7 @@ TransactionModel makeTransaction({
     title: title,
     amount: amount,
     type: type,
-    category: category,
+    categoryId: categoryId,
     date: date ?? DateTime.now(),
     note: note,
     isSynced: isSynced,
@@ -25,7 +25,7 @@ TransactionModel makeTransaction({
 
 TransactionModel makeIncome(double amount, {
   String title = 'Test Income',
-  String category = 'Gaji',
+  String categoryId = 'cat_income_123',
   DateTime? date,
   String note = '',
 }) {
@@ -33,7 +33,7 @@ TransactionModel makeIncome(double amount, {
     title: title,
     amount: amount,
     type: TransactionType.income,
-    category: category,
+    categoryId: categoryId,
     date: date,
     note: note,
   );
@@ -41,7 +41,7 @@ TransactionModel makeIncome(double amount, {
 
 TransactionModel makeExpense(double amount, {
   String title = 'Test Expense',
-  String category = 'Makanan',
+  String categoryId = 'cat_expense_123',
   DateTime? date,
   String note = '',
 }) {
@@ -49,7 +49,7 @@ TransactionModel makeExpense(double amount, {
     title: title,
     amount: amount,
     type: TransactionType.expense,
-    category: category,
+    categoryId: categoryId,
     date: date,
     note: note,
   );

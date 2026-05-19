@@ -106,7 +106,7 @@ class SmartDbHelper implements DbInterface {
       'title': t.title,
       'amount': t.amount,
       'type': t.type.value,
-      'category': t.category,
+      'category': t.categoryId,
       'date': t.date.toIso8601String().split('T')[0],
       'note': t.note,
       'currency': t.currency != 'IDR' ? t.currency : null,

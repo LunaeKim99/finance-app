@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## InDev [2.4.2] - 2026-05-19
+
+### Changed
+
+- **TransactionModel.category → categoryId** — Relasi ke koleksi `categories` PocketBase
+  - `category` (String) → `categoryId` (String, ID relasi)
+  - Tambah `categoryName` (String?, dari expand)
+  - Semua datasource, bloc, widget, service diupdate (AiService, ExportService, ImportService, ReceiptBloc, dll)
+  - `pb_import.json`: `transactions.category` jadi `type: "relation"` ref `categories`
+
+- **CategoryIconRegistry.resolve()** — Fallback icon dari nama kategori
+  - `resolve(iconKey, categoryName)` prioritas: stored icon → name-based → `Icons.category`
+  - Semua pemanggil icon kategori: TransactionCard, AddTransactionScreen, BudgetScreen, CategoryScreen
+
+- **CategoryScreen UI** — Add/edit kategori dari `AlertDialog` ke `ModalBottomSheet`
+  - Layout dengan icon preview, input rounded, tombol hijau/danger
+  - Fix overflow dengan `SingleChildScrollView`
+
+- **SyncCategories fallback** — `AddTransactionScreen._syncCategoriesFromBloc` isi list default jika bloc kosong
+
+### Fixed
+
+- `test/providers/transaction_logic_test.dart` — struktur kode dan import path, ganti `t.category` → `t.categoryName ?? t.categoryId`
+
 ## [2.4.1] - 2026-05-19
 
 ### Added

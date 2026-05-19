@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction_type.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/constants/icon_registry.dart';
 
 class TransactionCard extends StatelessWidget {
   final TransactionModel transaction;
@@ -35,7 +36,7 @@ class TransactionCard extends StatelessWidget {
         : AppTheme.expenseColor(context);
     final amountPrefix = isIncome ? '+ ' : '- ';
 
-    final iconData = _getCategoryIcon(transaction.category);
+    final iconData = CategoryIconRegistry.resolve(transaction.categoryId, transaction.categoryName ?? transaction.categoryId);
 
     if (isIOS) {
       return GestureDetector(
@@ -80,14 +81,14 @@ class TransactionCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      transaction.category,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: AppTheme.textPrimaryColor(context),
+                      Text(
+                        transaction.categoryName ?? transaction.categoryId,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: AppTheme.textPrimaryColor(context),
+                        ),
                       ),
-                    ),
                     const SizedBox(height: 2),
                     Text(
                       dateFormat.format(transaction.date),
@@ -204,14 +205,14 @@ class TransactionCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      transaction.category,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: AppTheme.textPrimaryColor(context),
+                      Text(
+                        transaction.categoryName ?? transaction.categoryId,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: AppTheme.textPrimaryColor(context),
+                        ),
                       ),
-                    ),
                     const SizedBox(height: 2),
                     Text(
                       dateFormat.format(transaction.date),
@@ -284,34 +285,5 @@ class TransactionCard extends StatelessWidget {
     );
   }
 
-  IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case 'Makanan':
-        return Platform.isIOS ? CupertinoIcons.bag_fill : Icons.restaurant;
-      case 'Transportasi':
-        return Platform.isIOS ? CupertinoIcons.car_fill : Icons.directions_car;
-      case 'Belanja':
-        return Platform.isIOS ? CupertinoIcons.bag : Icons.shopping_bag;
-      case 'Hiburan':
-        return Platform.isIOS ? CupertinoIcons.game_controller_solid : Icons.movie;
-      case 'Kesehatan':
-        return Platform.isIOS ? CupertinoIcons.heart_fill : Icons.local_hospital;
-      case 'Pendidikan':
-        return Platform.isIOS ? CupertinoIcons.book_fill : Icons.school;
-      case 'Tagihan':
-        return Platform.isIOS ? CupertinoIcons.doc_text_fill : Icons.receipt;
-      case 'Gaji':
-        return Platform.isIOS ? CupertinoIcons.money_dollar : Icons.work;
-      case 'Bonus':
-        return Platform.isIOS ? CupertinoIcons.gift_fill : Icons.card_giftcard;
-      case 'Usaha':
-        return Platform.isIOS ? CupertinoIcons.briefcase_fill : Icons.business;
-      case 'Investasi':
-        return Platform.isIOS ? CupertinoIcons.chart_bar_fill : Icons.trending_up;
-      case 'Hadiah':
-        return Platform.isIOS ? CupertinoIcons.gift : Icons.card_giftcard;
-      default:
-        return Platform.isIOS ? CupertinoIcons.ellipsis : Icons.more_horiz;
-    }
-  }
+  // Removed _getCategoryIcon method as it is now handled by CategoryIconRegistry.resolve()
 }
