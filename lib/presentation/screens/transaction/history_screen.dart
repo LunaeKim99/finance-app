@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction_type.dart';
-import '../../providers/transaction_provider.dart';
+import 'bloc/transaction_bloc.dart';
+import 'bloc/transaction_state.dart';
+import 'bloc/transaction_event.dart';
 import 'add_transaction_screen.dart';
 import '../../widgets/transaction/transaction_card.dart';
 
@@ -23,20 +25,30 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget build(BuildContext context) {
     final isIOS = Platform.isIOS;
 
-    return Consumer<TransactionProvider>(
-      builder: (context, provider, child) {
-        final filteredTransactions = _getFilteredTransactions(provider.allTransactions);
+    return BlocBuilder<TransactionBloc, TransactionState>(
+      builder: (context, state) {
+        if (state is! TransactionLoaded) {
+          if (isIOS) {
+            return const CupertinoPageScaffold(
+              child: Center(child: CircularProgressIndicator.adaptive()),
+            );
+          }
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator.adaptive()),
+          );
+        }
+        final filteredTransactions = _getFilteredTransactions(state.transactions);
 
         if (isIOS) {
-          return _buildIOS(filteredTransactions, provider);
+          return _buildIOS(filteredTransactions);
         }
 
-        return _buildAndroid(filteredTransactions, provider);
+        return _buildAndroid(filteredTransactions);
       },
     );
   }
 
-Widget _buildAndroid(List<TransactionModel> transactions, TransactionProvider provider) {
+Widget _buildAndroid(List<TransactionModel> transactions) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -56,14 +68,14 @@ Widget _buildAndroid(List<TransactionModel> transactions, TransactionProvider pr
           Expanded(
             child: transactions.isEmpty
                 ? _buildEmptyState()
-                : _buildList(transactions, provider),
+                : _buildList(transactions),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildIOS(List<TransactionModel> transactions, TransactionProvider provider) {
+  Widget _buildIOS(List<TransactionModel> transactions) {
     return SafeArea(
       child: Column(
         children: [
@@ -87,7 +99,7 @@ Widget _buildAndroid(List<TransactionModel> transactions, TransactionProvider pr
           Expanded(
             child: transactions.isEmpty
                 ? _buildEmptyState()
-                : _buildList(transactions, provider),
+                : _buildList(transactions),
           ),
         ],
       ),
@@ -397,7 +409,7 @@ Widget _buildAndroid(List<TransactionModel> transactions, TransactionProvider pr
     );
   }
 
-  Widget _buildList(List<TransactionModel> transactions, TransactionProvider provider) {
+  Widget _buildList(List<TransactionModel> transactions) {
     final grouped = _groupByDate(transactions);
     final isIOS = Platform.isIOS;
     final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
@@ -449,8 +461,8 @@ Widget _buildAndroid(List<TransactionModel> transactions, TransactionProvider pr
               ),
             ),
             ...items.map((t) => isIOS
-                ? _buildIOSListItem(t, provider)
-                : _buildAndroidListItem(t, provider)),
+                ? _buildIOSListItem(t)
+                : _buildAndroidListItem(t)),
           ],
         );
       },
@@ -469,7 +481,7 @@ Widget _buildAndroid(List<TransactionModel> transactions, TransactionProvider pr
     return grouped;
   }
 
-  Widget _buildAndroidListItem(TransactionModel transaction, TransactionProvider provider) {
+  Widget _buildAndroidListItem(TransactionModel transaction) {
     return Dismissible(
       key: Key(transaction.id.toString()),
       direction: DismissDirection.endToStart,
@@ -493,7 +505,7 @@ Widget _buildAndroid(List<TransactionModel> transactions, TransactionProvider pr
           ],
         ),
       ),
-      onDismissed: (_) => _deleteTransaction(transaction, provider),
+      onDismissed: (_) => _deleteTransaction(transaction),
       child: TransactionCard(
         transaction: transaction,
         showEditIcon: true,
@@ -502,7 +514,7 @@ Widget _buildAndroid(List<TransactionModel> transactions, TransactionProvider pr
     );
   }
 
-  Widget _buildIOSListItem(TransactionModel transaction, TransactionProvider provider) {
+  Widget _buildIOSListItem(TransactionModel transaction) {
     return Dismissible(
       key: Key(transaction.id.toString()),
       direction: DismissDirection.endToStart,
@@ -527,7 +539,7 @@ Widget _buildAndroid(List<TransactionModel> transactions, TransactionProvider pr
         ),
       ),
       confirmDismiss: (_) => _confirmDeleteIOS(transaction),
-      onDismissed: (_) => _deleteTransaction(transaction, provider),
+      onDismissed: (_) => _deleteTransaction(transaction),
       child: CupertinoContextMenu(
         actions: [
           CupertinoContextMenuAction(
@@ -544,7 +556,7 @@ Widget _buildAndroid(List<TransactionModel> transactions, TransactionProvider pr
               Navigator.pop(context);
               _confirmDeleteIOS(transaction).then((confirmed) {
                 if (confirmed) {
-                  _deleteTransaction(transaction, provider);
+                  _deleteTransaction(transaction);
                 }
               });
             },
@@ -594,8 +606,8 @@ Widget _buildAndroid(List<TransactionModel> transactions, TransactionProvider pr
     }
   }
 
-  void _deleteTransaction(TransactionModel transaction, TransactionProvider provider) async {
-    await provider.deleteTransaction(transaction.id!);
+  void _deleteTransaction(TransactionModel transaction) {
+    context.read<TransactionBloc>().add(TransactionDeleteRequested(id: transaction.id!));
 
     if (mounted) {
       if (Platform.isIOS) {
@@ -619,7 +631,7 @@ Widget _buildAndroid(List<TransactionModel> transactions, TransactionProvider pr
             action: SnackBarAction(
               label: 'Batal',
               onPressed: () {
-                provider.addTransaction(transaction);
+                context.read<TransactionBloc>().add(TransactionAddRequested(transaction: transaction));
               },
             ),
           ),

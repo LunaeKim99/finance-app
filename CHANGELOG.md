@@ -2,9 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-## InDev [2.4.1] - 2026-05-19
+## [2.5.0] - 2026-05-19
 
 ### Added
+
+- **Provider → BLoC Migration (complete)** — All 6 state managers migrated to `flutter_bloc`
+  - `AuthBloc` (existing), `SettingsBloc` (existing), `TransactionBloc` (enhanced), `BudgetBloc` (enhanced), `UsageBloc` (new), `CategoryBloc` (new)
+  - All consumer screens updated to use `context.read<>()`/`context.watch<>()`/`BlocBuilder`
+  - Computed properties on `TransactionLoaded`: `totalBalance`, `monthlyIncome`, `monthlyExpense`, `getCategoryTotals`, `getRecentTransactions`
+  - Computed helpers on `BudgetLoaded`: `getBudgetForCategory`, `getBudgetsForMonth`, `getBudgetUsagePercent`, `isOverBudget`, `isWarningBudget`, `getBudgetSummary`
+  - `SyncService` now injects `TransactionBloc` instead of `TransactionProvider`
+  - `TransactionMarkSynced` event for sync queue processing
+  - `app.dart` uses `MultiBlocProvider` with 6 BLoCs — zero `Provider`/`MultiProvider` imports
+  - Removed `TransactionProvider`, `BudgetProvider`, `UsageProvider`, `ThemeProvider`, `AuthProvider` source files
 
 - **Multi-Currency Support** — Setiap transaksi/aset/utang/budget bisa dalam mata uang berbeda
   - Domain entities: `currency` (default `'IDR'`) + `exchangeRateToIdr` (default `1.0`)

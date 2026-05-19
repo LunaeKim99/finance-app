@@ -7,9 +7,11 @@ import 'package:flutter/foundation.dart';
 import '../pb_helper.dart';
 import '../sync_queue_helper.dart';
 import '../../../services/pb_client.dart';
+import '../../../presentation/screens/transaction/bloc/transaction_bloc.dart';
+import '../../../presentation/screens/transaction/bloc/transaction_event.dart';
 
 class SyncService extends ChangeNotifier {
-  final TransactionProvider _transactionProvider;
+  final TransactionBloc _transactionBloc;
   final PbHelper _pbHelper;
   final SyncQueueHelper _syncQueueHelper;
   
@@ -25,7 +27,7 @@ class SyncService extends ChangeNotifier {
   int get pendingCount => _pendingCount;
 
   SyncService(
-    this._transactionProvider,
+    this._transactionBloc,
     this._pbHelper,
     this._syncQueueHelper,
   ) {
@@ -116,7 +118,10 @@ class SyncService extends ChangeNotifier {
             debugPrint('[SyncService] Synced $operation $collection');
             
             if (operation == 'create') {
-              _transactionProvider.markTransactionSynced(payload['id'] as String?);
+              final id = payload['id'] as String?;
+              if (id != null) {
+                _transactionBloc.add(TransactionMarkSynced(id: id));
+              }
             }
           }
         } catch (e) {
@@ -147,16 +152,5 @@ class SyncService extends ChangeNotifier {
   void dispose() {
     stopListening();
     super.dispose();
-  }
-}
-
-class TransactionProvider extends ChangeNotifier {
-  final bool _isSyncing = false;
-  
-  bool get isSyncing => _isSyncing;
-  
-  void markTransactionSynced(String? id) {
-    // This will be implemented in the actual TransactionProvider
-    notifyListeners();
   }
 }

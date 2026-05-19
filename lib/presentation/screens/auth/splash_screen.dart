@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../app/app_shell.dart';
-import '../../providers/transaction_provider.dart';
+import '../transaction/bloc/transaction_bloc.dart';
+import '../transaction/bloc/transaction_state.dart';
 import 'bloc/auth_bloc.dart';
 import 'bloc/auth_event.dart';
 import 'bloc/auth_state.dart';
@@ -57,6 +57,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _navigateToHome() async {
     context.read<AuthBloc>().add(const AuthCheckStatus());
+    await context.read<TransactionBloc>().ensureInitialized();
 
     await Future.delayed(const Duration(milliseconds: 2500));
 
@@ -157,9 +158,9 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
             const SizedBox(height: 24),
-            Consumer<TransactionProvider>(
-              builder: (context, provider, _) {
-                final isConnected = provider.isUsingRemoteStorage;
+            BlocBuilder<TransactionBloc, TransactionState>(
+              builder: (context, state) {
+                final isConnected = state is TransactionLoaded ? state.isOnline : false;
                 return FadeTransition(
                   opacity: _fadeAnimation,
                   child: Row(

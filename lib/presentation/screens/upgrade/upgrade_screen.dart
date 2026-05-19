@@ -2,13 +2,16 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/config/app_config.dart';
 import '../../../data/models/payment_model.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/usage_provider.dart';
+import '../../blocs/usage/usage_bloc.dart';
+import '../../../presentation/screens/auth/bloc/auth_bloc.dart';
+import '../../../presentation/screens/auth/bloc/auth_state.dart';
+import '../../blocs/usage/usage_state.dart';
+import '../../blocs/usage/usage_event.dart';
 import '../../../data/datasources/remote/midtrans_service.dart';
 import '../../../services/pb_client.dart';
 import 'payment_webview_screen.dart';
@@ -33,8 +36,8 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final usageProvider = context.watch<UsageProvider>();
-    final isPremium = usageProvider.isPremium;
+    final usageState = context.watch<UsageBloc>().state;
+    final isPremium = usageState is UsageLoaded ? usageState.isPremium : false;
     final isIOS = Platform.isIOS;
 
     if (isPremium) {
@@ -520,8 +523,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
         _loadingMessage = 'Mengaktifkan Premium...';
       });
 
-      final usageProvider = context.read<UsageProvider>();
-      await usageProvider.upgradeToPremium();
+      context.read<UsageBloc>().add(const UsageUpgradeToPremium());
 
       if (mounted) {
         setState(() => _isLoading = false);
@@ -560,10 +562,9 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
       final orderId = midtrans.generateOrderId();
       debugPrint('[Payment] Order ID: $orderId');
 
-      final authProv = context.read<AuthProvider>();
-
-      final name = authProv.userName;
-      final email = authProv.userEmail;
+      final authState = context.read<AuthBloc>().state;
+      final name = authState is AuthAuthenticated ? authState.profile.name : '';
+      final email = authState is AuthAuthenticated ? authState.profile.email : '';
 
       final token = await midtrans.createSnapToken(
         orderId: orderId,

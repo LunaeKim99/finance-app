@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/currencies.dart';
 import '../../../data/models/transaction_model.dart';
@@ -10,8 +9,11 @@ import '../../../data/models/transaction_type.dart';
 import '../../blocs/category/category_bloc.dart';
 import '../../blocs/category/category_event.dart';
 import '../../blocs/category/category_state.dart';
-import '../../providers/transaction_provider.dart';
-import '../../providers/usage_provider.dart';
+import '../../blocs/usage/usage_bloc.dart';
+import '../../blocs/usage/usage_state.dart';
+import '../../blocs/usage/usage_event.dart';
+import 'bloc/transaction_bloc.dart';
+import 'bloc/transaction_event.dart';
 import '../../../data/datasources/remote/receipt_scan_service.dart';
 import '../receipt/receipt_review_screen.dart';
 
@@ -867,11 +869,10 @@ color: _transactionType == TransactionType.expense
   }
 
   Widget _buildScanReceiptButton() {
-    final usageProvider = context.read<UsageProvider>();
     final isIOS = Platform.isIOS;
 
     return OutlinedButton.icon(
-      onPressed: () => _scanReceipt(usageProvider),
+      onPressed: _scanReceipt,
       icon: Icon(
         isIOS ? CupertinoIcons.camera : Icons.document_scanner_outlined,
         size: 18,
@@ -888,8 +889,9 @@ color: _transactionType == TransactionType.expense
     );
   }
 
-  Future<void> _scanReceipt(UsageProvider usageProvider) async {
-    if (!usageProvider.canUseAiPhoto()) {
+  Future<void> _scanReceipt() async {
+    final usageState = context.read<UsageBloc>().state;
+    if (!(usageState is UsageLoaded && usageState.canUseAiPhoto())) {
       if (Platform.isIOS) {
         showCupertinoDialog(
           context: context,
@@ -944,7 +946,7 @@ color: _transactionType == TransactionType.expense
 
     try {
       final result = await scanner.scanReceipt(image);
-      await usageProvider.incrementAiPhoto();
+      context.read<UsageBloc>().add(const UsageIncrementAiPhoto());
 
       if (mounted) {
         Navigator.pop(context);
@@ -1027,9 +1029,8 @@ color: _transactionType == TransactionType.expense
     );
 
     if (confirm == true && mounted) {
-      final provider = context.read<TransactionProvider>();
-      await provider.deleteTransaction(
-        widget.existingTransaction!.id!,
+      context.read<TransactionBloc>().add(
+        TransactionDeleteRequested(id: widget.existingTransaction!.id!),
       );
       if (mounted) Navigator.pop(context);
     }
@@ -1065,19 +1066,17 @@ color: _transactionType == TransactionType.expense
       exchangeRateToIdr: AppCurrencies.defaultRates[_selectedCurrency] ?? 1.0,
     );
 
-    final provider = context.read<TransactionProvider>();
-    bool success;
     if (_isEditMode) {
-      success = await provider.updateTransaction(transaction);
+      context.read<TransactionBloc>().add(TransactionUpdateRequested(transaction: transaction));
     } else {
-      success = await provider.addTransaction(transaction);
+      context.read<TransactionBloc>().add(TransactionAddRequested(transaction: transaction));
     }
 
     setState(() {
       _isLoading = false;
     });
 
-    if (success && mounted) {
+    if (mounted) {
       if (Platform.isIOS) {
         _showAlertIOS(
           'Berhasil',

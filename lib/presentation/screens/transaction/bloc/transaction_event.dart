@@ -38,3 +38,12 @@ class TransactionDeleteRequested extends TransactionEvent {
   @override
   List<Object?> get props => [id];
 }
+
+class TransactionMarkSynced extends TransactionEvent {
+  final String id;
+
+  const TransactionMarkSynced({required this.id});
+
+  @override
+  List<Object?> get props => [id];
+}

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/budget_model.dart';
-import '../../providers/budget_provider.dart';
-import '../../providers/transaction_provider.dart';
 import '../../../core/error/error_handler.dart';
+import '../transaction/bloc/transaction_bloc.dart';
+import '../transaction/bloc/transaction_state.dart';
+import 'bloc/budget_bloc.dart';
+import 'bloc/budget_event.dart';
+import 'bloc/budget_state.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -18,35 +21,63 @@ class BudgetScreenState extends State<BudgetScreen> {
   int _selectedYear = DateTime.now().year;
 
   @override
-  Widget build(BuildContext context) {
-    final budgetProvider = context.watch<BudgetProvider>();
-    final txProvider = context.watch<TransactionProvider>();
-    final categoryTotals = txProvider.getCategoryTotals(_selectedMonth, _selectedYear);
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<BudgetBloc>().add(BudgetLoadRequested(
+        month: _selectedMonth,
+        year: _selectedYear,
+      ));
+    });
+  }
 
+  void _reloadBudgets() {
+    context.read<BudgetBloc>().add(BudgetLoadRequested(
+      month: _selectedMonth,
+      year: _selectedYear,
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Budget Bulanan'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.calendar_month),
-            onPressed: _selectMonth,
-          ),
-        ],
-      ),
-      body: budgetProvider.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _buildMonthSelector(),
-                const SizedBox(height: 16),
-                _buildCategoryBudgetList(currencyFormat, categoryTotals, budgetProvider),
-                const SizedBox(height: 16),
-                _buildNoBudgetCard(categoryTotals, budgetProvider),
-              ],
-            ),
+    return BlocBuilder<TransactionBloc, TransactionState>(
+      builder: (context, txState) {
+        final categoryTotals = txState is TransactionLoaded
+            ? txState.getCategoryTotals(_selectedMonth, _selectedYear)
+            : <String, double>{};
+        return BlocBuilder<BudgetBloc, BudgetState>(
+          builder: (context, budgetState) {
+            final isLoading = budgetState is BudgetLoading || budgetState is BudgetInitial;
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text('Budget Bulanan'),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.calendar_month),
+                    onPressed: _selectMonth,
+                  ),
+                ],
+              ),
+              body: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        _buildMonthSelector(),
+                        const SizedBox(height: 16),
+                        if (budgetState is BudgetLoaded) ...[
+                          _buildCategoryBudgetList(currencyFormat, categoryTotals, budgetState),
+                          const SizedBox(height: 16),
+                          _buildNoBudgetCard(categoryTotals, budgetState),
+                        ],
+                      ],
+                    ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -73,6 +104,7 @@ class BudgetScreenState extends State<BudgetScreen> {
                     _selectedMonth--;
                   }
                 });
+                _reloadBudgets();
               },
             ),
             Text(
@@ -92,6 +124,7 @@ class BudgetScreenState extends State<BudgetScreen> {
                       _selectedMonth++;
                     }
                   });
+                  _reloadBudgets();
                 }
               },
             ),
@@ -101,8 +134,8 @@ class BudgetScreenState extends State<BudgetScreen> {
     );
   }
 
-  Widget _buildCategoryBudgetList(NumberFormat currencyFormat, Map<String, double> categoryTotals, BudgetProvider provider) {
-    final budgets = provider.getBudgetsForMonth(_selectedMonth, _selectedYear);
+  Widget _buildCategoryBudgetList(NumberFormat currencyFormat, Map<String, double> categoryTotals, BudgetLoaded state) {
+    final budgets = state.getBudgetsForMonth(_selectedMonth, _selectedYear);
     
     if (budgets.isEmpty) {
       return const SizedBox.shrink();
@@ -206,7 +239,7 @@ class BudgetScreenState extends State<BudgetScreen> {
     );
   }
 
-  Widget _buildNoBudgetCard(Map<String, double> categoryTotals, BudgetProvider provider) {
+  Widget _buildNoBudgetCard(Map<String, double> categoryTotals, BudgetLoaded state) {
     if (categoryTotals.isEmpty) {
       return Card(
         child: Padding(
@@ -233,7 +266,7 @@ class BudgetScreenState extends State<BudgetScreen> {
         Text('Kategori Tanpa Budget', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         ...categoryTotals.entries.where((e) {
-          final budget = provider.getBudgetForCategory(e.key, _selectedMonth, _selectedYear);
+          final budget = state.getBudgetForCategory(e.key);
           return budget == null;
         }).map((entry) {
           final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
@@ -355,21 +388,18 @@ class BudgetScreenState extends State<BudgetScreen> {
                 return;
               }
 
-              final provider = context.read<BudgetProvider>();
-              final success = await provider.setBudget(
+              context.read<BudgetBloc>().add(BudgetSetRequested(
                 id: budget?.id,
                 name: '$category Budget',
                 category: category,
                 amount: amount,
                 month: _selectedMonth,
                 year: _selectedYear,
-              );
+              ));
 
               if (context.mounted) {
                 Navigator.pop(context);
-                if (success) {
-                  ErrorHandler.showSuccess(context, 'Budget berhasil disimpan');
-                }
+                ErrorHandler.showSuccess(context, 'Budget berhasil disimpan');
               }
             },
             child: const Text('Simpan'),
@@ -400,11 +430,8 @@ class BudgetScreenState extends State<BudgetScreen> {
     );
 
     if (confirmed == true && mounted) {
-      final provider = context.read<BudgetProvider>();
-      final success = await provider.deleteBudget(id);
-      if (success && mounted) {
-        ErrorHandler.showSuccess(context, 'Budget berhasil dihapus');
-      }
+      context.read<BudgetBloc>().add(BudgetDeleteRequested(id: id));
+      ErrorHandler.showSuccess(context, 'Budget berhasil dihapus');
     }
   }
 }

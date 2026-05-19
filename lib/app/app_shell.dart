@@ -2,9 +2,9 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:provider/provider.dart';
-import '../presentation/providers/transaction_provider.dart';
-import '../presentation/providers/budget_provider.dart';
+import '../presentation/screens/transaction/bloc/transaction_bloc.dart';
+import '../presentation/screens/budget/bloc/budget_bloc.dart';
+import '../presentation/screens/budget/bloc/budget_event.dart';
 import '../presentation/screens/dashboard/dashboard_screen.dart';
 import '../presentation/screens/transaction/history_screen.dart';
 import '../presentation/screens/transaction/add_transaction_screen.dart';
@@ -12,8 +12,6 @@ import '../presentation/screens/report/report_screen.dart';
 import '../presentation/screens/ai_chat/bloc/ai_chat_bloc.dart';
 import '../presentation/screens/ai_chat/ai_chat_screen.dart';
 import '../presentation/screens/budget/budget_screen.dart';
-import '../core/error/error_handler.dart';
-
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
 
@@ -50,17 +48,11 @@ class _AppShellState extends State<AppShell> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final provider = context.read<TransactionProvider>();
-    provider.onError = (message) {
-      ErrorHandler.showError(context, message);
-    };
-    provider.onSuccess = (message) {
-      ErrorHandler.showSuccess(context, message);
-    };
     if (!_dataLoaded) {
       _dataLoaded = true;
-      provider.loadTransactions();
-      context.read<BudgetProvider>().loadBudgets();
+      context.read<TransactionBloc>().ensureInitialized();
+      final now = DateTime.now();
+      context.read<BudgetBloc>().add(BudgetLoadRequested(month: now.month, year: now.year));
     }
   }
 

@@ -3,12 +3,15 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-import '../../providers/transaction_provider.dart';
-import '../../providers/usage_provider.dart';
 import '../../../data/datasources/remote/export_service.dart';
+import '../../../data/models/transaction_model.dart';
+import '../../blocs/usage/usage_bloc.dart';
+import '../../blocs/usage/usage_state.dart';
+import '../transaction/bloc/transaction_bloc.dart';
+import '../transaction/bloc/transaction_state.dart';
 import '../upgrade/upgrade_screen.dart';
 import 'import_screen.dart';
 
@@ -55,15 +58,24 @@ class _ExportScreenState extends State<ExportScreen> {
   }
 
   Widget _buildContent() {
-    final isIOS = Platform.isIOS;
-    final usageProvider = context.watch<UsageProvider>();
-    final isPremium = usageProvider.isPremium;
-    final txProvider = context.watch<TransactionProvider>();
-    final allTx = txProvider.allTransactions;
+    return BlocBuilder<UsageBloc, UsageState>(
+      builder: (context, usageState) {
+        final isPremium = usageState is UsageLoaded ? usageState.isPremium : false;
+        return BlocBuilder<TransactionBloc, TransactionState>(
+          builder: (context, txState) {
+            final allTx = txState is TransactionLoaded ? txState.transactions : <TransactionModel>[];
+            final filteredCount = allTx
+                .where((t) => t.date.month == _selectedMonth && t.date.year == _selectedYear)
+                .length;
+            return _buildExportContent(isPremium, filteredCount);
+          },
+        );
+      },
+    );
+  }
 
-    final filteredCount = allTx
-        .where((t) => t.date.month == _selectedMonth && t.date.year == _selectedYear)
-        .length;
+  Widget _buildExportContent(bool isPremium, int filteredCount) {
+    final isIOS = Platform.isIOS;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -577,10 +589,11 @@ class _ExportScreenState extends State<ExportScreen> {
     if (isIOS) {
       setState(() => _loadingType = 'pdf');
       try {
-        final txProvider = context.read<TransactionProvider>();
+        final txState = context.read<TransactionBloc>().state;
+        if (txState is! TransactionLoaded) return;
         final exportService = ExportService();
         final file = await exportService.exportToPdf(
-          transactions: txProvider.allTransactions,
+          transactions: txState.transactions,
           month: _selectedMonth,
           year: _selectedYear,
         );
@@ -600,10 +613,11 @@ class _ExportScreenState extends State<ExportScreen> {
     setState(() => _loadingType = 'pdf');
 
     try {
-      final txProvider = context.read<TransactionProvider>();
+      final txState = context.read<TransactionBloc>().state;
+      if (txState is! TransactionLoaded) return;
       final exportService = ExportService();
       final file = await exportService.exportToPdf(
-        transactions: txProvider.allTransactions,
+        transactions: txState.transactions,
         month: _selectedMonth,
         year: _selectedYear,
       );
@@ -633,10 +647,11 @@ class _ExportScreenState extends State<ExportScreen> {
     if (isIOS) {
       setState(() => _loadingType = 'excel');
       try {
-        final txProvider = context.read<TransactionProvider>();
+        final txState = context.read<TransactionBloc>().state;
+        if (txState is! TransactionLoaded) return;
         final exportService = ExportService();
         final file = await exportService.exportToExcel(
-          transactions: txProvider.allTransactions,
+          transactions: txState.transactions,
           month: _selectedMonth,
           year: _selectedYear,
         );
@@ -656,10 +671,11 @@ class _ExportScreenState extends State<ExportScreen> {
     setState(() => _loadingType = 'excel');
 
     try {
-      final txProvider = context.read<TransactionProvider>();
+      final txState = context.read<TransactionBloc>().state;
+      if (txState is! TransactionLoaded) return;
       final exportService = ExportService();
       final file = await exportService.exportToExcel(
-        transactions: txProvider.allTransactions,
+        transactions: txState.transactions,
         month: _selectedMonth,
         year: _selectedYear,
       );

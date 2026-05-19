@@ -2,11 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../../data/models/payment_model.dart';
-import '../../providers/usage_provider.dart';
+import '../../blocs/usage/usage_bloc.dart';
+import '../../blocs/usage/usage_event.dart';
 import '../../../data/datasources/remote/midtrans_service.dart';
 import '../../../services/pb_client.dart';
 
@@ -159,8 +160,7 @@ class _PaymentWebviewScreenState extends State<PaymentWebviewScreen> {
     await _savePremiumTransaction(midtransData);
 
     if (mounted) {
-      final usageProvider = context.read<UsageProvider>();
-      await usageProvider.upgradeToPremium();
+      context.read<UsageBloc>().add(const UsageUpgradeToPremium());
 
       if (mounted) {
         widget.onSuccess?.call();

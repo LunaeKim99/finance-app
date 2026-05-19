@@ -4,13 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import '../../../core/config/app_config.dart';
 import '../../../data/models/transaction_model.dart';
-import '../../providers/budget_provider.dart';
-import '../../providers/transaction_provider.dart';
-import '../../providers/theme_provider.dart';
-import '../../providers/usage_provider.dart';
+import '../transaction/bloc/transaction_bloc.dart';
+import '../transaction/bloc/transaction_state.dart';
+import '../transaction/bloc/transaction_event.dart';
+import '../budget/bloc/budget_bloc.dart';
+import '../budget/bloc/budget_state.dart';
+import '../budget/bloc/budget_event.dart';
+import '../../blocs/usage/usage_bloc.dart';
+import '../../blocs/usage/usage_state.dart';
+import '../../blocs/usage/usage_event.dart';
 import '../../../data/datasources/remote/ai_service.dart';
 import '../auth/bloc/auth_bloc.dart';
 import '../auth/bloc/auth_event.dart';
@@ -20,6 +24,8 @@ import '../transaction/history_screen.dart';
 import '../upgrade/upgrade_screen.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../blocs/settings/settings_bloc.dart';
+import '../../blocs/settings/settings_event.dart';
+import '../../blocs/settings/settings_state.dart';
 import '../settings/settings_screen.dart';
 import '../../widgets/budget/budget_progress_card.dart';
 import '../../widgets/transaction/transaction_card.dart';
@@ -32,23 +38,41 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      context.read<TransactionBloc>().add(const TransactionLoadRequested());
+      final now = DateTime.now();
+      context.read<BudgetBloc>().add(
+        BudgetLoadRequested(month: now.month, year: now.year),
+      );
+      context.read<UsageBloc>().add(const UsageLoadRequested());
+    });
+  }
+
   void _refreshRecommendation() {
     setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TransactionProvider>(
-      builder: (context, provider, child) {
+    return BlocBuilder<TransactionBloc, TransactionState>(
+      builder: (context, state) {
+        if (state is! TransactionLoaded) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator.adaptive()),
+          );
+        }
         final currencyFormat = NumberFormat.currency(
           locale: 'id_ID',
           symbol: 'Rp ',
           decimalDigits: 0,
         );
 
-        final balance = provider.totalBalance;
-        final income = provider.monthlyIncome;
-        final expense = provider.monthlyExpense;
+        final balance = state.totalBalance;
+        final income = state.monthlyIncome;
+        final expense = state.monthlyExpense;
 
         final isIOS = Platform.isIOS;
         final monthFormat = DateFormat('MMMM', 'id_ID');
@@ -56,14 +80,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final isDark = Theme.of(context).brightness == Brightness.dark;
 
         Widget body = RefreshIndicator(
-          onRefresh: () => provider.loadTransactions(),
+          onRefresh: () async {
+              context.read<TransactionBloc>().add(const TransactionLoadRequested());
+            },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (provider.isUsingRemoteStorage)
+                if (state.isOnline)
                   _buildOnlineIndicator()
                 else
                   _buildOfflineBanner(isIOS),
@@ -243,11 +269,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                Consumer<BudgetProvider>(
-                  builder: (context, budgetProvider, _) {
+                BlocBuilder<BudgetBloc, BudgetState>(
+                  builder: (context, budgetState) {
+                    if (budgetState is! BudgetLoaded) {
+                      return const SizedBox.shrink();
+                    }
                     final currentMonth = DateTime.now().month;
                     final currentYear = DateTime.now().year;
-                    final budgets = budgetProvider.getBudgetsForMonth(currentMonth, currentYear);
+                    final budgets = budgetState.getBudgetsForMonth(currentMonth, currentYear);
 
                     if (budgets.isEmpty) {
                       return Padding(
@@ -266,8 +295,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       );
                     }
 
-                    final txProvider = context.read<TransactionProvider>();
-                    final categoryTotals = txProvider.getCategoryTotals(currentMonth, currentYear);
+                    final categoryTotals = state.getCategoryTotals(currentMonth, currentYear);
                     final sortedBudgets = budgets.map((b) {
                       final spent = categoryTotals[b.category] ?? 0.0;
                       return MapEntry(b, spent);
@@ -367,17 +395,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                if (provider.isLoading)
-                  const Center(child: CircularProgressIndicator.adaptive())
-                else if (provider.allTransactions.isEmpty)
+                if (state.transactions.isEmpty)
                   _buildEmptyState(context, isIOS)
                 else
                   ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: provider.getRecentTransactions(5).length,
+                    itemCount: state.getRecentTransactions(5).length,
                     itemBuilder: (context, index) {
-                      final transactions = provider.getRecentTransactions(5);
+                      final transactions = state.getRecentTransactions(5);
                       return TransactionCard(
                         transaction: transactions[index],
                         onTap: () =>
@@ -455,9 +481,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                 ),
-              Consumer<UsageProvider>(
-                builder: (context, usageProvider, _) {
-                  final isPremium = usageProvider.isPremium;
+              BlocBuilder<UsageBloc, UsageState>(
+                builder: (context, usageState) {
+                  final isPremium = usageState is UsageLoaded ? usageState.isPremium : false;
                   return GestureDetector(
                     onTap: () {
                       if (!isPremium) {
@@ -546,17 +572,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   );
                 },
               ),
-              Consumer<ThemeProvider>(
-                builder: (context, themeProvider, _) => IconButton(
-                  icon: Icon(
-                    themeProvider.isDarkMode
-                        ? Icons.light_mode_outlined
-                        : Icons.dark_mode_outlined,
-                    size: 22,
-                  ),
-                  onPressed: themeProvider.toggleTheme,
-                  tooltip: themeProvider.isDarkMode ? 'Mode Terang' : 'Mode Gelap',
-                ),
+              BlocBuilder<SettingsBloc, SettingsState>(
+                builder: (context, settingsState) {
+                  final isDark = settingsState is SettingsLoaded && settingsState.settings.isDarkMode;
+                  return IconButton(
+                    icon: Icon(
+                      isDark
+                          ? Icons.light_mode_outlined
+                          : Icons.dark_mode_outlined,
+                      size: 22,
+                    ),
+                    onPressed: () => context.read<SettingsBloc>().add(const SettingsToggleDarkMode()),
+                    tooltip: isDark ? 'Mode Terang' : 'Mode Gelap',
+                  );
+                },
               ),
               IconButton(
                 icon: const Icon(Icons.logout, size: 22),
@@ -747,16 +776,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildBudgetRecommendation() {
-    final usageProvider = Provider.of<UsageProvider>(context, listen: false);
-    final isPremium = usageProvider.isPremium;
-    final txProvider = Provider.of<TransactionProvider>(context, listen: false);
+    final usageState = context.read<UsageBloc>().state;
+    final isPremium = usageState is UsageLoaded ? usageState.isPremium : false;
+    final txState = context.read<TransactionBloc>().state;
+    if (txState is! TransactionLoaded) return const SizedBox.shrink();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final month = DateTime.now().month;
     final year = DateTime.now().year;
-    final income = txProvider.getMonthlyIncomeByMonth(month, year);
-    final expense = txProvider.getMonthlyExpenseByMonth(month, year);
-    final categoryTotals = txProvider.getCategoryTotals(month, year);
+    final income = txState.getMonthlyIncomeByMonth(month, year);
+    final expense = txState.getMonthlyExpenseByMonth(month, year);
+    final categoryTotals = txState.getCategoryTotals(month, year);
 
     if (!isPremium) {
       return Container(

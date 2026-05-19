@@ -2,14 +2,16 @@ import 'dart:io';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
-import '../../providers/transaction_provider.dart';
-import '../../providers/usage_provider.dart';
 import '../../../data/datasources/remote/ai_service.dart';
 import '../export_import/export_screen.dart';
+import '../transaction/bloc/transaction_bloc.dart';
+import '../transaction/bloc/transaction_state.dart';
 import '../upgrade/upgrade_screen.dart';
+import '../../blocs/usage/usage_bloc.dart';
+import '../../blocs/usage/usage_state.dart';
 import '../../../core/theme/app_theme.dart';
 
 class ReportScreen extends StatefulWidget {
@@ -27,15 +29,16 @@ class _ReportScreenState extends State<ReportScreen> {
   Widget build(BuildContext context) {
     final isIOS = Platform.isIOS;
 
-    return Consumer<TransactionProvider>(
-      builder: (context, provider, child) {
+    return BlocBuilder<TransactionBloc, TransactionState>(
+      builder: (context, state) {
+        if (state is! TransactionLoaded) return const SizedBox.shrink();
         final month = _selectedMonth.month;
         final year = _selectedMonth.year;
 
-        final income = provider.getMonthlyIncomeByMonth(month, year);
-        final expense = provider.getMonthlyExpenseByMonth(month, year);
+        final income = state.getMonthlyIncomeByMonth(month, year);
+        final expense = state.getMonthlyExpenseByMonth(month, year);
         final balance = income - expense;
-        final categoryTotals = provider.getCategoryTotals(month, year);
+        final categoryTotals = state.getCategoryTotals(month, year);
 
         final currencyFormat = NumberFormat.currency(
           locale: 'id_ID',
@@ -52,13 +55,13 @@ class _ReportScreenState extends State<ReportScreen> {
                 const SizedBox(height: 24),
                 _buildSummaryCards(income, expense, balance, currencyFormat),
                 const SizedBox(height: 24),
-                _buildWeeklySummary(provider),
+                _buildWeeklySummary(state),
                 const SizedBox(height: 24),
-                _buildMonthlySummary(provider),
+                _buildMonthlySummary(state),
                 const SizedBox(height: 24),
                 _buildPieChart(categoryTotals, currencyFormat),
                 const SizedBox(height: 24),
-                _buildBarChart(provider),
+                _buildBarChart(state),
               ],
             ),
           ),
@@ -448,15 +451,15 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  Widget _buildBarChart(TransactionProvider provider) {
+  Widget _buildBarChart(TransactionLoaded state) {
     final now = DateTime.now();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final List<BarChartGroupData> barGroups = [];
 
     for (int i = 5; i >= 0; i--) {
       final month = DateTime(now.year, now.month - i);
-      final income = provider.getMonthlyIncomeByMonth(month.month, month.year);
-      final expense = provider.getMonthlyExpenseByMonth(month.month, month.year);
+      final income = state.getMonthlyIncomeByMonth(month.month, month.year);
+      final expense = state.getMonthlyExpenseByMonth(month.month, month.year);
 
       barGroups.add(
         BarChartGroupData(
@@ -573,9 +576,9 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  Widget _buildWeeklySummary(TransactionProvider provider) {
-    final usageProvider = context.watch<UsageProvider>();
-    final isPremium = usageProvider.isPremium;
+  Widget _buildWeeklySummary(TransactionLoaded state) {
+    final usageState = context.watch<UsageBloc>().state;
+    final isPremium = usageState is UsageLoaded ? usageState.isPremium : false;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (!isPremium) {
@@ -639,7 +642,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
     return FutureBuilder<String>(
       future: AiRecommendationService().generateWeeklySummary(
-        provider.allTransactions,
+        state.transactions,
       ),
       builder: (context, snapshot) {
         return Container(
@@ -689,9 +692,9 @@ class _ReportScreenState extends State<ReportScreen> {
     );
 }
 
-  Widget _buildMonthlySummary(TransactionProvider provider) {
-    final usageProvider = context.watch<UsageProvider>();
-    final isPremium = usageProvider.isPremium;
+  Widget _buildMonthlySummary(TransactionLoaded state) {
+    final usageState = context.watch<UsageBloc>().state;
+    final isPremium = usageState is UsageLoaded ? usageState.isPremium : false;
     final isIOS = Platform.isIOS;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -801,7 +804,7 @@ class _ReportScreenState extends State<ReportScreen> {
                     'monthly_${_selectedMonth.month}_${_selectedMonth.year}',
                   ),
                   future: AiRecommendationService().generateMonthlySummary(
-                    provider.allTransactions
+                    state.transactions
                         .where((t) =>
                             t.date.month == _selectedMonth.month &&
                             t.date.year == _selectedMonth.year)

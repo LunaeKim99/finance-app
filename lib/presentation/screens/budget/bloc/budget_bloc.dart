@@ -6,10 +6,12 @@ import '../data/budget_datasource.dart';
 import '../../../../data/datasources/smart_db_helper.dart';
 import '../../../../data/datasources/pb_helper.dart';
 import '../../../../data/datasources/local/sqlite_helper.dart';
+import '../../../../data/models/budget_model.dart';
 
 class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
   late final BudgetDatasource _datasource;
   late final SmartDbHelper _dbHelper;
+  bool _initialized = false;
 
   BudgetBloc() : super(const BudgetInitial()) {
     _dbHelper = SmartDbHelper(remote: PbHelper(), local: SqliteHelper());
@@ -18,9 +20,12 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
     on<BudgetAddRequested>(_onAddBudget);
     on<BudgetUpdateRequested>(_onUpdateBudget);
     on<BudgetDeleteRequested>(_onDeleteBudget);
+    on<BudgetSetRequested>(_onSetBudget);
   }
 
-  Future<void> initialize() async {
+  Future<void> ensureInitialized() async {
+    if (_initialized) return;
+    _initialized = true;
     await _dbHelper.initialize();
   }
 
@@ -87,6 +92,45 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
     } catch (e) {
       debugPrint('[BudgetBloc] Delete error: $e');
       emit(const BudgetError(message: 'Gagal menghapus budget'));
+    }
+  }
+
+  Future<void> _onSetBudget(
+    BudgetSetRequested event,
+    Emitter<BudgetState> emit,
+  ) async {
+    try {
+      if (event.id != null && event.id!.isNotEmpty) {
+        final updated = BudgetModel(
+          id: event.id,
+          name: event.name,
+          amount: event.amount,
+          category: event.category,
+          month: event.month,
+          year: event.year,
+          note: event.note,
+          currency: 'IDR',
+        );
+        await _datasource.update(event.id!, updated);
+      } else {
+        final budget = BudgetModel(
+          name: event.name,
+          amount: event.amount,
+          category: event.category,
+          month: event.month,
+          year: event.year,
+          note: event.note,
+          currency: 'IDR',
+        );
+        await _datasource.create(budget);
+      }
+      final current = state;
+      if (current is BudgetLoaded) {
+        add(BudgetLoadRequested(month: current.month, year: current.year));
+      }
+    } catch (e) {
+      debugPrint('[BudgetBloc] Set budget error: $e');
+      emit(const BudgetError(message: 'Gagal menyimpan budget'));
     }
   }
 }

@@ -3,18 +3,17 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:provider/provider.dart';
 import '../data/repositories/auth_repository_impl.dart';
 import '../data/repositories/settings_repository_impl.dart';
 import '../data/repositories/category_repository_impl.dart';
-import '../presentation/providers/transaction_provider.dart';
-import '../presentation/providers/theme_provider.dart';
-import '../presentation/providers/usage_provider.dart';
-import '../presentation/providers/budget_provider.dart';
 import '../presentation/blocs/settings/settings_bloc.dart';
+import '../presentation/blocs/settings/settings_state.dart';
 import '../presentation/blocs/category/category_bloc.dart';
+import '../presentation/blocs/usage/usage_bloc.dart';
 import '../presentation/screens/auth/bloc/auth_bloc.dart';
 import '../presentation/screens/auth/bloc/auth_state.dart';
+import '../presentation/screens/transaction/bloc/transaction_bloc.dart';
+import '../presentation/screens/budget/bloc/budget_bloc.dart';
 import '../presentation/screens/auth/splash_screen.dart';
 import '../presentation/screens/auth/login_screen.dart';
 
@@ -25,107 +24,54 @@ class FinanceApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
+    return MultiBlocProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) {
-            final provider = TransactionProvider();
-            provider.initialize().then((_) => provider.loadTransactions());
-            return provider;
-          },
+        BlocProvider<AuthBloc>(
+          create: (_) => AuthBloc(
+            authRepository: AuthRepositoryImpl(),
+          ),
         ),
-        ChangeNotifierProvider(
-          create: (_) {
-            final provider = ThemeProvider();
-            provider.initialize();
-            return provider;
-          },
+        BlocProvider<SettingsBloc>(
+          create: (_) => SettingsBloc(
+            settingsRepository: SettingsRepositoryImpl(),
+          ),
         ),
-        ChangeNotifierProvider(
-          create: (_) {
-            final provider = UsageProvider();
-            provider.initialize();
-            return provider;
-          },
+        BlocProvider<TransactionBloc>(
+          create: (_) => TransactionBloc(),
         ),
-        ChangeNotifierProvider(
-          create: (_) {
-            final provider = BudgetProvider();
-            provider.initialize();
-            return provider;
-          },
+        BlocProvider<BudgetBloc>(
+          create: (_) => BudgetBloc(),
+        ),
+        BlocProvider<UsageBloc>(
+          create: (_) => UsageBloc(),
+        ),
+        BlocProvider<CategoryBloc>(
+          create: (_) => CategoryBloc(
+            repository: CategoryRepositoryImpl(),
+          ),
         ),
       ],
-      child: MultiBlocProvider(
-        providers: [
-          BlocProvider<AuthBloc>(
-            create: (_) => AuthBloc(
-              authRepository: AuthRepositoryImpl(),
-            ),
-          ),
-          BlocProvider<SettingsBloc>(
-            create: (_) => SettingsBloc(
-              settingsRepository: SettingsRepositoryImpl(),
-            ),
-          ),
-          BlocProvider<CategoryBloc>(
-            create: (_) => CategoryBloc(
-              repository: CategoryRepositoryImpl(),
-            ),
-          ),
-        ],
-        child: BlocListener<AuthBloc, AuthState>(
-          listener: (context, state) {
-            if (state is AuthUnauthenticated) {
-              appNavigatorKey.currentState?.pushNamedAndRemoveUntil(
-                '/login',
-                (route) => false,
-              );
-            }
-          },
-          child: Consumer<ThemeProvider>(
-            builder: (context, themeProvider, child) {
-              if (Platform.isIOS) {
-                return CupertinoApp(
-                  debugShowCheckedModeBanner: false,
-                  theme: CupertinoThemeData(
-                    primaryColor: const Color(0xFF4CAF50),
-                    brightness: themeProvider.isDarkMode
-                        ? Brightness.dark
-                        : Brightness.light,
-                  ),
-                  locale: const Locale('id', 'ID'),
-                  localizationsDelegates: const [
-                    GlobalMaterialLocalizations.delegate,
-                    GlobalWidgetsLocalizations.delegate,
-                    GlobalCupertinoLocalizations.delegate,
-                  ],
-                  supportedLocales: const [Locale('id', 'ID')],
-                  home: const SplashScreen(),
-                );
-              }
+      child: BlocListener<AuthBloc, AuthState>(
+        listener: (context, state) {
+          if (state is AuthUnauthenticated) {
+            appNavigatorKey.currentState?.pushNamedAndRemoveUntil(
+              '/login',
+              (route) => false,
+            );
+          }
+        },
+        child: BlocBuilder<SettingsBloc, SettingsState>(
+          builder: (context, settingsState) {
+            final isDark = settingsState is SettingsLoaded
+                ? settingsState.settings.isDarkMode
+                : false;
 
-              return MaterialApp(
-                navigatorKey: appNavigatorKey,
+            if (Platform.isIOS) {
+              return CupertinoApp(
                 debugShowCheckedModeBanner: false,
-                title: 'UWANGKU',
-                themeMode: themeProvider.themeMode,
-                theme: ThemeData(
-                  useMaterial3: true,
-                  colorScheme: ColorScheme.fromSeed(
-                    seedColor: const Color(0xFF4CAF50),
-                    brightness: Brightness.light,
-                  ),
-                  scaffoldBackgroundColor: Colors.white,
-                  platform: TargetPlatform.android,
-                ),
-                darkTheme: ThemeData(
-                  useMaterial3: true,
-                  colorScheme: ColorScheme.fromSeed(
-                    seedColor: const Color(0xFF4CAF50),
-                    brightness: Brightness.dark,
-                  ),
-                  scaffoldBackgroundColor: const Color(0xFF121212),
+                theme: CupertinoThemeData(
+                  primaryColor: const Color(0xFF4CAF50),
+                  brightness: isDark ? Brightness.dark : Brightness.light,
                 ),
                 locale: const Locale('id', 'ID'),
                 localizationsDelegates: const [
@@ -135,12 +81,44 @@ class FinanceApp extends StatelessWidget {
                 ],
                 supportedLocales: const [Locale('id', 'ID')],
                 home: const SplashScreen(),
-                routes: {
-                  '/login': (context) => const LoginScreen(),
-                },
               );
-            },
-          ),
+            }
+
+            return MaterialApp(
+              navigatorKey: appNavigatorKey,
+              debugShowCheckedModeBanner: false,
+              title: 'UWANGKU',
+              themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+              theme: ThemeData(
+                useMaterial3: true,
+                colorScheme: ColorScheme.fromSeed(
+                  seedColor: const Color(0xFF4CAF50),
+                  brightness: Brightness.light,
+                ),
+                scaffoldBackgroundColor: Colors.white,
+                platform: TargetPlatform.android,
+              ),
+              darkTheme: ThemeData(
+                useMaterial3: true,
+                colorScheme: ColorScheme.fromSeed(
+                  seedColor: const Color(0xFF4CAF50),
+                  brightness: Brightness.dark,
+                ),
+                scaffoldBackgroundColor: const Color(0xFF121212),
+              ),
+              locale: const Locale('id', 'ID'),
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [Locale('id', 'ID')],
+              home: const SplashScreen(),
+              routes: {
+                '/login': (context) => const LoginScreen(),
+              },
+            );
+          },
         ),
       ),
     );

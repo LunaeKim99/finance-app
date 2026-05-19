@@ -44,3 +44,26 @@ class BudgetDeleteRequested extends BudgetEvent {
   @override
   List<Object?> get props => [id];
 }
+
+class BudgetSetRequested extends BudgetEvent {
+  final String? id;
+  final String name;
+  final String category;
+  final double amount;
+  final int month;
+  final int year;
+  final String note;
+
+  const BudgetSetRequested({
+    this.id,
+    required this.name,
+    required this.category,
+    required this.amount,
+    required this.month,
+    required this.year,
+    this.note = '',
+  });
+
+  @override
+  List<Object?> get props => [id, name, category, amount, month, year, note];
+}

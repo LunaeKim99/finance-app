@@ -2,14 +2,16 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../../data/models/receipt_scan_result.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction_type.dart';
-import '../../providers/transaction_provider.dart';
-import '../../providers/usage_provider.dart';
+import '../../blocs/usage/usage_bloc.dart';
+import '../../blocs/usage/usage_event.dart';
+import '../transaction/bloc/transaction_bloc.dart';
+import '../transaction/bloc/transaction_event.dart';
 
 class ReceiptReviewScreen extends StatefulWidget {
   final ReceiptScanResult scanResult;
@@ -376,8 +378,7 @@ class _ReceiptReviewScreenState extends State<ReceiptReviewScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final txProvider = context.read<TransactionProvider>();
-      final usageProvider = context.read<UsageProvider>();
+      final txBloc = context.read<TransactionBloc>();
 
       if (_isSingleTransaction) {
         final total = _calculateTotal();
@@ -392,7 +393,7 @@ class _ReceiptReviewScreenState extends State<ReceiptReviewScreen> {
           note: 'Dari scan struk',
           currency: 'IDR',
         );
-        await txProvider.addTransaction(transaction);
+        txBloc.add(TransactionAddRequested(transaction: transaction));
       } else {
         for (final item in _items) {
           final transaction = TransactionModel(
@@ -404,11 +405,11 @@ class _ReceiptReviewScreenState extends State<ReceiptReviewScreen> {
             note: 'Dari scan struk',
             currency: 'IDR',
           );
-          await txProvider.addTransaction(transaction);
+          txBloc.add(TransactionAddRequested(transaction: transaction));
         }
       }
 
-      await usageProvider.incrementAiPhoto();
+      context.read<UsageBloc>().add(const UsageIncrementAiPhoto());
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

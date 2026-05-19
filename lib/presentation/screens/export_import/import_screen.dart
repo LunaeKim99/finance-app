@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:io';
-import '../../providers/usage_provider.dart';
+import '../../blocs/usage/usage_bloc.dart';
+import '../../blocs/usage/usage_state.dart';
 import '../../../data/datasources/remote/import_service.dart';
 import '../upgrade/upgrade_screen.dart';
 
@@ -21,8 +22,8 @@ class _ImportScreenState extends State<ImportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final usageProvider = context.watch<UsageProvider>();
-    final isPremium = usageProvider.isPremium;
+    final usageState = context.watch<UsageBloc>().state;
+    final isPremium = usageState is UsageLoaded && usageState.isPremium;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(

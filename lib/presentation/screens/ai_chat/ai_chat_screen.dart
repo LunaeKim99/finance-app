@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import '../../../data/models/transaction_type.dart';
-import '../../providers/transaction_provider.dart';
-import '../../providers/usage_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../blocs/usage/usage_bloc.dart';
+import '../../blocs/usage/usage_event.dart';
+import '../../blocs/usage/usage_state.dart';
+import '../transaction/bloc/transaction_bloc.dart';
+import '../transaction/bloc/transaction_event.dart';
 import '../upgrade/upgrade_screen.dart';
 import 'bloc/ai_chat_bloc.dart';
 import 'bloc/ai_chat_event.dart';
@@ -34,8 +36,8 @@ class _AiChatScreenState extends State<AiChatScreen> {
       if (mounted) setState(() => _isListening = false);
     };
     bloc.onConfirmTransactionExternal = (transaction) async {
-      final provider = context.read<TransactionProvider>();
-      return provider.addTransaction(transaction);
+      context.read<TransactionBloc>().add(TransactionAddRequested(transaction: transaction));
+      return true;
     };
   }
 
@@ -61,8 +63,8 @@ class _AiChatScreenState extends State<AiChatScreen> {
   void _sendTextMessage(String text) {
     if (text.trim().isEmpty) return;
 
-    final usageProvider = context.read<UsageProvider>();
-    if (!usageProvider.canUseAiText()) {
+    final usageState = context.read<UsageBloc>().state;
+    if (usageState is UsageLoaded && !usageState.canUseAiText()) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Batas harian tercapai (10/10).'),
@@ -81,7 +83,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
     }
     _textController.clear();
     context.read<AiChatBloc>().add(AiChatSendMessage(message: text));
-    usageProvider.incrementAiText();
+    context.read<UsageBloc>().add(const UsageIncrementAiText());
   }
 
   Future<void> _startVoiceInput() async {
@@ -165,9 +167,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                 ),
                 const SizedBox(width: 8),
-                Consumer<UsageProvider>(
-                  builder: (context, usageProvider, _) {
-                    if (usageProvider.isPremium) {
+                BlocBuilder<UsageBloc, UsageState>(
+                  builder: (context, usageState) {
+                    if (usageState is! UsageLoaded) return const SizedBox.shrink();
+                    if (usageState.isPremium) {
                       return Container(
                         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                         decoration: BoxDecoration(
@@ -187,7 +190,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        '${usageProvider.remainingAiText}/10',
+                        '${usageState.remainingAiText}/10',
                         style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade600),
                       ),
                     );
