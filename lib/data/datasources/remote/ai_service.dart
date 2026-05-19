@@ -9,9 +9,7 @@ import '../../../core/config/app_config.dart';
 import '../../../core/services/exchange_rate_service.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction_type.dart';
-import '../../../data/datasources/smart_db_helper.dart';
-import '../../../data/datasources/pb_helper.dart';
-import '../../../data/datasources/local/sqlite_helper.dart';
+import '../../../core/constants/default_categories.dart';
 
 const String _apiToken = AppConfig.groqApiKey;
 
@@ -288,15 +286,14 @@ ATURAN PENTING:
     final dateStr = currentDate.toIso8601String().split('T')[0];
 
     // Load user categories for dynamic prompt
-    List<String> expenseCats = ['Makanan', 'Transportasi', 'Belanja', 'Hiburan', 'Kesehatan', 'Pendidikan', 'Tagihan', 'Lainnya'];
-    List<String> incomeCats = ['Gaji', 'Bonus', 'Usaha', 'Investasi', 'Hadiah', 'Lainnya'];
-    try {
-      final allCats = await SmartDbHelper(remote: PbHelper(), local: SqliteHelper()).fetchAllCategories();
-      if (allCats.isNotEmpty) {
-        expenseCats = allCats.where((c) => c.type == 'expense').map((c) => c.name).toList();
-        incomeCats = allCats.where((c) => c.type == 'income').map((c) => c.name).toList();
-      }
-    } catch (_) {}
+    final expenseCats = DefaultCategories.list
+        .where((c) => c.type == 'expense')
+        .map((c) => c.name)
+        .toList();
+    final incomeCats = DefaultCategories.list
+        .where((c) => c.type == 'income')
+        .map((c) => c.name)
+        .toList();
 
     try {
       _tryResetModel();

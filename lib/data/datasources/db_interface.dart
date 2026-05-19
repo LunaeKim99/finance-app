@@ -2,7 +2,6 @@ import '../../data/models/transaction_model.dart';
 import '../../data/models/asset_model.dart';
 import '../../data/models/debt_model.dart';
 import '../../data/models/budget_model.dart';
-import '../../data/models/category_model.dart';
 
 abstract class DbInterface {
   Future<void> initialize();
@@ -34,10 +33,4 @@ abstract class DbInterface {
   Future<BudgetModel> updateBudget(String id, BudgetModel b);
   Future<List<BudgetModel>> fetchBudgetsByMonth(int month, int year);
   Future<void> updateBudgetSpent(String id, double spent);
-
-  // Categories
-  Future<List<CategoryModel>> fetchAllCategories();
-  Future<CategoryModel> createCategory(CategoryModel c);
-  Future<void> deleteCategory(String id);
-  Future<CategoryModel> updateCategory(String id, CategoryModel c);
 }

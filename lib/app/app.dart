@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import '../data/repositories/auth_repository_impl.dart';
 import '../data/repositories/settings_repository_impl.dart';
-import '../data/repositories/category_repository_impl.dart';
 import '../presentation/blocs/settings/settings_bloc.dart';
 import '../presentation/blocs/settings/settings_state.dart';
 import '../presentation/blocs/category/category_bloc.dart';
@@ -46,9 +45,7 @@ class FinanceApp extends StatelessWidget {
           create: (_) => UsageBloc(),
         ),
         BlocProvider<CategoryBloc>(
-          create: (_) => CategoryBloc(
-            repository: CategoryRepositoryImpl(),
-          ),
+          create: (_) => CategoryBloc(),
         ),
       ],
       child: BlocListener<AuthBloc, AuthState>(

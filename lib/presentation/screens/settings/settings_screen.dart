@@ -12,7 +12,6 @@ import '../upgrade/upgrade_screen.dart';
 import '../export_import/export_screen.dart';
 import '../export_import/import_screen.dart';
 import '../../../core/constants/currencies.dart';
-import '../categories/category_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -155,17 +154,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const Divider(),
 
-            // === KATEGORI ===
-            _buildSectionHeader('Kategori'),
-            _buildMenuTile(
-              icon: Icons.category_outlined,
-              title: 'Kelola Kategori',
-              trailing: const Icon(Icons.chevron_right, size: 20),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CategoryScreen()),
-              ),
-            ),
             const Divider(),
 
             // === PREMIUM ===

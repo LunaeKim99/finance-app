@@ -8,7 +8,7 @@ import '../../data/models/transaction_model.dart';
 import '../../data/models/asset_model.dart';
 import '../../data/models/debt_model.dart';
 import '../../data/models/budget_model.dart';
-import '../../data/models/category_model.dart';
+
 import 'local/sqlite_helper.dart';
 import 'pb_helper.dart';
 import 'sync_queue_helper.dart';
@@ -65,12 +65,15 @@ class SmartDbHelper implements DbInterface {
     final wasAvailable = _isRemoteAvailable;
     _isRemoteAvailable = await PbClient.isConnected();
 
-    if (_isRemoteAvailable && !wasAvailable) {
-      await syncPendingToRemote();
-    }
-
     if (_isRemoteAvailable != wasAvailable) {
       _connectivityController.add(_isRemoteAvailable);
+    }
+
+    if (_isRemoteAvailable) {
+      final pending = await _syncQueue.getPendingCount();
+      if (pending > 0 || !wasAvailable) {
+        await syncPendingToRemote();
+      }
     }
   }
 
@@ -169,16 +172,6 @@ class SmartDbHelper implements DbInterface {
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  Future<void> _writeThroughCategory(CategoryModel c) async {
-    final db = await local.database;
-    await db.insert('categories', {
-      'id': c.id,
-      'name': c.name,
-      'type': c.type,
-      'icon': c.icon,
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
-  }
-
   // ============ SYNC ============
 
   Future<void> syncPendingToRemote() async {
@@ -261,18 +254,6 @@ class SmartDbHelper implements DbInterface {
                 payload['id'] as String,
                 (payload['spent'] as num).toDouble(),
               );
-              break;
-            case 'create:categories':
-              await remote.createCategory(CategoryModel.fromMap(payload));
-              break;
-            case 'update:categories':
-              await remote.updateCategory(
-                payload['id'] as String,
-                CategoryModel.fromMap(payload),
-              );
-              break;
-            case 'delete:categories':
-              await safeDelete(() => remote.deleteCategory(payload['id'] as String));
               break;
           }
 
@@ -522,47 +503,4 @@ class SmartDbHelper implements DbInterface {
     );
   }
 
-  // ============ CATEGORIES ============
-
-  @override
-  Future<List<CategoryModel>> fetchAllCategories() async {
-    return _exec(
-      remoteOp: () => remote.fetchAllCategories(),
-      localOp: () => local.fetchAllCategories(),
-      collection: 'categories',
-    );
-  }
-
-  @override
-  Future<CategoryModel> createCategory(CategoryModel c) async {
-    return _exec(
-      remoteOp: () => remote.createCategory(c),
-      localOp: () => local.createCategory(c),
-      isWrite: true,
-      queueOp: () => _syncQueue.enqueue('create', 'categories', c.toMap()),
-      writeThrough: (_) => _writeThroughCategory(c),
-    );
-  }
-
-  @override
-  Future<void> deleteCategory(String id) async {
-    if (id.isEmpty) return;
-    await _exec<void>(
-      remoteOp: () => remote.deleteCategory(id),
-      localOp: () => local.deleteCategory(id),
-      isWrite: true,
-      queueOp: () => _syncQueue.enqueue('delete', 'categories', {'id': id}),
-    );
-  }
-
-  @override
-  Future<CategoryModel> updateCategory(String id, CategoryModel c) async {
-    return _exec(
-      remoteOp: () => remote.updateCategory(id, c),
-      localOp: () => local.updateCategory(id, c),
-      isWrite: true,
-      queueOp: () => _syncQueue.enqueue('update', 'categories', c.toMap()),
-      writeThrough: (_) => _writeThroughCategory(c.copyWith(id: id)),
-    );
-  }
 }

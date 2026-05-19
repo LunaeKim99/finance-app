@@ -3,10 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/budget_model.dart';
 import '../../../core/error/error_handler.dart';
+import '../../../core/constants/default_categories.dart';
 import '../../../core/constants/icon_registry.dart';
-import '../../../domain/entities/category.dart';
-import '../../blocs/category/category_bloc.dart';
-import '../../blocs/category/category_state.dart';
 import '../transaction/bloc/transaction_bloc.dart';
 import '../transaction/bloc/transaction_state.dart';
 import 'bloc/budget_bloc.dart';
@@ -358,14 +356,10 @@ class BudgetScreenState extends State<BudgetScreen> {
               const SizedBox(height: 20),
               InkWell(
                 onTap: () {
-                  final state = context.read<CategoryBloc>().state;
-                  List<String> categories = [];
-                  if (state is CategoryLoaded) {
-                    categories = state.expenseCategories.map((c) => c.name).toList();
-                  }
-                  if (categories.isEmpty) {
-                    categories = ['Makanan', 'Transportasi', 'Belanja', 'Hiburan', 'Kesehatan', 'Pendidikan', 'Tagihan', 'Lainnya'];
-                  }
+                  final categories = DefaultCategories.list
+                      .where((c) => c.type == 'expense')
+                      .map((c) => c.name)
+                      .toList();
 
                   showModalBottomSheet(
                     context: ctx,
@@ -488,14 +482,6 @@ class BudgetScreenState extends State<BudgetScreen> {
   }
 
   IconData _getCategoryIcon(String categoryName) {
-    final state = context.read<CategoryBloc>().state;
-    if (state is CategoryLoaded) {
-      final cat = state.expenseCategories.firstWhere(
-        (c) => c.name == categoryName,
-        orElse: () => Category(name: 'Lainnya', type: 'expense', icon: 'category'),
-      );
-      return CategoryIconRegistry.resolve(cat.icon, cat.name);
-    }
     return CategoryIconRegistry.resolve(null, categoryName);
   }
 

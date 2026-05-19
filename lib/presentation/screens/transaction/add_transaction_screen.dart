@@ -1,17 +1,13 @@
-import 'dart:async';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/currencies.dart';
+import '../../../core/constants/default_categories.dart';
 import '../../../core/constants/icon_registry.dart';
-import '../../../domain/entities/category.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction_type.dart';
-import '../../blocs/category/category_bloc.dart';
-import '../../blocs/category/category_event.dart';
-import '../../blocs/category/category_state.dart';
 import '../../blocs/usage/usage_bloc.dart';
 import '../../blocs/usage/usage_state.dart';
 import '../../blocs/usage/usage_event.dart';
@@ -38,33 +34,33 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
   final _amountFocusNode = FocusNode();
-  StreamSubscription<CategoryState>? _catSubscription;
 
   TransactionType _transactionType = TransactionType.expense;
-  String? _selectedCategoryId;
+  String? _selectedCategoryName;
   String _selectedCurrency = 'IDR';
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
-  List<Category> _expenseCats = [];
-  List<Category> _incomeCats = [];
+
+  List<String> get _expenseCategoryNames =>
+      DefaultCategories.list.where((c) => c.type == 'expense').map((c) => c.name).toList();
+  List<String> get _incomeCategoryNames =>
+      DefaultCategories.list.where((c) => c.type == 'income').map((c) => c.name).toList();
+  List<String> get _currentCategoryNames =>
+      _transactionType == TransactionType.expense ? _expenseCategoryNames : _incomeCategoryNames;
 
   @override
   void initState() {
     super.initState();
     _amountController.addListener(() => setState(() {}));
-    context.read<CategoryBloc>().add(const CategoryLoadRequested());
-    _syncCategoriesFromBloc();
-    _catSubscription = context.read<CategoryBloc>().stream.listen((state) {
-      if (state is CategoryLoaded && mounted) {
-        setState(() => _syncCategoriesFromBloc());
-      }
-    });
+    if (_selectedCategoryName == null && _currentCategoryNames.isNotEmpty) {
+      _selectedCategoryName = _currentCategoryNames.first;
+    }
     final existing = widget.existingTransaction;
     if (existing != null) {
       _amountController.text = existing.amount.toStringAsFixed(0);
       _noteController.text = existing.note;
       _transactionType = existing.type;
-      _selectedCategoryId = existing.categoryId;
+      _selectedCategoryName = existing.categoryId;
       _selectedCurrency = existing.currency;
       _selectedDate = existing.date;
     }
@@ -75,27 +71,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   @override
   void dispose() {
-    _catSubscription?.cancel();
     _titleController.dispose();
     _amountController.dispose();
     _noteController.dispose();
     _amountFocusNode.dispose();
     super.dispose();
-  }
-
-  List<Category> get _currentCategories =>
-      _transactionType == TransactionType.expense ? _expenseCats : _incomeCats;
-
-  void _syncCategoriesFromBloc() {
-    final state = context.read<CategoryBloc>().state;
-    if (state is CategoryLoaded) {
-      _expenseCats = state.expenseCategories;
-      _incomeCats = state.incomeCategories;
-
-      if (_selectedCategoryId == null && _currentCategories.isNotEmpty) {
-        _selectedCategoryId = _currentCategories.first.id;
-      }
-    }
   }
 
   String _formatNumberWithDot(String text) {
@@ -313,9 +293,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             icon: isIOS ? CupertinoIcons.arrow_up_circle_fill : Icons.arrow_upward_rounded,
             onTap: () => setState(() {
               _transactionType = TransactionType.expense;
-              _syncCategoriesFromBloc();
-              if (_expenseCats.isNotEmpty) {
-                _selectedCategoryId = _expenseCats.first.id;
+              if (_currentCategoryNames.isNotEmpty) {
+                _selectedCategoryName = _currentCategoryNames.first;
               }
             }),
           ),
@@ -326,9 +305,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             icon: isIOS ? CupertinoIcons.arrow_down_circle_fill : Icons.arrow_downward_rounded,
             onTap: () => setState(() {
               _transactionType = TransactionType.income;
-              _syncCategoriesFromBloc();
-              if (_incomeCats.isNotEmpty) {
-                _selectedCategoryId = _incomeCats.first.id;
+              if (_currentCategoryNames.isNotEmpty) {
+                _selectedCategoryName = _currentCategoryNames.first;
               }
             }),
           ),
@@ -389,10 +367,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   Widget _buildCategoryRow(Color accentColor) {
     final isIOS = Platform.isIOS;
-    final selectedCat = _currentCategories.firstWhere(
-      (c) => c.id == _selectedCategoryId,
-      orElse: () => Category(name: 'Lainnya', type: 'expense'),
-    );
+    final catName = _selectedCategoryName ?? 'Lainnya';
 
     return InkWell(
       onTap: isIOS ? _showCategoryPickerIOS : _showCategoryPickerAndroid,
@@ -408,7 +383,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
-                _getCategoryIcon(selectedCat.name),
+                CategoryIconRegistry.resolve(null, catName),
                 size: 18,
                 color: accentColor,
               ),
@@ -424,7 +399,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    selectedCat.name,
+                    catName,
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
@@ -469,46 +444,28 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   padding: EdgeInsets.only(bottom: 8),
                   child: Text(
                     'Pilih Kategori',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
-                ..._currentCategories.map((category) {
-                  final isSelected = category.id == _selectedCategoryId;
+                ..._currentCategoryNames.map((name) {
+                  final isSelected = name == _selectedCategoryName;
                   return ListTile(
                     leading: Icon(
-                      _getCategoryIcon(category.name),
-                      color: isSelected
-                          ? (_transactionType == TransactionType.expense
-                              ? Colors.red
-                              : const Color(0xFF4CAF50))
-                          : Colors.grey,
+                      CategoryIconRegistry.resolve(null, name),
+                      color: isSelected ? Colors.red : Colors.grey,
                     ),
                     title: Text(
-                      category.name,
+                      name,
                       style: TextStyle(
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        color: isSelected
-                            ? (_transactionType == TransactionType.expense
-                                ? Colors.red
-                                : const Color(0xFF4CAF50))
-                            : null,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? Colors.red : null,
                       ),
                     ),
-                    trailing: isSelected
-                        ? Icon(
-                            Icons.check,
-                            color: _transactionType == TransactionType.expense
-                                ? Colors.red
-                                : const Color(0xFF4CAF50),
-                          )
-                        : null,
+                    trailing: isSelected ? const Icon(Icons.check, color: Colors.red) : null,
                     onTap: () {
-                      setState(() => _selectedCategoryId = category.id);
+                      setState(() {
+                        _selectedCategoryName = name;
+                      });
                       Navigator.pop(context);
                     },
                   );
@@ -551,11 +508,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 itemExtent: 40,
                 onSelectedItemChanged: (index) {
                   setState(() {
-                    _selectedCategoryId = _currentCategories[index].id;
+                    _selectedCategoryName = _currentCategoryNames[index];
                   });
                 },
-                children: _currentCategories.map((category) {
-                  return Center(child: Text(category.name));
+                children: _currentCategoryNames.map((name) {
+                  return Center(child: Text(name));
                 }).toList(),
               ),
             ),
@@ -1082,17 +1039,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final cleanAmount = _amountController.text.replaceAll(RegExp(r'[^\d]'), '');
     final amount = double.tryParse(cleanAmount) ?? 0;
 
-    final selectedCat = _currentCategories.firstWhere(
-      (c) => c.id == _selectedCategoryId,
-      orElse: () => Category(name: 'Lainnya', type: 'expense'),
-    );
+    final catName = _selectedCategoryName ?? 'Lainnya';
 
     final transaction = TransactionModel(
       id: _isEditMode ? widget.existingTransaction?.id : null,
-      title: selectedCat.name,
+      title: catName,
       amount: amount,
       type: _transactionType,
-      categoryId: _selectedCategoryId ?? selectedCat.id!,
+      categoryId: catName,
       date: _selectedDate,
       note: _noteController.text,
       currency: _selectedCurrency,
@@ -1144,16 +1098,4 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  IconData _getCategoryIcon(String categoryName) {
-    final state = context.read<CategoryBloc>().state;
-    if (state is CategoryLoaded) {
-      final allCats = [...state.expenseCategories, ...state.incomeCategories];
-      final cat = allCats.firstWhere(
-        (c) => c.name == categoryName,
-        orElse: () => Category(name: 'Lainnya', type: 'expense', icon: 'category'),
-      );
-      return CategoryIconRegistry.resolve(cat.icon, cat.name);
-    }
-    return CategoryIconRegistry.resolve(null, categoryName);
-  }
 }

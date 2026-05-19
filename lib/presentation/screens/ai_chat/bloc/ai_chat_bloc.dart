@@ -60,14 +60,19 @@ class AiChatBloc extends Bloc<AiChatEvent, AiChatState> {
 
   bool _isFinanceRelated(String message) {
     final financeKeywords = [
-      'uang', 'keuangan', 'tabung', 'tabungan', 'investasi', 'saham', 'reksa dana',
-      'obligasi', 'bunga', 'kredit', 'hutang', 'piutang', 'cicilan', 'anggaran',
-      'budget', 'pengeluaran', 'pemasukan', 'pendapatan', 'gaji', 'belanja',
-      'hemat', 'nabung', 'inflasi', 'aset', 'liabilitas', 'laporan', 'neraca',
-      'cashflow', 'arus kas', 'pajak', 'asuransi', 'dana darurat', 'finansial',
-      'finance', 'money', 'saving', 'expense', 'income', 'spending', 'cost',
-      'price', 'harga', 'bayar', 'transfer', 'bank', 'dompet', 'wallet',
-      'premium', 'subscription', 'langganan', 'receipt', 'struk', 'nota',
+      'uang', 'keuangan', 'rupiah', 'tabung', 'tabungan', 'investasi', 'saham',
+      'reksa dana', 'obligasi', 'bunga', 'kredit', 'debet', 'hutang', 'piutang',
+      'cicilan', 'cicil', 'anggaran', 'budget', 'pengeluaran', 'pemasukan',
+      'pendapatan', 'gaji', 'belanja', 'beli', 'jual', 'hemat', 'nabung',
+      'inflasi', 'aset', 'liabilitas', 'laporan', 'neraca', 'cashflow', 'arus kas',
+      'pajak', 'asuransi', 'dana darurat', 'finansial', 'finance', 'money',
+      'saving', 'expense', 'income', 'spending', 'cost', 'price', 'harga',
+      'bayar', 'rb', 'juta', 'ribu', 'biaya', 'saldo', 'transaksi', 'catat',
+      'dapat', 'terima', 'keluar', 'masuk', 'bon', 'tagih', 'transfer', 'bank',
+      'dompet', 'wallet', 'premium', 'subscription', 'langganan', 'receipt',
+      'struk', 'nota',
+      'idr', 'usd', 'eur', 'sgd', 'myr', 'jpy', 'gbp', 'aud', 'sar', 'cny',
+      'dollar', 'euro', 'ringgit', 'yen', 'pound', 'riyal', 'yuan',
     ];
 
     final lowerMessage = message.toLowerCase();

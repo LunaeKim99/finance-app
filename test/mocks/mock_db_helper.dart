@@ -3,7 +3,7 @@ import 'package:uwangku/data/models/transaction_model.dart';
 import 'package:uwangku/data/models/asset_model.dart';
 import 'package:uwangku/data/models/debt_model.dart';
 import 'package:uwangku/data/models/budget_model.dart';
-import 'package:uwangku/data/models/category_model.dart';
+
 
 class MockDbHelper implements DbInterface {
   final List<TransactionModel> _transactions = [];
@@ -92,15 +92,4 @@ class MockDbHelper implements DbInterface {
   @override
   Future<void> updateBudgetSpent(String id, double spent) async {}
 
-  @override
-  Future<List<CategoryModel>> fetchAllCategories() async => [];
-
-  @override
-  Future<CategoryModel> createCategory(CategoryModel c) async => c;
-
-  @override
-  Future<void> deleteCategory(String id) async {}
-
-  @override
-  Future<CategoryModel> updateCategory(String id, CategoryModel c) async => c;
 }

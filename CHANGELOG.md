@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## InDev [2.5.0] - 2026-05-20
+
+### Removed
+
+- **Custom Category CRUD** — Categories are now hardcoded (no add/edit/delete from UI)
+  - Removed `CategoryScreen` (368 lines), `CategoryRepository`, `CategoryRepositoryImpl`, `CategoryModel`
+  - Removed all category methods from `DbInterface`, `SmartDbHelper`, `SqliteHelper`, `PbHelper`
+  - Removed `categories` table from SQLite schema + version 3 migration
+  - Removed sync queue handlers for category operations
+  - Removed "Kelola Kategori" navigation from Settings
+  - Categories reduced from 22 (16 expense + 6 income) → 15 (10 expense + 5 income)
+
+### Changed
+
+- **CategoryBloc** — Simplified to load directly from `DefaultCategories.list` (no repository/database dependency)
+- **AddTransactionScreen** — Category picker now uses `DefaultCategories` directly instead of `CategoryBloc`; uses category name as transaction identifier
+- **BudgetScreen** — Category picker uses `DefaultCategories` directly instead of `CategoryBloc` state
+- **AiService** — Category list for AI system prompt now from `DefaultCategories` instead of `SmartDbHelper`
+- **CategoryIconRegistry._nameToIconKey** — Added entries for `bensin`, `pakaian`, `freelance`, `bisnis`, `makanan & minuman`
+- **AiChatBloc._isFinanceRelated** — Expanded keyword list from 49 to ~87 entries including currencies (idr, usd, euro, dll.), transaction verbs (beli, jual, dapat, catat), and common financial terms (ribu, rupiah, saldo, biaya, dll.)
+
+### Fixed
+
+- **SmartDbHelper.createCategory write-through** — Was writing original `CategoryModel` (with null ID) to SQLite instead of PocketBase response (with assigned ID), causing categories to have `id: null` in local storage
+- **Sync queue not replaying without connectivity change** — `_checkConnectivity` now triggers `syncPendingToRemote()` every 30 seconds when remote is available, not only on offline→online transition
+- **AI chat rejecting transaction descriptions** — Messages like "makan bakso 150 ribu" were rejected at bloc pre-filter due to missing common financial keywords (`ribu`, `rupiah`, `beli`, `biaya`, `saldo`, dll.)
+
 ## InDev [2.4.2] - 2026-05-19
 
 ### Changed

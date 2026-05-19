@@ -3,7 +3,7 @@ import '../../data/models/transaction_model.dart';
 import '../../data/models/asset_model.dart';
 import '../../data/models/debt_model.dart';
 import '../../data/models/budget_model.dart';
-import '../../data/models/category_model.dart';
+
 import '../../services/pb_client.dart';
 
 class PbHelper {
@@ -266,47 +266,4 @@ class PbHelper {
     }
   }
 
-  // ============ CATEGORIES ============
-  Future<List<CategoryModel>> fetchAllCategories() async {
-    try {
-      final filter = _userId != null ? 'user = "$_userId"' : '';
-      final result = await _pb.collection('categories').getList(
-        filter: filter,
-        sort: 'name',
-      );
-      return result.items.map((r) => CategoryModel.fromRecord(r)).toList();
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  Future<CategoryModel> createCategory(CategoryModel c) async {
-    try {
-      final body = c.toJson();
-      if (_userId != null) body['user'] = _userId;
-      final result = await _pb.collection('categories').create(body: body);
-      return CategoryModel.fromRecord(result);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  Future<void> deleteCategory(String id) async {
-    try {
-      await _pb.collection('categories').delete(id);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  Future<CategoryModel> updateCategory(String id, CategoryModel c) async {
-    try {
-      final body = c.toJson();
-      if (_userId != null) body['user'] = _userId;
-      final result = await _pb.collection('categories').update(id, body: body);
-      return CategoryModel.fromRecord(result);
-    } catch (e) {
-      rethrow;
-    }
-  }
 }

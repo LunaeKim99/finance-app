@@ -5,7 +5,7 @@ import '../../../data/models/transaction_model.dart';
 import '../../../data/models/asset_model.dart';
 import '../../../data/models/debt_model.dart';
 import '../../../data/models/budget_model.dart';
-import '../../../data/models/category_model.dart';
+
 import '../db_interface.dart';
 
 class SqliteHelper implements DbInterface {
@@ -38,7 +38,6 @@ class SqliteHelper implements DbInterface {
     await db.delete('assets');
     await db.delete('debts');
     await db.delete('budgets');
-    await db.delete('categories');
   }
 
   Future<void> _upgradeTables(Database db, int oldVersion, int newVersion) async {
@@ -48,16 +47,6 @@ class SqliteHelper implements DbInterface {
       await db.execute('ALTER TABLE debts ADD COLUMN currency TEXT');
       await db.execute('ALTER TABLE debts ADD COLUMN exchange_rate_to_idr REAL');
       await db.execute('ALTER TABLE budgets ADD COLUMN currency TEXT');
-    }
-    if (oldVersion < 3) {
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS categories (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          type TEXT NOT NULL,
-          icon TEXT
-        )
-      ''');
     }
   }
 
@@ -121,14 +110,6 @@ class SqliteHelper implements DbInterface {
       )
     ''');
 
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS categories (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        type TEXT NOT NULL,
-        icon TEXT
-      )
-    ''');
   }
 
   String _generateId() {
@@ -374,46 +355,6 @@ class SqliteHelper implements DbInterface {
     );
   }
 
-  // ============ CATEGORIES ============
-  @override
-  Future<List<CategoryModel>> fetchAllCategories() async {
-    final db = await database;
-    final maps = await db.query('categories', orderBy: 'name ASC');
-    return maps.map((map) => CategoryModel.fromMap(map)).toList();
-  }
-
-  @override
-  Future<CategoryModel> createCategory(CategoryModel c) async {
-    final db = await database;
-    final newId = _generateId();
-    final categoryWithId = c.copyWith(id: newId);
-    await db.insert(
-      'categories',
-      _toMapSqlite(categoryWithId),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-    return categoryWithId;
-  }
-
-  @override
-  Future<void> deleteCategory(String id) async {
-    final db = await database;
-    await db.delete('categories', where: 'id = ?', whereArgs: [id]);
-  }
-
-  @override
-  Future<CategoryModel> updateCategory(String id, CategoryModel c) async {
-    final db = await database;
-    final updatedCategory = c.copyWith(id: id);
-    await db.update(
-      'categories',
-      _toMapSqlite(updatedCategory),
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-    return updatedCategory;
-  }
-
   // ============ HELPERS ============
   Map<String, dynamic> _normalizeDateMap(Map<String, dynamic> map) {
     final normalized = Map<String, dynamic>.from(map);
@@ -507,14 +448,6 @@ class SqliteHelper implements DbInterface {
         'note': model.note,
         'is_active': model.isActive ? 1 : 0,
         'currency': model.currency != 'IDR' ? model.currency : null,
-      };
-    }
-    if (model is CategoryModel) {
-      return {
-        'id': model.id,
-        'name': model.name,
-        'type': model.type,
-        'icon': model.icon,
       };
     }
     throw Exception('Unknown model type');
