@@ -36,7 +36,7 @@ class DefaultCategories {
     DefaultCategoryEntry(name: 'Freelance', icon: 'laptop', type: 'income'),
     DefaultCategoryEntry(name: 'Bisnis', icon: 'store', type: 'income'),
     DefaultCategoryEntry(name: 'Tabungan', icon: 'savings', type: 'income'),
-    DefaultCategoryEntry(name: 'Investasi', icon: 'trending_up', type: 'expense'),
+    DefaultCategoryEntry(name: 'Investasi', icon: 'trending_up', type: 'income'),
     DefaultCategoryEntry(name: 'Lainnya', icon: 'category', type: 'income'),
   ];
 }
