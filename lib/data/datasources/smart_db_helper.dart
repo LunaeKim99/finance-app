@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:pocketbase/pocketbase.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../services/pb_client.dart';
 import '../../data/models/transaction_model.dart';
@@ -186,6 +187,18 @@ class SmartDbHelper implements DbInterface {
           final payloadStr = item['payload'] as String;
           final payload = jsonDecode(payloadStr) as Map<String, dynamic>;
 
+          Future<void> safeDelete(Future<void> Function() deleteFn) async {
+            try {
+              await deleteFn();
+            } on ClientException catch (e) {
+              if (e.statusCode == 404) {
+                debugPrint('[SmartDbHelper] Record already deleted on remote, skipping');
+              } else {
+                rethrow;
+              }
+            }
+          }
+
           switch ('$operation:$collection') {
             case 'create:transactions':
               await remote.createTransaction(
@@ -199,7 +212,7 @@ class SmartDbHelper implements DbInterface {
               );
               break;
             case 'delete:transactions':
-              await remote.deleteTransaction(payload['id'] as String);
+              await safeDelete(() => remote.deleteTransaction(payload['id'] as String));
               break;
             case 'create:assets':
               await remote.createAsset(AssetModel.fromMap(payload));
@@ -211,7 +224,7 @@ class SmartDbHelper implements DbInterface {
               );
               break;
             case 'delete:assets':
-              await remote.deleteAsset(payload['id'] as String);
+              await safeDelete(() => remote.deleteAsset(payload['id'] as String));
               break;
             case 'create:debts':
               await remote.createDebt(DebtModel.fromMap(payload));
@@ -223,7 +236,7 @@ class SmartDbHelper implements DbInterface {
               );
               break;
             case 'delete:debts':
-              await remote.deleteDebt(payload['id'] as String);
+              await safeDelete(() => remote.deleteDebt(payload['id'] as String));
               break;
             case 'create:budgets':
               await remote.createBudget(BudgetModel.fromMap(payload));
@@ -235,7 +248,7 @@ class SmartDbHelper implements DbInterface {
               );
               break;
             case 'delete:budgets':
-              await remote.deleteBudget(payload['id'] as String);
+              await safeDelete(() => remote.deleteBudget(payload['id'] as String));
               break;
             case 'update:budgets_spent':
               await remote.updateBudgetSpent(
@@ -253,7 +266,7 @@ class SmartDbHelper implements DbInterface {
               );
               break;
             case 'delete:categories':
-              await remote.deleteCategory(payload['id'] as String);
+              await safeDelete(() => remote.deleteCategory(payload['id'] as String));
               break;
           }
 
@@ -520,6 +533,7 @@ class SmartDbHelper implements DbInterface {
 
   @override
   Future<void> deleteCategory(String id) async {
+    if (id.isEmpty) return;
     await _exec<void>(
       remoteOp: () => remote.deleteCategory(id),
       localOp: () => local.deleteCategory(id),
