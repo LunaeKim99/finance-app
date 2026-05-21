@@ -11,7 +11,6 @@ import '../../blocs/settings/settings_event.dart';
 import '../../blocs/settings/settings_state.dart';
 import '../../blocs/usage/usage_bloc.dart';
 import '../../blocs/usage/usage_state.dart';
-import '../../blocs/usage/usage_event.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/transaction/transaction_card.dart';
 import '../auth/bloc/auth_bloc.dart';
@@ -24,7 +23,6 @@ import '../transaction/history_screen.dart';
 import '../budget/budget_screen.dart';
 import '../budget/bloc/budget_bloc.dart';
 import '../budget/bloc/budget_state.dart';
-import '../budget/bloc/budget_event.dart';
 import '../upgrade/upgrade_screen.dart';
 import '../../../data/datasources/remote/ai_service.dart';
 
@@ -36,17 +34,6 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(() {
-      context.read<TransactionBloc>().add(const TransactionLoadRequested());
-      final now = DateTime.now();
-      context.read<BudgetBloc>().add(BudgetLoadRequested(month: now.month, year: now.year));
-      context.read<UsageBloc>().add(const UsageLoadRequested());
-    });
-  }
-
   void _refreshRecommendation() => setState(() {});
 
   @override
@@ -493,90 +480,93 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildAiRecommendationSection(TransactionLoaded state) {
-    final usageState = context.read<UsageBloc>().state;
-    final isPremium = usageState is UsageLoaded ? usageState.isPremium : false;
-    final month = DateTime.now().month;
-    final year = DateTime.now().year;
-    final income = state.getMonthlyIncomeByMonth(month, year);
-    final expense = state.getMonthlyExpenseByMonth(month, year);
-    final categoryTotals = state.getCategoryTotals(month, year);
+    return BlocBuilder<UsageBloc, UsageState>(
+      builder: (context, usageState) {
+        final isPremium = usageState is UsageLoaded ? usageState.isPremium : false;
+        final month = DateTime.now().month;
+        final year = DateTime.now().year;
+        final income = state.getMonthlyIncomeByMonth(month, year);
+        final expense = state.getMonthlyExpenseByMonth(month, year);
+        final categoryTotals = state.getCategoryTotals(month, year);
 
-    if (!isPremium) {
-      return GlassCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+        if (!isPremium) {
+          return GlassCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: AppRadius.mdRadius),
-                  child: const Icon(Icons.auto_awesome_rounded, color: AppColors.primary, size: 20),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
                   children: [
-                    Text('Saran Keuangan AI', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600, color: AppColors.onSurface)),
-                    Text('Khusus pengguna Premium', style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: AppRadius.mdRadius),
+                      child: const Icon(Icons.auto_awesome_rounded, color: AppColors.primary, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Saran Keuangan AI', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+                        Text('Khusus pengguna Premium', style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
+                      ],
+                    ),
                   ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const UpgradeScreen())),
+                    child: const Text('Upgrade ke Premium', style: TextStyle(fontWeight: FontWeight.w600)),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const UpgradeScreen())),
-                child: const Text('Upgrade ke Premium', style: TextStyle(fontWeight: FontWeight.w600)),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+          );
+        }
 
-    return GlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return GlassCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Icon(Icons.lightbulb_rounded, color: AppColors.primary, size: 20),
-                  const SizedBox(width: 8),
-                  Text('Saran Keuangan AI', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+                  Row(
+                    children: [
+                      const Icon(Icons.lightbulb_rounded, color: AppColors.primary, size: 20),
+                      const SizedBox(width: 8),
+                      Text('Saran Keuangan AI', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh_rounded, size: 20),
+                    onPressed: _refreshRecommendation,
+                    visualDensity: VisualDensity.compact,
+                  ),
                 ],
               ),
-              IconButton(
-                icon: const Icon(Icons.refresh_rounded, size: 20),
-                onPressed: _refreshRecommendation,
-                visualDensity: VisualDensity.compact,
+              const SizedBox(height: 12),
+              FutureBuilder<String>(
+                future: AiRecommendationService().generateBudgetRecommendation(
+                  categoryTotals: categoryTotals, totalIncome: income, totalExpense: expense,
+                ),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Column(children: [CircularProgressIndicator(), SizedBox(height: 8), Text('Menganalisis...')]),
+                      ),
+                    );
+                  }
+                  if (snapshot.hasError) return Text('Gagal: ${snapshot.error}', style: AppTypography.bodySm.copyWith(color: AppColors.error));
+                  return MarkdownBody(data: snapshot.data ?? '', styleSheet: MarkdownStyleSheet(p: const TextStyle(fontSize: 14)));
+                },
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          FutureBuilder<String>(
-            future: AiRecommendationService().generateBudgetRecommendation(
-              categoryTotals: categoryTotals, totalIncome: income, totalExpense: expense,
-            ),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Column(children: [CircularProgressIndicator(), SizedBox(height: 8), Text('Menganalisis...')]),
-                  ),
-                );
-              }
-              if (snapshot.hasError) return Text('Gagal: ${snapshot.error}', style: AppTypography.bodySm.copyWith(color: AppColors.error));
-              return MarkdownBody(data: snapshot.data ?? '', styleSheet: MarkdownStyleSheet(p: const TextStyle(fontSize: 14)));
-            },
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
