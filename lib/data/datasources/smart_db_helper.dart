@@ -47,10 +47,16 @@ class SmartDbHelper implements DbInterface {
     ]);
 
     _isRemoteAvailable = await PbClient.isConnected();
+
+    if (!_isRemoteAvailable) {
+      await Future.delayed(const Duration(seconds: 2));
+      _isRemoteAvailable = await PbClient.isConnected();
+    }
+
     if (!_connectivityController.isClosed) _connectivityController.add(_isRemoteAvailable);
 
     _connectivityTimer = Timer.periodic(
-      const Duration(seconds: 30),
+      Duration(seconds: _isRemoteAvailable ? 30 : 10),
       (_) => _checkConnectivity(),
     );
 
@@ -68,6 +74,11 @@ class SmartDbHelper implements DbInterface {
 
     if (_isRemoteAvailable != wasAvailable) {
       if (!_connectivityController.isClosed) _connectivityController.add(_isRemoteAvailable);
+      _connectivityTimer?.cancel();
+      _connectivityTimer = Timer.periodic(
+        Duration(seconds: _isRemoteAvailable ? 30 : 10),
+        (_) => _checkConnectivity(),
+      );
     }
 
     if (_isRemoteAvailable) {
@@ -98,8 +109,17 @@ class SmartDbHelper implements DbInterface {
         return result;
       } catch (e) {
         debugPrint('[SmartDbHelper] Remote failed: $e');
-        _isRemoteAvailable = false;
-        if (!_connectivityController.isClosed) _connectivityController.add(false);
+
+        final isConnectivityError = e is! ClientException ||
+            (e.statusCode != 400 && e.statusCode != 401 &&
+                e.statusCode != 403 && e.statusCode != 404 &&
+                e.statusCode != 422);
+
+        if (isConnectivityError) {
+          _isRemoteAvailable = false;
+          if (!_connectivityController.isClosed) _connectivityController.add(false);
+        }
+
         if (isWrite && queueOp != null) await queueOp();
         return localOp();
       }
