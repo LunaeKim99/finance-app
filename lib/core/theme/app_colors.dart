@@ -73,3 +73,63 @@ class AppColors {
   static const premiumGradientMid = Color(0xFF006A36);
   static const premiumGradientEnd = Color(0xFF1D854A);
 }
+
+class AppColorsDark {
+  AppColorsDark._();
+
+  // Background & Surface (dark)
+  static const background             = Color(0xFF0F1110);
+  static const surface                = Color(0xFF1A1C1B);
+  static const surfaceDim             = Color(0xFF111312);
+  static const surfaceBright          = Color(0xFF363A37);
+  static const surfaceContainerLowest = Color(0xFF0A0D0B);
+  static const surfaceContainerLow    = Color(0xFF181D19);
+  static const surfaceContainer       = Color(0xFF1C2120);
+  static const surfaceContainerHigh   = Color(0xFF262B27);
+  static const surfaceContainerHighest= Color(0xFF303530);
+
+  // On-Surface (dark)
+  static const onSurface              = Color(0xFFE1E3E0);
+  static const onSurfaceVariant       = Color(0xFFC1CABC);
+  static const inverseSurface         = Color(0xFFE1E3E0);
+  static const inverseOnSurface       = Color(0xFF2F3133);
+
+  // Outline (dark)
+  static const outline                = Color(0xFF8B9488);
+  static const outlineVariant         = Color(0xFF3E4A3D);
+
+  // Primary — Growth Green (dark)
+  static const primary                = Color(0xFF79DB95);
+  static const onPrimary              = Color(0xFF003919);
+  static const primaryContainer       = Color(0xFF005229);
+  static const onPrimaryContainer     = Color(0xFF95F7B0);
+  static const inversePrimary         = Color(0xFF006A36);
+
+  // Secondary — Coral Rose (dark)
+  static const secondary              = Color(0xFFFFB3B0);
+  static const onSecondary            = Color(0xFF68000F);
+  static const secondaryContainer     = Color(0xFF8B1720);
+  static const onSecondaryContainer   = Color(0xFFFFDAD8);
+
+  // Tertiary — Warm Gold (dark)
+  static const tertiary               = Color(0xFFF9BD22);
+  static const onTertiary             = Color(0xFF3F2D00);
+  static const tertiaryContainer      = Color(0xFF5C4300);
+  static const onTertiaryContainer    = Color(0xFFFFDF9F);
+
+  // Error (dark)
+  static const error                  = Color(0xFFFFB4AB);
+  static const onError                = Color(0xFF690005);
+  static const errorContainer         = Color(0xFF93000A);
+  static const onErrorContainer       = Color(0xFFFFDAD6);
+
+  // Misc
+  static const surfaceTint            = Color(0xFF79DB95);
+  static const surfaceVariant         = Color(0xFF3E4A3D);
+  static const onBackground           = Color(0xFFE1E3E0);
+
+  // Premium gradient (dark — slightly lighter green)
+  static const premiumGradientStart   = Color(0xFF003919);
+  static const premiumGradientMid     = Color(0xFF005229);
+  static const premiumGradientEnd     = Color(0xFF006A36);
+}
