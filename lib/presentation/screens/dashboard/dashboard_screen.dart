@@ -137,7 +137,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                       decoration: BoxDecoration(
                         color: isPremium ? AppColors.primary : AppColors.primary.withValues(alpha: 0.1),
                         borderRadius: AppRadius.fullRadius,
@@ -152,12 +152,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             color: isPremium ? AppColors.onPrimary : AppColors.primary,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            isPremium ? 'Premium' : 'Premium',
-                            style: AppTypography.labelMono.copyWith(
-                              fontSize: 10,
-                              color: isPremium ? AppColors.onPrimary : AppColors.primary,
-                              fontWeight: FontWeight.w700,
+                          Flexible(
+                            child: Text(
+                              isPremium ? 'Premium' : 'Premium',
+                              style: AppTypography.labelMono.copyWith(
+                                fontSize: 10,
+                                color: isPremium ? AppColors.onPrimary : AppColors.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ),
                         ],
@@ -215,13 +219,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           const Icon(Icons.wifi_off_rounded, color: AppColors.tertiary, size: 18),
           const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('OFFLINE', style: AppTypography.labelMono.copyWith(color: AppColors.tertiary, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 2),
-              Text('Koneksi terputus. Data mungkin tidak sinkron.', style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('OFFLINE', style: AppTypography.labelMono.copyWith(color: AppColors.tertiary, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                Text('Koneksi terputus. Data mungkin tidak sinkron.', style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
+              ],
+            ),
           ),
         ],
       ),

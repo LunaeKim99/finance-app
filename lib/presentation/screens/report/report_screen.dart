@@ -219,9 +219,14 @@ class _ReportScreenState extends State<ReportScreen> {
             style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant, height: 1.6),
           ),
           const SizedBox(height: 12),
-          BlocBuilder<ReportBloc, ReportState>(
-            builder: (context, reportState) {
-              return _buildAiSummarySection(reportState, categoryTotals, income, expense, fmt);
+          BlocBuilder<UsageBloc, UsageState>(
+            builder: (context, usageState) {
+              final isPremium = usageState is UsageLoaded ? usageState.isPremium : false;
+              return BlocBuilder<ReportBloc, ReportState>(
+                builder: (context, reportState) {
+                  return _buildAiSummarySection(reportState, categoryTotals, income, expense, fmt, isPremium);
+                },
+              );
             },
           ),
         ],
@@ -229,10 +234,7 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  Widget _buildAiSummarySection(ReportState reportState, Map<String, double> categoryTotals, double income, double expense, NumberFormat fmt) {
-    final usageState = context.read<UsageBloc>().state;
-    final isPremium = usageState is UsageLoaded ? usageState.isPremium : false;
-
+  Widget _buildAiSummarySection(ReportState reportState, Map<String, double> categoryTotals, double income, double expense, NumberFormat fmt, bool isPremium) {
     if (!isPremium) {
       return SizedBox(
         width: double.infinity,

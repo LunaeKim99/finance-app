@@ -128,7 +128,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
     final usageState = context.watch<UsageBloc>().state;
     final isPremium = usageState is UsageLoaded && usageState.isPremium;
 
-    return BlocBuilder<AiChatBloc, AiChatState>(
+    return BlocConsumer<AiChatBloc, AiChatState>(
+      listener: (context, state) {
+        _scrollToBottom();
+      },
       builder: (context, state) {
         final messages = state is AiChatMessageAdded
             ? state.messages
@@ -138,15 +141,11 @@ class _AiChatScreenState extends State<AiChatScreen> {
                     ? state.messages
                     : <ChatMessage>[];
 
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollToBottom();
-        });
-
         return Scaffold(
           body: SafeArea(
             child: Column(
               children: [
-                _buildHeader(isPremium),
+                _buildHeader(isPremium, usageState),
                 Expanded(
                   child: messages.isEmpty
                       ? _buildIntroCard()
@@ -168,8 +167,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
     );
   }
 
-  Widget _buildHeader(bool isPremium) {
-    final localUsageState = context.read<UsageBloc>().state;
+  Widget _buildHeader(bool isPremium, UsageState usageState) {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.surface,
@@ -208,12 +206,12 @@ class _AiChatScreenState extends State<AiChatScreen> {
               ],
             ),
             const Spacer(),
-            if (!isPremium && localUsageState is UsageLoaded)
+            if (!isPremium && usageState is UsageLoaded)
               Container(
                 margin: const EdgeInsets.only(right: 4),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(color: AppColors.surfaceContainerHighest, borderRadius: AppRadius.fullRadius),
-                child: Text('${localUsageState.remainingAiText}/10', style: AppTypography.labelMono.copyWith(fontSize: 10, color: AppColors.onSurfaceVariant)),
+                child: Text('${usageState.remainingAiText}/10', style: AppTypography.labelMono.copyWith(fontSize: 10, color: AppColors.onSurfaceVariant)),
               ),
             IconButton(
               icon: const Icon(Icons.more_vert_rounded, color: AppColors.onSurfaceVariant),
