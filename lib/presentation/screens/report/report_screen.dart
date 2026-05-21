@@ -29,6 +29,20 @@ class _ReportScreenState extends State<ReportScreen> {
   bool _showMonthlySummary = false;
 
   @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    Future.microtask(() {
+      if (mounted) {
+        context.read<ReportBloc>().add(ReportLoadRequested(
+          month: now.month,
+          year: now.year,
+        ));
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocBuilder<TransactionBloc, TransactionState>(
       builder: (context, state) {
@@ -95,8 +109,26 @@ class _ReportScreenState extends State<ReportScreen> {
   Widget _buildMonthSelector() {
     return MonthSelector(
       selectedMonth: _selectedMonth,
-      onPrevious: () => setState(() => _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month - 1)),
-      onNext: () => setState(() => _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month + 1)),
+      onPrevious: () {
+        setState(() {
+          _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month - 1);
+          _showMonthlySummary = false;
+        });
+        context.read<ReportBloc>().add(ReportChangeMonth(
+          month: _selectedMonth.month,
+          year: _selectedMonth.year,
+        ));
+      },
+      onNext: () {
+        setState(() {
+          _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month + 1);
+          _showMonthlySummary = false;
+        });
+        context.read<ReportBloc>().add(ReportChangeMonth(
+          month: _selectedMonth.month,
+          year: _selectedMonth.year,
+        ));
+      },
       compact: true,
     );
   }
