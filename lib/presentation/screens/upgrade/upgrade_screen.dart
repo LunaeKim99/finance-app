@@ -89,9 +89,9 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
               ),
               child: const Row(
                 children: [
@@ -112,7 +112,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: const Color(0xFF4CAF50).withOpacity(0.1),
+              color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: ClipRRect(
@@ -205,9 +205,9 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF4CAF50).withOpacity(0.04),
+        color: const Color(0xFF4CAF50).withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF4CAF50).withOpacity(0.15)),
+        border: Border.all(color: const Color(0xFF4CAF50).withValues(alpha: 0.15)),
       ),
       child: Column(
         children: features.map((feature) {
@@ -221,7 +221,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4CAF50).withOpacity(0.12),
+                    color: const Color(0xFF4CAF50).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(icon, size: 18, color: const Color(0xFF4CAF50)),
@@ -322,7 +322,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(14),
-          color: isSelected ? const Color(0xFF4CAF50).withOpacity(0.06) : null,
+          color: isSelected ? const Color(0xFF4CAF50).withValues(alpha: 0.06) : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -406,7 +406,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
           backgroundColor: const Color(0xFF4CAF50),
           foregroundColor: Colors.white,
           elevation: 2,
-          shadowColor: const Color(0xFF4CAF50).withOpacity(0.4),
+          shadowColor: const Color(0xFF4CAF50).withValues(alpha: 0.4),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -443,7 +443,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50).withOpacity(0.1),
+                color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -471,9 +471,9 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
+                  color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                 ),
                 child: const Text(
                   'DEMO BUILD',

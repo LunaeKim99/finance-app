@@ -3,10 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'ai_chat_event.dart';
 import 'ai_chat_state.dart';
-import '../../../../data/models/transaction_model.dart';
+import '../../../../domain/entities/transaction.dart';
 import '../../../../data/datasources/remote/ai_service.dart';
 import '../../../../data/datasources/remote/voice_service.dart';
 import '../../../../data/datasources/remote/ocr_service.dart';
+import '../../../../data/models/transaction_model.dart' as model;
+import '../../../../data/models/transaction_type.dart' as data_tx_type;
 
 const String kFinanceSystemPrompt = """
 Kamu adalah asisten keuangan personal bernama "FinBot" yang terintegrasi dalam aplikasi keuangan.
@@ -38,7 +40,7 @@ class AiChatBloc extends Bloc<AiChatEvent, AiChatState> {
 
   VoidCallback? onVoiceStart;
   VoidCallback? onVoiceStop;
-  Future<bool> Function(TransactionModel)? onConfirmTransactionExternal;
+  Future<bool> Function(Transaction)? onConfirmTransactionExternal;
 
   AiChatBloc() : super(const AiChatInitial()) {
     on<AiChatInitialize>(_onInitialize);
@@ -155,10 +157,11 @@ class AiChatBloc extends Bloc<AiChatEvent, AiChatState> {
       _messages.removeLast();
 
       if (response.action == AiAction.addTransaction && response.transaction != null) {
+        final tx = _toEntity(response.transaction!);
         _appendMessage(ChatMessage(
           text: response.message,
           isUser: false,
-          pendingTransaction: response.transaction,
+          pendingTransaction: tx,
           timestamp: DateTime.now(),
         ));
       } else {
@@ -239,10 +242,11 @@ class AiChatBloc extends Bloc<AiChatEvent, AiChatState> {
       _messages.removeLast();
 
       if (response.action == AiAction.addTransaction && response.transaction != null) {
+        final tx = _toEntity(response.transaction!);
         _appendMessage(ChatMessage(
           text: response.message,
           isUser: false,
-          pendingTransaction: response.transaction,
+          pendingTransaction: tx,
           timestamp: DateTime.now(),
         ));
       } else {
@@ -275,14 +279,17 @@ class AiChatBloc extends Bloc<AiChatEvent, AiChatState> {
 
     await _voiceService.startListening(
       onResult: (result) {
+        if (isClosed) return;
         _recognizedWords = _voiceService.normalizeIndonesianNumbers(
           result.recognizedWords,
         );
       },
       onListeningStart: () {
+        if (isClosed) return;
         onVoiceStart?.call();
       },
       onListeningStop: () {
+        if (isClosed) return;
         _isListening = false;
         onVoiceStop?.call();
         final words = _recognizedWords.trim();
@@ -374,5 +381,22 @@ class AiChatBloc extends Bloc<AiChatEvent, AiChatState> {
       ));
     }
     emit(AiChatMessageAdded(messages: List.from(_messages)));
+  }
+
+  Transaction _toEntity(model.TransactionModel m) {
+    return Transaction(
+      id: m.id,
+      title: m.title,
+      amount: m.amount,
+      type: m.type == data_tx_type.TransactionType.income
+          ? TransactionType.income
+          : TransactionType.expense,
+      category: m.categoryId,
+      date: m.date,
+      note: m.note.isEmpty ? null : m.note,
+      isSynced: m.isSynced,
+      currency: m.currency,
+      exchangeRateToIdr: m.exchangeRateToIdr,
+    );
   }
 }

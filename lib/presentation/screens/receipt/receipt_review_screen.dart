@@ -6,8 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../../data/models/receipt_scan_result.dart';
-import '../../../data/models/transaction_model.dart';
-import '../../../data/models/transaction_type.dart';
+import '../../../domain/entities/transaction.dart';
 import '../../blocs/usage/usage_bloc.dart';
 import '../../blocs/usage/usage_event.dart';
 import '../transaction/bloc/transaction_bloc.dart';
@@ -268,7 +267,7 @@ class _ReceiptReviewScreenState extends State<ReceiptReviewScreen> {
             const SizedBox(height: 8),
             if (!isIOS && Platform.isIOS == false)
               DropdownButtonFormField<String>(
-                value: item.category,
+                initialValue: item.category,
                 decoration: const InputDecoration(
                   labelText: 'Kategori',
                   isDense: true,
@@ -378,17 +377,18 @@ class _ReceiptReviewScreenState extends State<ReceiptReviewScreen> {
     setState(() => _isLoading = true);
 
     try {
+      if (!mounted) return;
       final txBloc = context.read<TransactionBloc>();
 
       if (_isSingleTransaction) {
         final total = _calculateTotal();
-        final transaction = TransactionModel(
+        final transaction = Transaction(
           title: widget.scanResult.merchant.isNotEmpty
               ? widget.scanResult.merchant
-              : ' Pembelian',
+              : 'Pembelian',
           amount: total,
           type: TransactionType.expense,
-          categoryId: _items.isNotEmpty ? _items.first.category : 'Lainnya',
+          category: _items.isNotEmpty ? _items.first.category : 'Lainnya',
           date: widget.scanResult.date ?? DateTime.now(),
           note: 'Dari scan struk',
           currency: 'IDR',
@@ -396,11 +396,11 @@ class _ReceiptReviewScreenState extends State<ReceiptReviewScreen> {
         txBloc.add(TransactionAddRequested(transaction: transaction));
       } else {
         for (final item in _items) {
-          final transaction = TransactionModel(
+          final transaction = Transaction(
             title: item.name,
             amount: item.price,
             type: TransactionType.expense,
-            categoryId: item.category,
+            category: item.category,
             date: widget.scanResult.date ?? DateTime.now(),
             note: 'Dari scan struk',
             currency: 'IDR',
@@ -409,6 +409,7 @@ class _ReceiptReviewScreenState extends State<ReceiptReviewScreen> {
         }
       }
 
+      if (!mounted) return;
       context.read<UsageBloc>().add(const UsageIncrementAiPhoto());
 
       if (mounted) {

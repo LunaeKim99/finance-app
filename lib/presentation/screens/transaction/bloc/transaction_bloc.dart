@@ -1,20 +1,22 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'transaction_event.dart';
 import 'transaction_state.dart';
-import '../data/transaction_datasource.dart';
+import '../../../../data/repositories/transaction_repository_impl.dart';
 import '../../../../data/datasources/smart_db_helper.dart';
 import '../../../../data/datasources/pb_helper.dart';
 import '../../../../data/datasources/local/sqlite_helper.dart';
 
 class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
-  late final TransactionDatasource _datasource;
+  late final TransactionRepositoryImpl _repository;
   late final SmartDbHelper _dbHelper;
   bool _initialized = false;
+  StreamSubscription<bool>? _connectivitySub;
 
   TransactionBloc() : super(const TransactionInitial()) {
     _dbHelper = SmartDbHelper(remote: PbHelper(), local: SqliteHelper());
-    _datasource = TransactionDatasource(dbHelper: _dbHelper);
+    _repository = TransactionRepositoryImpl(_dbHelper);
     on<TransactionLoadRequested>(_onLoadTransactions);
     on<TransactionAddRequested>(_onAddTransaction);
     on<TransactionUpdateRequested>(_onUpdateTransaction);
@@ -22,17 +24,27 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     on<TransactionMarkSynced>(_onMarkSynced);
   }
 
-  bool get isOnline => _datasource.isOnline;
+  bool get isOnline => _dbHelper.isRemoteAvailable;
 
   Future<void> ensureInitialized() async {
     if (_initialized) return;
     _initialized = true;
     add(const TransactionLoadRequested());
-    _dbHelper.connectivityStream.listen((_) {
-      if (state is TransactionLoaded) {
-        add(const TransactionLoadRequested());
-      }
+    _connectivitySub = _dbHelper.connectivityStream.listen((_) {
+      if (isClosed) return;
+      Future.microtask(() {
+        if (isClosed) return;
+        if (state is TransactionLoaded) {
+          add(const TransactionLoadRequested());
+        }
+      });
     });
+  }
+
+  @override
+  Future<void> close() {
+    _connectivitySub?.cancel();
+    return super.close();
   }
 
   Future<void> _onLoadTransactions(
@@ -41,10 +53,10 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   ) async {
     emit(const TransactionLoading());
     try {
-      final transactions = await _datasource.fetchAll();
+      final transactions = await _repository.getTransactions();
       emit(TransactionLoaded(
         transactions: transactions,
-        isOnline: _datasource.isOnline,
+        isOnline: _dbHelper.isRemoteAvailable,
       ));
     } catch (e) {
       debugPrint('[TransactionBloc] Load error: $e');
@@ -57,7 +69,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     Emitter<TransactionState> emit,
   ) async {
     try {
-      await _datasource.create(event.transaction);
+      await _repository.addTransaction(event.transaction);
       add(const TransactionLoadRequested());
     } catch (e) {
       debugPrint('[TransactionBloc] Add error: $e');
@@ -70,7 +82,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     Emitter<TransactionState> emit,
   ) async {
     try {
-      await _datasource.update(event.transaction.id ?? '', event.transaction);
+      await _repository.updateTransaction(event.transaction);
       add(const TransactionLoadRequested());
     } catch (e) {
       debugPrint('[TransactionBloc] Update error: $e');
@@ -83,7 +95,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     Emitter<TransactionState> emit,
   ) async {
     try {
-      await _datasource.delete(event.id);
+      await _repository.deleteTransaction(event.id);
       add(const TransactionLoadRequested());
     } catch (e) {
       debugPrint('[TransactionBloc] Delete error: $e');

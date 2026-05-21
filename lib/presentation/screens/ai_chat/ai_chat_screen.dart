@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import '../../../data/models/transaction_type.dart';
+import '../../../domain/entities/transaction.dart';
 import '../../../core/constants/currencies.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../blocs/usage/usage_bloc.dart';
 import '../../blocs/usage/usage_event.dart';
 import '../../blocs/usage/usage_state.dart';
@@ -37,7 +39,9 @@ class _AiChatScreenState extends State<AiChatScreen> {
       if (mounted) setState(() => _isListening = false);
     };
     bloc.onConfirmTransactionExternal = (transaction) async {
+      if (!mounted) return false;
       context.read<TransactionBloc>().add(TransactionAddRequested(transaction: transaction));
+      context.read<UsageBloc>().add(const UsageIncrementAiText());
       return true;
     };
   }
@@ -72,10 +76,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
           action: SnackBarAction(
             label: 'Upgrade',
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const UpgradeScreen()),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const UpgradeScreen()));
             },
           ),
         ),
@@ -124,6 +125,8 @@ class _AiChatScreenState extends State<AiChatScreen> {
   Widget build(BuildContext context) {
     final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ');
     final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
+    final usageState = context.watch<UsageBloc>().state;
+    final isPremium = usageState is UsageLoaded && usageState.isPremium;
 
     return BlocBuilder<AiChatBloc, AiChatState>(
       builder: (context, state) {
@@ -140,95 +143,155 @@ class _AiChatScreenState extends State<AiChatScreen> {
         });
 
         return Scaffold(
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            centerTitle: true,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            backgroundColor: Colors.transparent,
-            title: Row(
-              mainAxisSize: MainAxisSize.min,
+          body: SafeArea(
+            child: Column(
               children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4CAF50).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.auto_awesome_rounded,
-                    size: 18,
-                    color: Color(0xFF4CAF50),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  'Asisten Keuangan',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-                ),
-                const SizedBox(width: 8),
-                BlocBuilder<UsageBloc, UsageState>(
-                  builder: (context, usageState) {
-                    if (usageState is! UsageLoaded) return const SizedBox.shrink();
-                    if (usageState.isPremium) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4CAF50),
-                          borderRadius: BorderRadius.circular(8),
+                _buildHeader(isPremium),
+                Expanded(
+                  child: messages.isEmpty
+                      ? _buildIntroCard()
+                      : ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                          itemCount: messages.length,
+                          itemBuilder: (context, index) {
+                            return _buildMessageBubble(messages[index], index, currencyFormat, dateFormat);
+                          },
                         ),
-                        child: const Text(
-                          'PREMIUM',
-                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
-                      );
-                    }
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '${usageState.remainingAiText}/10',
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade600),
-                      ),
-                    );
-                  },
                 ),
+                _buildInputBar(),
               ],
             ),
-          ),
-          body: Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-                    return _buildMessageBubble(message, index, currencyFormat, dateFormat);
-                  },
-                ),
-              ),
-              _buildInputBar(),
-            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildMessageBubble(
-    ChatMessage message,
-    int index,
-    NumberFormat currencyFormat,
-    DateFormat dateFormat,
-  ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _buildHeader(bool isPremium) {
+    final localUsageState = context.read<UsageBloc>().state;
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(bottom: BorderSide(color: AppColors.surfaceContainerHighest, width: 0.5)),
+      ),
+      child: SizedBox(
+        height: 64,
+        child: Row(
+          children: [
+            const SizedBox(width: 12),
+            Container(
+              width: 32, height: 32,
+              decoration: BoxDecoration(color: AppColors.primaryContainer, borderRadius: AppRadius.mdRadius),
+              child: const Icon(Icons.auto_awesome_rounded, size: 18, color: AppColors.onPrimaryContainer),
+            ),
+            const SizedBox(width: 10),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Asisten Keuangan', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w700, color: AppColors.onSurface)),
+                if (isPremium)
+                  Container(
+                    margin: const EdgeInsets.only(top: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(color: AppColors.primaryContainer, borderRadius: AppRadius.smRadius),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.stars_rounded, size: 10, color: AppColors.onPrimaryContainer),
+                        const SizedBox(width: 2),
+                        Text('Premium', style: AppTypography.labelMono.copyWith(fontSize: 9, color: AppColors.onPrimaryContainer)),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+            const Spacer(),
+            if (!isPremium && localUsageState is UsageLoaded)
+              Container(
+                margin: const EdgeInsets.only(right: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(color: AppColors.surfaceContainerHighest, borderRadius: AppRadius.fullRadius),
+                child: Text('${localUsageState.remainingAiText}/10', style: AppTypography.labelMono.copyWith(fontSize: 10, color: AppColors.onSurfaceVariant)),
+              ),
+            IconButton(
+              icon: const Icon(Icons.more_vert_rounded, color: AppColors.onSurfaceVariant),
+              onPressed: () {},
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
+  Widget _buildIntroCard() {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLowest,
+            borderRadius: AppRadius.xlRadius,
+            border: Border.all(color: AppColors.surfaceContainerHighest),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, 4))],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Text('👋', style: TextStyle(fontSize: 24)),
+                  const SizedBox(width: 8),
+                  Text('Halo! Saya asisten keuanganmu.', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text('Kamu bisa mencatat dengan cara:', style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
+              const SizedBox(height: 16),
+              _modeItem(Icons.keyboard_rounded, 'Ketik', 'Misal: "makan siang 35rb"', AppColors.primary),
+              const SizedBox(height: 14),
+              _modeItem(Icons.mic_rounded, 'Tahan mic', 'Ucapkan transaksimu langsung', AppColors.primary),
+              const SizedBox(height: 14),
+              _modeItem(Icons.document_scanner_rounded, 'Tap scan', 'Foto struk atau nota belanja', AppColors.secondary),
+              const SizedBox(height: 16),
+              Text('Mau catat transaksi apa hari ini?', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 8, top: 4),
+          child: Text('Hari ini, ${DateFormat('HH:mm', 'id_ID').format(DateTime.now())}',
+            style: AppTypography.labelMono.copyWith(fontSize: 10, color: AppColors.onSurfaceVariant)),
+        ),
+      ],
+    );
+  }
+
+  Widget _modeItem(IconData icon, String title, String subtitle, Color color) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 36, height: 36,
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: AppRadius.mdRadius, border: Border.all(color: color.withValues(alpha: 0.2))),
+          child: Icon(icon, size: 18, color: color),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+            const SizedBox(height: 1),
+            Text(subtitle, style: AppTypography.bodySm.copyWith(fontSize: 13, color: AppColors.onSurfaceVariant)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMessageBubble(ChatMessage message, int index, NumberFormat currencyFormat, DateFormat dateFormat) {
     if (message.isLoading) {
       return Align(
         alignment: Alignment.centerLeft,
@@ -236,8 +299,8 @@ class _AiChatScreenState extends State<AiChatScreen> {
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isDark ? AppTheme.darkCard : Colors.grey[100],
-            borderRadius: BorderRadius.circular(12),
+            color: AppColors.surfaceContainerLowest,
+            borderRadius: AppRadius.lgRadius,
           ),
           child: const Row(
             mainAxisSize: MainAxisSize.min,
@@ -261,24 +324,15 @@ class _AiChatScreenState extends State<AiChatScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isDark ? AppTheme.darkCard : Colors.grey[200],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  message.text,
-                  style: TextStyle(color: isDark ? AppTheme.darkTextPrimary : Colors.black87),
-                ),
+                decoration: BoxDecoration(color: AppColors.surfaceContainerLowest, borderRadius: AppRadius.lgRadius),
+                child: Text(message.text, style: AppTypography.bodyMd.copyWith(color: AppColors.onSurface)),
               ),
               const SizedBox(height: 8),
               ElevatedButton.icon(
                 onPressed: () => context.read<AiChatBloc>().add(const AiChatRetry()),
                 icon: const Icon(Icons.refresh, size: 18),
                 label: const Text('Coba Hubungkan Ulang'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryGreen,
-                  foregroundColor: Colors.white,
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: AppColors.onPrimary),
               ),
             ],
           ),
@@ -289,7 +343,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
     if (message.pendingTransaction != null) {
       final transaction = message.pendingTransaction!;
       final isIncome = transaction.type == TransactionType.income;
-      final txColor = isIncome ? const Color(0xFF4CAF50) : Colors.red;
+      final txColor = isIncome ? AppColors.primary : AppColors.secondary;
 
       return Align(
         alignment: Alignment.centerLeft,
@@ -302,8 +356,8 @@ class _AiChatScreenState extends State<AiChatScreen> {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: txColor.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: txColor.withValues(alpha: 0.3), width: 1.5),
+                  borderRadius: AppRadius.xlRadius,
+                  border: Border.all(color: txColor.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -314,15 +368,22 @@ class _AiChatScreenState extends State<AiChatScreen> {
                       child: Icon(isIncome ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded, color: txColor, size: 18),
                     ),
                     const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(transaction.categoryName ?? transaction.categoryId, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                            const SizedBox(height: 2),
-                            Text(transaction.currency != 'IDR' ? '${AppCurrencies.symbolFor(transaction.currency)} ${NumberFormat('#,###', 'id_ID').format(transaction.amount.ceil())} (${currencyFormat.format(transaction.amountInIdr)})' : currencyFormat.format(transaction.amount), style: TextStyle(color: txColor, fontWeight: FontWeight.bold, fontSize: 16)),
-                            Text(dateFormat.format(transaction.date), style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
-                          ],
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(transaction.category,
+                          style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w700, color: AppColors.onSurface)),
+                        const SizedBox(height: 2),
+                        Text(
+                          transaction.currency != 'IDR'
+                              ? '${AppCurrencies.symbolFor(transaction.currency)} ${NumberFormat('#,###', 'id_ID').format(transaction.amount.ceil())} (${currencyFormat.format(transaction.amountInIdr)})'
+                              : currencyFormat.format(transaction.amount),
+                          style: TextStyle(color: txColor, fontWeight: FontWeight.w700, fontSize: 16),
                         ),
+                        Text(dateFormat.format(transaction.date),
+                          style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -330,11 +391,8 @@ class _AiChatScreenState extends State<AiChatScreen> {
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppTheme.darkCard : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(message.text),
+                  decoration: BoxDecoration(color: AppColors.surfaceContainerLowest, borderRadius: AppRadius.mdRadius),
+                  child: Text(message.text, style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
                 ),
               ],
               const SizedBox(height: 8),
@@ -346,9 +404,9 @@ class _AiChatScreenState extends State<AiChatScreen> {
                       icon: const Icon(Icons.close_rounded, size: 16),
                       label: const Text('Batal'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: BorderSide(color: Colors.red.withValues(alpha: 0.4)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        foregroundColor: AppColors.error,
+                        side: BorderSide(color: AppColors.error.withValues(alpha: 0.4)),
+                        shape: RoundedRectangleBorder(borderRadius: AppRadius.mdRadius),
                         padding: const EdgeInsets.symmetric(vertical: 10),
                       ),
                     ),
@@ -360,10 +418,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
                       icon: const Icon(Icons.check_rounded, size: 16),
                       label: const Text('Simpan'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF4CAF50),
-                        foregroundColor: Colors.white,
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.onPrimary,
                         elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(borderRadius: AppRadius.mdRadius),
                         padding: const EdgeInsets.symmetric(vertical: 10),
                       ),
                     ),
@@ -383,9 +441,15 @@ class _AiChatScreenState extends State<AiChatScreen> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: message.isUser
-              ? AppTheme.primaryGreen
-              : (isDark ? AppTheme.darkCard : Colors.grey[100]),
-          borderRadius: BorderRadius.circular(12),
+              ? AppColors.primary
+              : AppColors.surfaceContainerLowest,
+          borderRadius: message.isUser
+              ? const BorderRadius.only(
+                  topLeft: Radius.circular(12), topRight: Radius.circular(4),
+                  bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12))
+              : const BorderRadius.only(
+                  topLeft: Radius.circular(4), topRight: Radius.circular(12),
+                  bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12)),
         ),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         child: Column(
@@ -393,21 +457,12 @@ class _AiChatScreenState extends State<AiChatScreen> {
           children: [
             if (message.imageFile != null) ...[
               ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.file(
-                  message.imageFile!,
-                  height: 150, width: 200,
-                  fit: BoxFit.cover,
-                ),
+                borderRadius: AppRadius.mdRadius,
+                child: Image.file(message.imageFile!, height: 150, width: 200, fit: BoxFit.cover),
               ),
               const SizedBox(height: 8),
             ],
-            Text(
-              message.text,
-              style: TextStyle(
-                color: message.isUser ? Colors.white : (isDark ? AppTheme.darkTextPrimary : Colors.black87),
-              ),
-            ),
+            Text(message.text, style: AppTypography.bodyMd.copyWith(color: message.isUser ? AppColors.onPrimary : AppColors.onSurface)),
           ],
         ),
       ),
@@ -415,41 +470,38 @@ class _AiChatScreenState extends State<AiChatScreen> {
   }
 
   Widget _buildInputBar() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.darkCard : Colors.white,
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, -3)),
-        ],
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.surfaceContainerHighest, width: 0.5)),
       ),
-      child: SafeArea(
-        child: Row(
-          children: [
-            GestureDetector(
-              onTap: _scanImage,
-              child: Container(
-                width: 40, height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.document_scanner_rounded, color: Color(0xFF4CAF50), size: 20),
-              ),
+      child: Row(
+        children: [
+          InkWell(
+            onTap: _scanImage,
+            borderRadius: AppRadius.fullRadius,
+            child: Container(
+              width: 44, height: 44,
+              decoration: BoxDecoration(color: AppColors.surfaceContainerLowest, borderRadius: AppRadius.xlRadius, border: Border.all(color: AppColors.surfaceContainerHighest)),
+              child: const Icon(Icons.document_scanner_rounded, color: AppColors.onSurfaceVariant, size: 20),
             ),
-            const SizedBox(width: 8),
-            Expanded(
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLowest,
+                borderRadius: AppRadius.xlRadius,
+                border: Border.all(color: AppColors.surfaceContainerHighest),
+              ),
               child: TextField(
                 controller: _textController,
                 decoration: InputDecoration(
                   hintText: _isListening ? 'Mendengarkan...' : 'Ceritakan transaksimu...',
-                  hintStyle: TextStyle(color: _isListening ? Colors.red : Colors.grey.shade400, fontSize: 14),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
-                  filled: true,
-                  fillColor: isDark ? AppTheme.darkCardBorder : Colors.grey.shade100,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  hintStyle: TextStyle(color: _isListening ? AppColors.error : AppColors.onSurfaceVariant.withValues(alpha: 0.7), fontSize: 14),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   isDense: true,
                 ),
                 onSubmitted: (text) {
@@ -457,46 +509,25 @@ class _AiChatScreenState extends State<AiChatScreen> {
                 },
               ),
             ),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onLongPressStart: (_) => _startVoiceInput(),
-              onLongPressEnd: (_) => _stopVoiceInput(),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 40, height: 40,
-                decoration: BoxDecoration(
-                  color: _isListening ? Colors.red : const Color(0xFF4CAF50),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: (_isListening ? Colors.red : const Color(0xFF4CAF50)).withValues(alpha: 0.3),
-                      blurRadius: 8, offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  _isListening ? Icons.stop_rounded : Icons.mic_rounded,
-                  color: Colors.white, size: 20,
-                ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onLongPressStart: (_) => _startVoiceInput(),
+            onLongPressEnd: (_) => _stopVoiceInput(),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 44, height: 44,
+              decoration: BoxDecoration(
+                color: _isListening ? AppColors.secondary : AppColors.primary,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(color: (_isListening ? AppColors.secondary : AppColors.primary).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2)),
+                ],
               ),
+              child: Icon(_isListening ? Icons.stop_rounded : Icons.mic_rounded, color: AppColors.onPrimary, size: 20),
             ),
-            const SizedBox(width: 4),
-            GestureDetector(
-              onTap: () {
-                final text = _textController.text.trim();
-                if (text.isNotEmpty) _sendTextMessage(text);
-              },
-              child: Container(
-                width: 40, height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF4CAF50),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -2,18 +2,24 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'report_event.dart';
 import 'report_state.dart';
-import '../data/report_datasource.dart';
-import '../../../../data/models/transaction_model.dart';
-import '../../../../data/models/transaction_type.dart';
+import '../../../../data/repositories/transaction_repository_impl.dart';
+import '../../../../data/datasources/smart_db_helper.dart';
+import '../../../../data/datasources/pb_helper.dart';
+import '../../../../data/datasources/local/sqlite_helper.dart';
+import '../../../../data/datasources/remote/ai_service.dart';
+import '../../../../domain/entities/transaction.dart';
 
 class ReportBloc extends Bloc<ReportEvent, ReportState> {
-  final ReportDatasource _datasource;
+  final TransactionRepositoryImpl _repository;
 
-  ReportBloc({ReportDatasource? datasource})
-      : _datasource = datasource ?? ReportDatasource(),
+  ReportBloc()
+      : _repository = TransactionRepositoryImpl(
+          SmartDbHelper(remote: PbHelper(), local: SqliteHelper()),
+        ),
         super(const ReportInitial()) {
     on<ReportLoadRequested>(_onLoad);
     on<ReportChangeMonth>(_onChangeMonth);
+    on<ReportGenerateAiSummary>(_onGenerateAiSummary);
   }
 
   Future<void> _onLoad(
@@ -22,7 +28,7 @@ class ReportBloc extends Bloc<ReportEvent, ReportState> {
   ) async {
     emit(const ReportLoading());
     try {
-      final all = await _datasource.fetchAll();
+      final all = await _repository.getTransactions();
       _emitLoaded(emit, event.month, event.year, all);
     } catch (e) {
       debugPrint('[ReportBloc] Load error: $e');
@@ -36,7 +42,7 @@ class ReportBloc extends Bloc<ReportEvent, ReportState> {
   ) async {
     emit(const ReportLoading());
     try {
-      final all = await _datasource.fetchAll();
+      final all = await _repository.getTransactions();
       _emitLoaded(emit, event.month, event.year, all);
     } catch (e) {
       debugPrint('[ReportBloc] Change month error: $e');
@@ -44,11 +50,39 @@ class ReportBloc extends Bloc<ReportEvent, ReportState> {
     }
   }
 
+  Future<void> _onGenerateAiSummary(
+    ReportGenerateAiSummary event,
+    Emitter<ReportState> emit,
+  ) async {
+    final current = state;
+    if (current is! ReportLoaded) return;
+    emit(current.copyWith(aiSummaryLoading: true));
+
+    try {
+      final summary = await AiRecommendationService().generateBudgetRecommendation(
+        categoryTotals: event.categoryTotals,
+        totalIncome: event.totalIncome,
+        totalExpense: event.totalExpense,
+      );
+      if (!isClosed) {
+        emit(current.copyWith(aiSummary: summary, aiSummaryLoading: false));
+      }
+    } catch (e) {
+      debugPrint('[ReportBloc] AI summary error: $e');
+      if (!isClosed) {
+        emit(current.copyWith(
+          aiSummary: 'Gagal membuat analisis. Coba lagi nanti.',
+          aiSummaryLoading: false,
+        ));
+      }
+    }
+  }
+
   void _emitLoaded(
     Emitter<ReportState> emit,
     int month,
     int year,
-    List<TransactionModel> all,
+    List<Transaction> all,
   ) {
     final filtered = all.where((t) => t.date.month == month && t.date.year == year).toList();
     double income = 0;
@@ -61,7 +95,7 @@ class ReportBloc extends Bloc<ReportEvent, ReportState> {
       } else {
         expense += t.amount;
         categoryTotals.update(
-          t.categoryName ?? t.categoryId,
+          t.category,
           (v) => v + t.amount,
           ifAbsent: () => t.amount,
         );

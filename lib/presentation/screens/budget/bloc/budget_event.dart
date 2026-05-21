@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../../../data/models/budget_model.dart';
+import '../../../../domain/entities/budget.dart';
 
 abstract class BudgetEvent extends Equatable {
   const BudgetEvent();
@@ -19,7 +19,7 @@ class BudgetLoadRequested extends BudgetEvent {
 }
 
 class BudgetAddRequested extends BudgetEvent {
-  final BudgetModel budget;
+  final Budget budget;
 
   const BudgetAddRequested({required this.budget});
 
@@ -28,7 +28,7 @@ class BudgetAddRequested extends BudgetEvent {
 }
 
 class BudgetUpdateRequested extends BudgetEvent {
-  final BudgetModel budget;
+  final Budget budget;
 
   const BudgetUpdateRequested({required this.budget});
 

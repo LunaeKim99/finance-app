@@ -1,17 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'usage_event.dart';
 import 'usage_state.dart';
-import '../../../data/models/usage_model.dart';
+import '../../../domain/repositories/usage_repository.dart';
 
 class UsageBloc extends Bloc<UsageEvent, UsageState> {
-  static const String _keyAiText = 'usage_ai_text';
-  static const String _keyAiPhoto = 'usage_ai_photo';
-  static const String _keyIsPremium = 'usage_is_premium';
-  static const String _keyLastReset = 'usage_last_reset';
+  final UsageRepository _usageRepository;
 
-  UsageBloc() : super(const UsageInitial()) {
+  UsageBloc({required UsageRepository usageRepository})
+      : _usageRepository = usageRepository,
+        super(const UsageInitial()) {
     on<UsageLoadRequested>(_onLoad);
     on<UsageIncrementAiText>(_onIncrementAiText);
     on<UsageIncrementAiPhoto>(_onIncrementAiPhoto);
@@ -25,41 +23,7 @@ class UsageBloc extends Bloc<UsageEvent, UsageState> {
   ) async {
     emit(const UsageLoading());
     try {
-      final prefs = await SharedPreferences.getInstance();
-
-      final lastResetStr = prefs.getString(_keyLastReset);
-      DateTime lastReset;
-      if (lastResetStr != null) {
-        lastReset = DateTime.parse(lastResetStr);
-      } else {
-        lastReset = DateTime.now();
-        await prefs.setString(_keyLastReset, lastReset.toIso8601String());
-      }
-
-      final today = DateTime.now();
-      final now = DateTime(today.year, today.month, today.day);
-      final lastResetDay = DateTime(lastReset.year, lastReset.month, lastReset.day);
-
-      UsageModel usage;
-      if (now.isAfter(lastResetDay)) {
-        usage = UsageModel(
-          aiTextUsedToday: 0,
-          aiPhotoUsedToday: 0,
-          isPremium: prefs.getBool(_keyIsPremium) ?? false,
-          lastResetDate: now,
-        );
-        await prefs.setInt(_keyAiText, 0);
-        await prefs.setInt(_keyAiPhoto, 0);
-        await prefs.setString(_keyLastReset, now.toIso8601String());
-      } else {
-        usage = UsageModel(
-          aiTextUsedToday: prefs.getInt(_keyAiText) ?? 0,
-          aiPhotoUsedToday: prefs.getInt(_keyAiPhoto) ?? 0,
-          isPremium: prefs.getBool(_keyIsPremium) ?? false,
-          lastResetDate: lastReset,
-        );
-      }
-
+      final usage = await _usageRepository.load();
       emit(UsageLoaded(usage: usage));
     } catch (e) {
       debugPrint('[UsageBloc] Load error: $e');
@@ -77,8 +41,7 @@ class UsageBloc extends Bloc<UsageEvent, UsageState> {
       final updated = current.usage.copyWith(
         aiTextUsedToday: current.usage.aiTextUsedToday + 1,
       );
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_keyAiText, updated.aiTextUsedToday);
+      await _usageRepository.save(updated);
       emit(UsageLoaded(usage: updated));
     }
   }
@@ -93,8 +56,7 @@ class UsageBloc extends Bloc<UsageEvent, UsageState> {
       final updated = current.usage.copyWith(
         aiPhotoUsedToday: current.usage.aiPhotoUsedToday + 1,
       );
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_keyAiPhoto, updated.aiPhotoUsedToday);
+      await _usageRepository.save(updated);
       emit(UsageLoaded(usage: updated));
     }
   }
@@ -106,8 +68,7 @@ class UsageBloc extends Bloc<UsageEvent, UsageState> {
     final current = state;
     if (current is UsageLoaded) {
       final updated = current.usage.copyWith(isPremium: true);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_keyIsPremium, true);
+      await _usageRepository.save(updated);
       emit(UsageLoaded(usage: updated));
     }
   }
@@ -119,8 +80,7 @@ class UsageBloc extends Bloc<UsageEvent, UsageState> {
     final current = state;
     if (current is UsageLoaded) {
       final updated = current.usage.copyWith(isPremium: false);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_keyIsPremium, false);
+      await _usageRepository.save(updated);
       emit(UsageLoaded(usage: updated));
     }
   }

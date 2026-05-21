@@ -33,7 +33,7 @@ class PbHelper {
     return _pb;
   }
 
-  String? get _userId => _pb.authStore.model?.id;
+  String? get _userId => _pb.authStore.record?.id;
 
   // ============ TRANSACTIONS ============
   Future<List<TransactionModel>> fetchAllTransactions() async {

@@ -47,7 +47,7 @@ class SmartDbHelper implements DbInterface {
     ]);
 
     _isRemoteAvailable = await PbClient.isConnected();
-    _connectivityController.add(_isRemoteAvailable);
+    if (!_connectivityController.isClosed) _connectivityController.add(_isRemoteAvailable);
 
     _connectivityTimer = Timer.periodic(
       const Duration(seconds: 30),
@@ -62,11 +62,12 @@ class SmartDbHelper implements DbInterface {
   }
 
   Future<void> _checkConnectivity() async {
+    if (_connectivityController.isClosed) return;
     final wasAvailable = _isRemoteAvailable;
     _isRemoteAvailable = await PbClient.isConnected();
 
     if (_isRemoteAvailable != wasAvailable) {
-      _connectivityController.add(_isRemoteAvailable);
+      if (!_connectivityController.isClosed) _connectivityController.add(_isRemoteAvailable);
     }
 
     if (_isRemoteAvailable) {
@@ -98,7 +99,7 @@ class SmartDbHelper implements DbInterface {
       } catch (e) {
         debugPrint('[SmartDbHelper] Remote failed: $e');
         _isRemoteAvailable = false;
-        _connectivityController.add(false);
+        if (!_connectivityController.isClosed) _connectivityController.add(false);
         if (isWrite && queueOp != null) await queueOp();
         return localOp();
       }
@@ -169,6 +170,7 @@ class SmartDbHelper implements DbInterface {
       'note': b.note,
       'is_active': b.isActive ? 1 : 0,
       'currency': b.currency != 'IDR' ? b.currency : null,
+      'created': DateTime.now().toIso8601String(),
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 

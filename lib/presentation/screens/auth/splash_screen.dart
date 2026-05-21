@@ -59,6 +59,7 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _navigateToHome() async {
     context.read<AuthBloc>().add(const AuthCheckStatus());
     await context.read<TransactionBloc>().ensureInitialized();
+    if (!mounted) return;
     await ExchangeRateService.instance.initialize();
 
     await Future.delayed(const Duration(milliseconds: 2500));

@@ -107,7 +107,7 @@ class _PaymentWebviewScreenState extends State<PaymentWebviewScreen> {
         'payment_type': data['payment_type']?.toString() ?? '',
         'gross_amount': grossAmount,
         'currency': data['currency']?.toString() ?? 'IDR',
-        'user_id': pb.authStore.model?.id,
+        'user_id': pb.authStore.record?.id,
         'raw_payload': data,
         'created_at': DateTime.now().toIso8601String(),
       });
@@ -132,7 +132,7 @@ class _PaymentWebviewScreenState extends State<PaymentWebviewScreen> {
         'category': 'Premium / Subscription',
         'date': DateTime.now().toIso8601String(),
         'note': 'Order ID: $orderId | Transaction ID: $transactionId',
-        'user': pb.authStore.model?.id,
+        'user': pb.authStore.record?.id,
       });
 
       debugPrint('[PaymentWebview] Premium transaction saved');

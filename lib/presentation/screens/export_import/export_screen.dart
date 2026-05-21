@@ -8,6 +8,8 @@ import 'package:intl/intl.dart';
 
 import '../../../data/datasources/remote/export_service.dart';
 import '../../../data/models/transaction_model.dart';
+import '../../../data/models/transaction_type.dart' as data;
+import '../../../domain/entities/transaction.dart';
 import '../../blocs/usage/usage_bloc.dart';
 import '../../blocs/usage/usage_state.dart';
 import '../transaction/bloc/transaction_bloc.dart';
@@ -63,7 +65,7 @@ class _ExportScreenState extends State<ExportScreen> {
         final isPremium = usageState is UsageLoaded ? usageState.isPremium : false;
         return BlocBuilder<TransactionBloc, TransactionState>(
           builder: (context, txState) {
-            final allTx = txState is TransactionLoaded ? txState.transactions : <TransactionModel>[];
+            final allTx = txState is TransactionLoaded ? txState.transactions : <Transaction>[];
             final filteredCount = allTx
                 .where((t) => t.date.month == _selectedMonth && t.date.year == _selectedYear)
                 .length;
@@ -199,7 +201,7 @@ class _ExportScreenState extends State<ExportScreen> {
       children: [
         Expanded(
           child: DropdownButtonFormField<int>(
-            value: _selectedMonth,
+            initialValue: _selectedMonth,
             decoration: const InputDecoration(
               labelText: 'Bulan',
               border: OutlineInputBorder(),
@@ -218,7 +220,7 @@ class _ExportScreenState extends State<ExportScreen> {
         const SizedBox(width: 12),
         Expanded(
           child: DropdownButtonFormField<int>(
-            value: _selectedYear,
+            initialValue: _selectedYear,
             decoration: const InputDecoration(
               labelText: 'Tahun',
               border: OutlineInputBorder(),
@@ -245,15 +247,15 @@ class _ExportScreenState extends State<ExportScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF4CAF50).withOpacity(0.08),
-            const Color(0xFF4CAF50).withOpacity(0.03),
+            const Color(0xFF4CAF50).withValues(alpha: 0.08),
+            const Color(0xFF4CAF50).withValues(alpha: 0.03),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFF4CAF50).withOpacity(0.25),
+          color: const Color(0xFF4CAF50).withValues(alpha: 0.25),
           width: 1.5,
         ),
       ),
@@ -265,7 +267,7 @@ class _ExportScreenState extends State<ExportScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4CAF50).withOpacity(0.12),
+                  color: const Color(0xFF4CAF50).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
@@ -475,7 +477,7 @@ class _ExportScreenState extends State<ExportScreen> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.4),
+                      color: Colors.grey.withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -502,7 +504,7 @@ class _ExportScreenState extends State<ExportScreen> {
                   leading: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF4CAF50).withOpacity(0.1),
+                      color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
@@ -529,7 +531,7 @@ class _ExportScreenState extends State<ExportScreen> {
                   leading: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
+                      color: Colors.blue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
@@ -582,6 +584,21 @@ class _ExportScreenState extends State<ExportScreen> {
     );
   }
 
+  List<TransactionModel> _toModelList(List<Transaction> entities) {
+    return entities.map((e) => TransactionModel(
+      id: e.id,
+      title: e.title,
+      amount: e.amount,
+      type: e.type == TransactionType.income ? data.TransactionType.income : data.TransactionType.expense,
+      categoryId: e.category,
+      date: e.date,
+      note: e.note ?? '',
+      isSynced: e.isSynced,
+      currency: e.currency,
+      exchangeRateToIdr: e.exchangeRateToIdr,
+    )).toList();
+  }
+
   Future<void> _exportPdf() async {
     final isIOS = Platform.isIOS;
 
@@ -592,7 +609,7 @@ class _ExportScreenState extends State<ExportScreen> {
         if (txState is! TransactionLoaded) return;
         final exportService = ExportService();
         final file = await exportService.exportToPdf(
-          transactions: txState.transactions,
+          transactions: _toModelList(txState.transactions),
           month: _selectedMonth,
           year: _selectedYear,
         );
@@ -616,7 +633,7 @@ class _ExportScreenState extends State<ExportScreen> {
       if (txState is! TransactionLoaded) return;
       final exportService = ExportService();
       final file = await exportService.exportToPdf(
-        transactions: txState.transactions,
+        transactions: _toModelList(txState.transactions),
         month: _selectedMonth,
         year: _selectedYear,
       );
@@ -650,7 +667,7 @@ class _ExportScreenState extends State<ExportScreen> {
         if (txState is! TransactionLoaded) return;
         final exportService = ExportService();
         final file = await exportService.exportToExcel(
-          transactions: txState.transactions,
+          transactions: _toModelList(txState.transactions),
           month: _selectedMonth,
           year: _selectedYear,
         );
@@ -674,7 +691,7 @@ class _ExportScreenState extends State<ExportScreen> {
       if (txState is! TransactionLoaded) return;
       final exportService = ExportService();
       final file = await exportService.exportToExcel(
-        transactions: txState.transactions,
+        transactions: _toModelList(txState.transactions),
         month: _selectedMonth,
         year: _selectedYear,
       );

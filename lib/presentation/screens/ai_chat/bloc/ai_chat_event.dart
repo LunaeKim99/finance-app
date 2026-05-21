@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../../../data/models/transaction_model.dart';
+import '../../../../domain/entities/transaction.dart';
 
 abstract class AiChatEvent extends Equatable {
   const AiChatEvent();
@@ -51,7 +51,7 @@ class AiChatStopVoice extends AiChatEvent {
 }
 
 class AiChatConfirmTransaction extends AiChatEvent {
-  final TransactionModel transaction;
+  final Transaction transaction;
   final int messageIndex;
 
   const AiChatConfirmTransaction({

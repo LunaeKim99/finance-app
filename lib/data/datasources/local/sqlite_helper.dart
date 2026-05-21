@@ -28,7 +28,7 @@ class SqliteHelper implements DbInterface {
     final dir = await getApplicationDocumentsDirectory();
     final String dbPath = join(dir.path, 'finance_app.db');
 
-    return openDatabase(dbPath, version: 3,
+    return openDatabase(dbPath, version: 4,
         onCreate: _createTables, onUpgrade: _upgradeTables);
   }
 
@@ -47,6 +47,13 @@ class SqliteHelper implements DbInterface {
       await db.execute('ALTER TABLE debts ADD COLUMN currency TEXT');
       await db.execute('ALTER TABLE debts ADD COLUMN exchange_rate_to_idr REAL');
       await db.execute('ALTER TABLE budgets ADD COLUMN currency TEXT');
+    }
+    if (oldVersion < 4) {
+      try {
+        await db.execute('ALTER TABLE budgets ADD COLUMN created TEXT');
+      } catch (_) {
+        // Kolom sudah ada (fresh CREATE TABLE atau migrasi sebelumnya)
+      }
     }
   }
 
@@ -106,7 +113,8 @@ class SqliteHelper implements DbInterface {
         year INTEGER NOT NULL,
         note TEXT,
         is_active INTEGER,
-        currency TEXT
+        currency TEXT,
+        created TEXT
       )
     ''');
 
@@ -303,9 +311,11 @@ class SqliteHelper implements DbInterface {
     final db = await database;
     final newId = _generateId();
     final budgetWithId = b.copyWith(id: newId);
+    final map = _toMapSqlite(budgetWithId);
+    map['created'] = DateTime.now().toIso8601String();
     await db.insert(
       'budgets',
-      _toMapSqlite(budgetWithId),
+      map,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
     return budgetWithId;

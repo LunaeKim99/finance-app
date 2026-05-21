@@ -1,28 +1,26 @@
-import 'dart:io';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import '../../../core/constants/currencies.dart';
 import '../../../core/constants/default_categories.dart';
 import '../../../core/constants/icon_registry.dart';
-import '../../../data/models/transaction_model.dart';
-import '../../../data/models/transaction_type.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/app_radius.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../domain/entities/transaction.dart';
 import '../../blocs/usage/usage_bloc.dart';
 import '../../blocs/usage/usage_state.dart';
 import '../../blocs/usage/usage_event.dart';
+import '../../widgets/glass_card.dart';
 import 'bloc/transaction_bloc.dart';
 import 'bloc/transaction_event.dart';
 import '../../../data/datasources/remote/receipt_scan_service.dart';
 import '../receipt/receipt_review_screen.dart';
 
 class AddTransactionScreen extends StatefulWidget {
-  final TransactionModel? existingTransaction;
+  final Transaction? existingTransaction;
 
-  const AddTransactionScreen({
-    super.key,
-    this.existingTransaction,
-  });
+  const AddTransactionScreen({super.key, this.existingTransaction});
 
   @override
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -30,7 +28,6 @@ class AddTransactionScreen extends StatefulWidget {
 
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
   final _amountFocusNode = FocusNode();
@@ -58,20 +55,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final existing = widget.existingTransaction;
     if (existing != null) {
       _amountController.text = existing.amount.toStringAsFixed(0);
-      _noteController.text = existing.note;
+      _noteController.text = existing.note ?? '';
       _transactionType = existing.type;
-      _selectedCategoryName = existing.categoryId;
+      _selectedCategoryName = existing.category;
       _selectedCurrency = existing.currency;
       _selectedDate = existing.date;
     }
   }
 
   bool get _isEditMode => widget.existingTransaction != null;
-  String get _screenTitle => _isEditMode ? 'Edit Transaksi' : 'Tambah Transaksi';
 
   @override
   void dispose() {
-    _titleController.dispose();
     _amountController.dispose();
     _noteController.dispose();
     _amountFocusNode.dispose();
@@ -83,8 +78,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     if (cleanText.isEmpty) return '';
     final number = int.tryParse(cleanText) ?? 0;
     return number.toString().replaceAllMapped(
-        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-        (Match m) => '${m[1]}.');
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
   }
 
   void _onAmountChanged(String value) {
@@ -97,1005 +91,531 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final isIOS = Platform.isIOS;
+  String get _selectedCurrencyDisplay {
+    final match = AppCurrencies.supported.firstWhere(
+      (c) => c.code == _selectedCurrency,
+      orElse: () => AppCurrencies.supported.first,
+    );
+    return '${match.symbol} ${match.code} - ${match.name}';
+  }
 
-    if (isIOS) {
-      return _buildIOS();
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: Theme.of(context).colorScheme.copyWith(primary: AppColors.primary),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) setState(() => _selectedDate = picked);
+  }
+
+  String _formatDate(DateTime date) {
+    final days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    final months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    return '${days[date.weekday - 1]}, ${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  void _submit() {
+    final rawAmount = _amountController.text.replaceAll(RegExp(r'[^\d]'), '');
+    if (rawAmount.isEmpty || int.parse(rawAmount) == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Masukkan jumlah transaksi'), behavior: SnackBarBehavior.floating),
+      );
+      return;
     }
 
-    return _buildAndroid();
-  }
+    if (_selectedCategoryName == null) return;
 
-  Widget _buildAndroid() {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          _screenTitle,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 17,
-          ),
-        ),
-        centerTitle: true,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        backgroundColor: Colors.transparent,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-        ),
-        actions: _isEditMode
-            ? [
-                IconButton(
-                  onPressed: _deleteTransaction,
-                  icon: const Icon(
-                    Icons.delete_outline_rounded,
-                    color: Colors.red,
-                  ),
-                ),
-              ]
-            : null,
-      ),
-      body: _buildForm(),
+    final transaction = Transaction(
+      id: widget.existingTransaction?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      title: _selectedCategoryName!,
+      type: _transactionType,
+      amount: double.parse(rawAmount),
+      category: _selectedCategoryName!,
+      date: _selectedDate,
+      note: _noteController.text.isEmpty ? null : _noteController.text,
+      currency: _selectedCurrency,
     );
-  }
 
-  Widget _buildIOS() {
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(_screenTitle),
-        leading: CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Batal'),
-        ),
-      ),
-      child: SafeArea(child: _buildForm()),
+    context.read<TransactionBloc>().add(
+      _isEditMode
+          ? TransactionUpdateRequested(transaction: transaction)
+          : TransactionAddRequested(transaction: transaction),
     );
+
+    Navigator.pop(context);
   }
 
-  Widget _buildForm() {
-    final isExpense = _transactionType == TransactionType.expense;
-    final accentColor = isExpense ? Colors.red : const Color(0xFF4CAF50);
-
-    return Form(
-      key: _formKey,
-      child: Column(
-        children: [
-          _buildTopSection(accentColor, isExpense),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              children: [
-                const SizedBox(height: 8),
-                _buildCategoryRow(accentColor),
-                _buildDivider(),
-                _buildDateRow(accentColor),
-                _buildDivider(),
-                _buildCurrencyRow(),
-                _buildDivider(),
-                _buildNoteRow(),
-                const SizedBox(height: 24),
-                _buildScanReceiptButton(),
-                const SizedBox(height: 16),
-                _buildSubmitButton(),
-                const SizedBox(height: 32),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTopSection(Color accentColor, bool isExpense) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-      decoration: BoxDecoration(
-        color: accentColor.withValues(alpha: 0.08),
-      ),
-      child: Column(
-        children: [
-          _buildTypeSelector(),
-          const SizedBox(height: 28),
-          Text(
-            isExpense ? 'Pengeluaran' : 'Pemasukan',
-            style: TextStyle(
-              fontSize: 13,
-              color: accentColor.withValues(alpha: 0.7),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          GestureDetector(
-            onTap: () => FocusScope.of(context).requestFocus(_amountFocusNode),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  AppCurrencies.symbolFor(_selectedCurrency),
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w500,
-                    color: accentColor.withValues(alpha: 0.6),
-                  ),
-                ),
-                IntrinsicWidth(
-                  child: TextFormField(
-                    controller: _amountController,
-                    focusNode: _amountFocusNode,
-                    onChanged: _onAmountChanged,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 42,
-                      fontWeight: FontWeight.bold,
-                      color: accentColor,
-                      letterSpacing: -1,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: '0',
-                      hintStyle: TextStyle(
-                        fontSize: 42,
-                        fontWeight: FontWeight.bold,
-                        color: accentColor.withValues(alpha: 0.25),
-                      ),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Nominal tidak boleh kosong';
-                      }
-                      final cleanValue = value.replaceAll(RegExp(r'[^\d]'), '');
-                      if (double.tryParse(cleanValue) == null) {
-                        return 'Masukkan angka yang valid';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTypeSelector() {
-    final isExpense = _transactionType == TransactionType.expense;
-    final isIOS = Platform.isIOS;
-
-    return Container(
-      height: 44,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(50),
-      ),
-      child: Row(
-        children: [
-          _buildTypeOption(
-            label: 'Pengeluaran',
-            isSelected: isExpense,
-            selectedColor: Colors.red,
-            icon: isIOS ? CupertinoIcons.arrow_up_circle_fill : Icons.arrow_upward_rounded,
-            onTap: () => setState(() {
-              _transactionType = TransactionType.expense;
-              if (_currentCategoryNames.isNotEmpty) {
-                _selectedCategoryName = _currentCategoryNames.first;
-              }
-            }),
-          ),
-          _buildTypeOption(
-            label: 'Pemasukan',
-            isSelected: !isExpense,
-            selectedColor: const Color(0xFF4CAF50),
-            icon: isIOS ? CupertinoIcons.arrow_down_circle_fill : Icons.arrow_downward_rounded,
-            onTap: () => setState(() {
-              _transactionType = TransactionType.income;
-              if (_currentCategoryNames.isNotEmpty) {
-                _selectedCategoryName = _currentCategoryNames.first;
-              }
-            }),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTypeOption({
-    required String label,
-    required bool isSelected,
-    required Color selectedColor,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeInOut,
-          decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(50),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : [],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 15,
-                color: isSelected ? selectedColor : Colors.grey,
-              ),
-              const SizedBox(width: 5),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                  color: isSelected ? selectedColor : Colors.grey,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryRow(Color accentColor) {
-    final isIOS = Platform.isIOS;
-    final catName = _selectedCategoryName ?? 'Lainnya';
-
-    return InkWell(
-      onTap: isIOS ? _showCategoryPickerIOS : _showCategoryPickerAndroid,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                CategoryIconRegistry.resolve(null, catName),
-                size: 18,
-                color: accentColor,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Kategori',
-                    style: TextStyle(fontSize: 11, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    catName,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              isIOS ? CupertinoIcons.chevron_right : Icons.chevron_right,
-              size: 18,
-              color: Colors.grey.shade400,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showCategoryPickerAndroid() {
-    showModalBottomSheet(
+  void _deleteTransaction() {
+    showDialog(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    'Pilih Kategori',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                ),
-                ..._currentCategoryNames.map((name) {
-                  final isSelected = name == _selectedCategoryName;
-                  return ListTile(
-                    leading: Icon(
-                      CategoryIconRegistry.resolve(null, name),
-                      color: isSelected ? Colors.red : Colors.grey,
-                    ),
-                    title: Text(
-                      name,
-                      style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected ? Colors.red : null,
-                      ),
-                    ),
-                    trailing: isSelected ? const Icon(Icons.check, color: Colors.red) : null,
-                    onTap: () {
-                      setState(() {
-                        _selectedCategoryName = name;
-                      });
-                      Navigator.pop(context);
-                    },
-                  );
-                }),
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showCategoryPickerIOS() {
-    showCupertinoModalPopup(
-      context: context,
-      builder: (context) => Container(
-        height: 250,
-        color: CupertinoColors.systemBackground,
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  CupertinoButton(
-                    child: const Text('Batal'),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  CupertinoButton(
-                    child: const Text('Pilih'),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: CupertinoPicker(
-                itemExtent: 40,
-                onSelectedItemChanged: (index) {
-                  setState(() {
-                    _selectedCategoryName = _currentCategoryNames[index];
-                  });
-                },
-                children: _currentCategoryNames.map((name) {
-                  return Center(child: Text(name));
-                }).toList(),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDateRow(Color accentColor) {
-    final isIOS = Platform.isIOS;
-    final dateStr = DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(_selectedDate);
-
-    return InkWell(
-      onTap: isIOS
-          ? _showDatePickerIOS
-          : () async {
-              final date = await showDatePicker(
-                context: context,
-                initialDate: _selectedDate,
-                firstDate: DateTime(2020),
-                lastDate: DateTime.now(),
-                builder: (context, child) => Theme(
-                  data: Theme.of(context).copyWith(
-                    colorScheme: ColorScheme.light(primary: accentColor),
-                  ),
-                  child: child!,
-                ),
-              );
-              if (date != null) setState(() => _selectedDate = date);
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.xlRadius),
+        title: const Text('Hapus Transaksi'),
+        content: const Text('Apakah kamu yakin ingin menghapus transaksi ini?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<TransactionBloc>().add(TransactionDeleteRequested(id: widget.existingTransaction!.safeId));
+              Navigator.pop(context);
             },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                isIOS ? CupertinoIcons.calendar : Icons.calendar_today_rounded,
-                size: 18,
-                color: accentColor,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Tanggal',
-                    style: TextStyle(fontSize: 11, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    dateStr,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              isIOS ? CupertinoIcons.chevron_right : Icons.chevron_right,
-              size: 18,
-              color: Colors.grey.shade400,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCurrencyRow() {
-    final isIOS = Platform.isIOS;
-    final currencyInfo = AppCurrencies.getById(_selectedCurrency);
-
-    return InkWell(
-      onTap: isIOS ? _showCurrencyPickerIOS : _showCurrencyPickerAndroid,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.attach_money_rounded,
-                size: 18,
-                color: Colors.blue,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Mata Uang',
-                    style: TextStyle(fontSize: 11, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${currencyInfo.symbol} ${currencyInfo.code} - ${currencyInfo.name}',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              isIOS ? CupertinoIcons.chevron_right : Icons.chevron_right,
-              size: 18,
-              color: Colors.grey.shade400,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showCurrencyPickerAndroid() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.only(bottom: 8),
-                child: Text(
-                  'Pilih Mata Uang',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-              Flexible(
-                child: ListView(
-                  shrinkWrap: true,
-                  children: AppCurrencies.supported.map((currency) {
-                    final isSelected = currency.code == _selectedCurrency;
-                    return ListTile(
-                      leading: Text(
-                        currency.symbol,
-                        style: const TextStyle(fontSize: 20),
-                      ),
-                      title: Text(
-                        '${currency.code} - ${currency.name}',
-                        style: TextStyle(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? Colors.blue : null,
-                        ),
-                      ),
-                      trailing: isSelected
-                          ? const Icon(Icons.check, color: Colors.blue)
-                          : null,
-                      onTap: () {
-                        setState(() => _selectedCurrency = currency.code);
-                        Navigator.pop(context);
-                      },
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showCurrencyPickerIOS() {
-    showCupertinoModalPopup(
-      context: context,
-      builder: (context) => Container(
-        height: 250,
-        color: CupertinoColors.systemBackground,
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  CupertinoButton(
-                    child: const Text('Batal'),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  CupertinoButton(
-                    child: const Text('Pilih'),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: CupertinoPicker(
-                itemExtent: 40,
-                onSelectedItemChanged: (index) {
-                  setState(() {
-                    _selectedCurrency = AppCurrencies.supported[index].code;
-                  });
-                },
-                children: AppCurrencies.supported.map((currency) {
-                  return Center(
-                    child: Text('${currency.symbol} ${currency.code} - ${currency.name}'),
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNoteRow() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: Colors.grey.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              Platform.isIOS
-                  ? CupertinoIcons.pencil
-                  : Icons.edit_note_rounded,
-              size: 18,
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: TextFormField(
-              controller: _noteController,
-              maxLines: null,
-              style: const TextStyle(fontSize: 15),
-              decoration: const InputDecoration(
-                hintText: 'Tambah catatan...',
-                hintStyle: TextStyle(color: Colors.grey),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.only(top: 10),
-                labelText: 'Catatan',
-                labelStyle: TextStyle(fontSize: 11, color: Colors.grey),
-                floatingLabelBehavior: FloatingLabelBehavior.always,
-              ),
-            ),
+            child: const Text('Hapus', style: TextStyle(color: AppColors.error)),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Divider(
-      height: 1,
-      thickness: 0.5,
-      color: Colors.grey.withValues(alpha: 0.2),
-      indent: 52,
-    );
-  }
-
-  void _showDatePickerIOS() {
-    showCupertinoModalPopup(
-      context: context,
-      builder: (context) => Container(
-        height: 300,
-        color: CupertinoColors.systemBackground,
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  CupertinoButton(
-                    child: const Text('Batal'),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  CupertinoButton(
-                    child: const Text('Pilih'),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: CupertinoDatePicker(
-                mode: CupertinoDatePickerMode.date,
-                initialDateTime: _selectedDate,
-                onDateTimeChanged: (date) {
-                  setState(() {
-                    _selectedDate = date;
-                  });
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildScanReceiptButton() {
-    final isIOS = Platform.isIOS;
-
-    return OutlinedButton.icon(
-      onPressed: _scanReceipt,
-      icon: Icon(
-        isIOS ? CupertinoIcons.camera : Icons.document_scanner_outlined,
-        size: 18,
-      ),
-      label: const Text('Scan Struk / Nota'),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: const Color(0xFF4CAF50),
-        side: const BorderSide(color: Color(0xFF4CAF50), width: 1.5),
-        minimumSize: const Size(double.infinity, 48),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
       ),
     );
   }
 
   Future<void> _scanReceipt() async {
     final usageState = context.read<UsageBloc>().state;
-    if (!(usageState is UsageLoaded && usageState.canUseAiPhoto())) {
-      if (Platform.isIOS) {
-        showCupertinoDialog(
-          context: context,
-          builder: (context) => CupertinoAlertDialog(
-            title: const Text('Batas Tercapai'),
-            content: const Text(
-              'Batas scan struk harian tercapai (2/2). Coba lagi besok atau upgrade ke Premium.',
-            ),
-            actions: [
-              CupertinoDialogAction(
-                child: const Text('OK'),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Batas scan struk harian tercapai (2/2). Coba lagi besok atau upgrade ke Premium.',
-            ),
-          ),
-        );
-      }
+    if (usageState is UsageLoaded && usageState.remainingAiPhoto <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kuota scan habis. Upgrade ke Premium untuk kuota tak terbatas.'), behavior: SnackBarBehavior.floating),
+      );
       return;
     }
 
-    final scanner = ReceiptScanService();
-    final image = await scanner.pickImage();
-    if (image == null) return;
-
-    if (Platform.isIOS) {
-      showCupertinoDialog(
-        context: context,
-        builder: (context) => const CupertinoAlertDialog(
-          content: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CupertinoActivityIndicator(),
-              SizedBox(width: 12),
-              Text('Memproses struk...'),
-            ],
-          ),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Memproses struk...')),
-      );
-    }
-
+    setState(() => _isLoading = true);
     try {
-      final result = await scanner.scanReceipt(image);
-      context.read<UsageBloc>().add(const UsageIncrementAiPhoto());
-
+      final imageFile = await ReceiptScanService().pickImage(fromCamera: false);
+      if (imageFile == null) { setState(() => _isLoading = false); return; }
+      final scanResult = await ReceiptScanService().scanReceipt(imageFile);
       if (mounted) {
-        Navigator.pop(context);
-        Navigator.push(
+        final result = await Navigator.push<bool>(
           context,
-          MaterialPageRoute(
-            builder: (_) => ReceiptReviewScreen(scanResult: result),
-          ),
+          MaterialPageRoute(builder: (_) => ReceiptReviewScreen(scanResult: scanResult)),
         );
+        if (result == true && mounted) {
+          context.read<UsageBloc>().add(const UsageIncrementAiPhoto());
+        }
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal scan: $e')),
+          SnackBar(content: Text('Gagal scan: $e'), behavior: SnackBarBehavior.floating),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Widget _buildSubmitButton() {
+  @override
+  Widget build(BuildContext context) {
     final isExpense = _transactionType == TransactionType.expense;
-    final accentColor = isExpense ? Colors.red : const Color(0xFF4CAF50);
-    final cleanAmount = _amountController.text.replaceAll(RegExp(r'[^\d]'), '');
-    final isValid = cleanAmount.isNotEmpty && (double.tryParse(cleanAmount) ?? 0) > 0;
+    final accentColor = isExpense ? AppColors.secondary : AppColors.primary;
 
-    return SizedBox(
-      height: 54,
-      child: ElevatedButton(
-        onPressed: _isLoading || !isValid ? null : _saveTransaction,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isValid ? accentColor : Colors.grey.shade300,
-          foregroundColor: isValid ? Colors.white : Colors.grey,
-          minimumSize: const Size(double.infinity, 54),
-          elevation: isValid ? 2 : 0,
-          shadowColor: accentColor.withValues(alpha: 0.4),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        child: _isLoading
-            ? SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  color: Colors.white,
-                ),
-              )
-            : Text(
-                _isEditMode ? 'Perbarui Transaksi' : 'Simpan Transaksi',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.3,
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      _buildTopSection(accentColor, isExpense),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          children: [
+                            _buildCategoryField(),
+                            const SizedBox(height: AppSpacing.stackSm),
+                            _buildDateField(),
+                            const SizedBox(height: AppSpacing.stackSm),
+                            _buildCurrencyField(),
+                            const SizedBox(height: AppSpacing.stackSm),
+                            _buildNotesField(),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
+            ),
+            _buildBottomActions(),
+          ],
+        ),
       ),
     );
   }
 
-  Future<void> _deleteTransaction() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Hapus Transaksi?'),
-        content: const Text('Transaksi ini akan dihapus permanen.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Hapus'),
-          ),
-        ],
+  Widget _buildHeader() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(bottom: BorderSide(color: AppColors.surfaceContainerHighest, width: 0.5)),
+      ),
+      child: SizedBox(
+        height: 56,
+        child: Row(
+          children: [
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.arrow_back_rounded, color: AppColors.onSurfaceVariant),
+            ),
+            const Spacer(),
+            Text('Tambah Transaksi', style: AppTypography.headlineSm.copyWith(color: AppColors.onSurface)),
+            const Spacer(),
+            if (_isEditMode)
+              IconButton(
+                onPressed: _deleteTransaction,
+                icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
+              )
+            else
+              const SizedBox(width: 48),
+          ],
+        ),
       ),
     );
-
-    if (confirm == true && mounted) {
-      context.read<TransactionBloc>().add(
-        TransactionDeleteRequested(id: widget.existingTransaction!.id!),
-      );
-      if (mounted) Navigator.pop(context);
-    }
   }
 
-  Future<void> _saveTransaction() async {
-    if (_amountController.text.isEmpty) {
-      if (Platform.isIOS) {
-        _showAlertIOS('Error', 'Nominal tidak boleh kosong');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nominal tidak boleh kosong')),
-        );
-      }
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    final cleanAmount = _amountController.text.replaceAll(RegExp(r'[^\d]'), '');
-    final amount = double.tryParse(cleanAmount) ?? 0;
-
-    final catName = _selectedCategoryName ?? 'Lainnya';
-
-    final transaction = TransactionModel(
-      id: _isEditMode ? widget.existingTransaction?.id : null,
-      title: catName,
-      amount: amount,
-      type: _transactionType,
-      categoryId: catName,
-      date: _selectedDate,
-      note: _noteController.text,
-      currency: _selectedCurrency,
-      exchangeRateToIdr: AppCurrencies.defaultRates[_selectedCurrency] ?? 1.0,
-    );
-
-    if (_isEditMode) {
-      context.read<TransactionBloc>().add(TransactionUpdateRequested(transaction: transaction));
-    } else {
-      context.read<TransactionBloc>().add(TransactionAddRequested(transaction: transaction));
-    }
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (mounted) {
-      if (Platform.isIOS) {
-        _showAlertIOS(
-          'Berhasil',
-          _isEditMode ? 'Transaksi berhasil diperbarui' : 'Transaksi berhasil ditambahkan',
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_isEditMode
-                ? 'Transaksi berhasil diperbarui'
-                : 'Transaksi berhasil ditambahkan'),
+  Widget _buildTopSection(Color accentColor, bool isExpense) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+        border: Border(bottom: BorderSide(color: AppColors.surfaceContainerHighest.withValues(alpha: 0.5))),
+      ),
+      child: Column(
+        children: [
+          _buildTypeToggle(isExpense),
+          const SizedBox(height: 24),
+          Text(
+            isExpense ? 'Pengeluaran' : 'Pemasukan',
+            style: AppTypography.bodySm.copyWith(color: accentColor, fontWeight: FontWeight.w500),
           ),
-        );
-      }
-      Navigator.pop(context);
-    }
-  }
-
-  void _showAlertIOS(String title, String message) {
-    showCupertinoDialog(
-      context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('OK'),
-            onPressed: () => Navigator.pop(context),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Rp', style: AppTypography.headlineMd.copyWith(color: accentColor.withValues(alpha: 0.7))),
+              const SizedBox(width: 4),
+              SizedBox(
+                width: 180,
+                child: TextField(
+                  controller: _amountController,
+                  focusNode: _amountFocusNode,
+                  onChanged: _onAmountChanged,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  style: AppTypography.currencyDisplay.copyWith(color: accentColor),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
+  Widget _buildTypeToggle(bool isExpense) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainer,
+        borderRadius: AppRadius.fullRadius,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() {
+                _transactionType = TransactionType.expense;
+                if (_selectedCategoryName != null && !_currentCategoryNames.contains(_selectedCategoryName)) {
+                  _selectedCategoryName = _currentCategoryNames.isNotEmpty ? _currentCategoryNames.first : null;
+                }
+              }),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: isExpense ? AppColors.surfaceContainerLowest : Colors.transparent,
+                  borderRadius: AppRadius.fullRadius,
+                  boxShadow: isExpense
+                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1))]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.arrow_upward_rounded, size: 16, color: isExpense ? AppColors.secondary : AppColors.onSurfaceVariant),
+                    const SizedBox(width: 6),
+                    Text('Pengeluaran', style: AppTypography.bodySm.copyWith(
+                      fontWeight: isExpense ? FontWeight.w600 : FontWeight.w500,
+                      color: isExpense ? AppColors.secondary : AppColors.onSurfaceVariant,
+                    )),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() {
+                _transactionType = TransactionType.income;
+                if (_selectedCategoryName != null && !_currentCategoryNames.contains(_selectedCategoryName)) {
+                  _selectedCategoryName = _currentCategoryNames.isNotEmpty ? _currentCategoryNames.first : null;
+                }
+              }),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: !isExpense ? AppColors.surfaceContainerLowest : Colors.transparent,
+                  borderRadius: AppRadius.fullRadius,
+                  boxShadow: !isExpense
+                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1))]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.arrow_downward_rounded, size: 16, color: !isExpense ? AppColors.primary : AppColors.onSurfaceVariant),
+                    const SizedBox(width: 6),
+                    Text('Pemasukan', style: AppTypography.bodySm.copyWith(
+                      fontWeight: !isExpense ? FontWeight.w600 : FontWeight.w500,
+                      color: !isExpense ? AppColors.primary : AppColors.onSurfaceVariant,
+                    )),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormField({
+    required IconData icon,
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+    Color? iconBgColor,
+  }) {
+    return GlassCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            width: 44, height: 44,
+            decoration: BoxDecoration(
+              color: iconBgColor ?? AppColors.surfaceContainer,
+              borderRadius: AppRadius.fullRadius,
+            ),
+            child: Icon(icon, color: AppColors.onSurfaceVariant, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: AppTypography.labelMono.copyWith(fontSize: 11, color: AppColors.onSurfaceVariant)),
+                const SizedBox(height: 2),
+                Text(value, style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right_rounded, color: AppColors.onSurfaceVariant),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryField() {
+    return _buildFormField(
+      icon: iconDataForCategory(_selectedCategoryName ?? ''),
+      label: 'Kategori',
+      value: _selectedCategoryName ?? 'Lainnya',
+      onTap: _showCategoryPicker,
+      iconBgColor: AppColors.surfaceContainer,
+    );
+  }
+
+  Widget _buildDateField() {
+    return _buildFormField(
+      icon: Icons.calendar_today_rounded,
+      label: 'Tanggal',
+      value: _formatDate(_selectedDate),
+      onTap: _pickDate,
+      iconBgColor: AppColors.primaryFixedDim.withValues(alpha: 0.2),
+    );
+  }
+
+  Widget _buildCurrencyField() {
+    return _buildFormField(
+      icon: Icons.attach_money_rounded,
+      label: 'Mata Uang',
+      value: _selectedCurrencyDisplay,
+      onTap: _showCurrencyPicker,
+      iconBgColor: AppColors.primaryContainer.withValues(alpha: 0.2),
+    );
+  }
+
+  Widget _buildNotesField() {
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44, height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainer,
+              borderRadius: AppRadius.fullRadius,
+            ),
+            child: const Icon(Icons.edit_note_rounded, color: AppColors.onSurfaceVariant, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Catatan', style: AppTypography.labelMono.copyWith(fontSize: 11, color: AppColors.onSurfaceVariant)),
+                const SizedBox(height: 4),
+                TextField(
+                  controller: _noteController,
+                  decoration: const InputDecoration(
+                    hintText: 'Tambah catatan...',
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  maxLines: 3,
+                  style: AppTypography.bodyMd.copyWith(color: AppColors.onSurface),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomActions() {
+    final isEmpty = _amountController.text.replaceAll(RegExp(r'[^\d]'), '').isEmpty;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.surfaceContainerHighest, width: 0.5)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _isLoading ? null : _scanReceipt,
+              icon: _isLoading
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.receipt_long_rounded, size: 20),
+              label: Text(_isLoading ? 'Memproses...' : 'Scan Struk / Nota'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.xlRadius),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: isEmpty ? null : _submit,
+              child: Text(_isEditMode ? 'Simpan Perubahan' : 'Simpan Transaksi'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCategoryPicker() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Pilih Kategori', style: AppTypography.headlineSm.copyWith(color: AppColors.onSurface)),
+            const SizedBox(height: 16),
+            ..._currentCategoryNames.map((cat) => ListTile(
+              leading: Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainer,
+                  borderRadius: AppRadius.mdRadius,
+                ),
+                child: Icon(iconDataForCategory(cat), color: AppColors.onSurfaceVariant, size: 20),
+              ),
+              title: Text(cat, style: AppTypography.bodyMd.copyWith(color: AppColors.onSurface)),
+              trailing: cat == _selectedCategoryName
+                  ? const Icon(Icons.check_rounded, color: AppColors.primary)
+                  : null,
+              onTap: () { setState(() => _selectedCategoryName = cat); Navigator.pop(ctx); },
+            )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCurrencyPicker() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Pilih Mata Uang', style: AppTypography.headlineSm.copyWith(color: AppColors.onSurface)),
+            const SizedBox(height: 16),
+            ...AppCurrencies.supported.map((c) => ListTile(
+              title: Text('${c.symbol} ${c.code} - ${c.name}', style: AppTypography.bodyMd.copyWith(color: AppColors.onSurface)),
+              trailing: c.code == _selectedCurrency
+                  ? const Icon(Icons.check_rounded, color: AppColors.primary)
+                  : null,
+              onTap: () { setState(() => _selectedCurrency = c.code); Navigator.pop(ctx); },
+            )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static IconData iconDataForCategory(String category) {
+    return CategoryIconRegistry.resolve(category, category);
+  }
 }

@@ -1,13 +1,13 @@
 import 'dart:io';
 import 'package:equatable/equatable.dart';
-import '../../../../data/models/transaction_model.dart';
+import '../../../../domain/entities/transaction.dart';
 
 class ChatMessage {
   final String text;
   final bool isUser;
   final bool isLoading;
   final bool isRetryButton;
-  final TransactionModel? pendingTransaction;
+  final Transaction? pendingTransaction;
   final File? imageFile;
   final DateTime timestamp;
 

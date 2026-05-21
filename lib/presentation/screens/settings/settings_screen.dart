@@ -1,10 +1,10 @@
-import 'dart:io';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/settings/settings_bloc.dart';
 import '../../blocs/settings/settings_event.dart';
 import '../../blocs/settings/settings_state.dart';
+import '../../blocs/usage/usage_bloc.dart';
+import '../../blocs/usage/usage_state.dart';
 import '../auth/bloc/auth_bloc.dart';
 import '../auth/bloc/auth_event.dart';
 import '../auth/bloc/auth_state.dart';
@@ -12,6 +12,11 @@ import '../upgrade/upgrade_screen.dart';
 import '../export_import/export_screen.dart';
 import '../export_import/import_screen.dart';
 import '../../../core/constants/currencies.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/app_radius.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../widgets/toggle_switch.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -29,274 +34,322 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isIOS = Platform.isIOS;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final usageState = context.watch<UsageBloc>().state;
+    final isPremium = usageState is UsageLoaded && usageState.isPremium;
 
-    if (isIOS) {
-      return CupertinoPageScaffold(
-        navigationBar: const CupertinoNavigationBar(
-          middle: Text('Pengaturan'),
-        ),
-        child: SafeArea(child: _buildBody(isDark)),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Pengaturan',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-      ),
-      body: _buildBody(isDark),
-    );
-  }
-
-  Widget _buildBody(bool isDark) {
-    return BlocConsumer<SettingsBloc, SettingsState>(
-      listener: (context, state) {
-        if (state is SettingsLoaded) {
-          _applyTheme(context, state.settings.isDarkMode);
-        }
-      },
+    return BlocBuilder<SettingsBloc, SettingsState>(
       builder: (context, state) {
-        if (state is SettingsLoading) {
-          return const Center(child: CircularProgressIndicator.adaptive());
-        }
-
         final settings = state is SettingsLoaded ? state.settings : null;
 
-        return ListView(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          children: [
-            // === AKUN ===
-            _buildSectionHeader('Akun'),
-            BlocBuilder<AuthBloc, AuthState>(
-              builder: (context, authState) {
-                final profile = authState is AuthAuthenticated
-                    ? authState.profile
-                    : null;
-                return _buildProfileTile(
-                  name: profile?.name ?? 'Pengguna',
-                  email: profile?.email ?? '',
-                  onTap: () => _navigateToProfile(context),
-                );
-              },
-            ),
-            _buildMenuTile(
-              icon: Icons.logout_rounded,
-              title: 'Keluar',
-              trailing: null,
-              onTap: () => _confirmLogout(context),
-            ),
-            const Divider(),
-
-            // === TAMPILAN ===
-            _buildSectionHeader('Tampilan'),
-            _buildSwitchTile(
-              icon: isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-              title: 'Mode Gelap',
-              value: settings?.isDarkMode ?? false,
-              onChanged: (_) => context
-                  .read<SettingsBloc>()
-                  .add(const SettingsToggleDarkMode()),
-            ),
-            const Divider(),
-
-            // === PREFERENSI ===
-            _buildSectionHeader('Preferensi'),
-            _buildMenuTile(
-              icon: Icons.currency_exchange_rounded,
-              title: 'Mata Uang',
-              trailing: Text(
-                settings?.preferredCurrency ?? 'IDR',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              onTap: () => _showCurrencyPicker(context),
-            ),
-            _buildMenuTile(
-              icon: Icons.notifications_outlined,
-              title: 'Notifikasi',
-              trailing: _buildToggle(
-                value: settings?.notificationsEnabled ?? true,
-              ),
-              onTap: () => context
-                  .read<SettingsBloc>()
-                  .add(const SettingsToggleNotifications()),
-            ),
-            const Divider(),
-
-            // === DATA ===
-            _buildSectionHeader('Data'),
-            _buildMenuTile(
-              icon: Icons.file_upload_outlined,
-              title: 'Ekspor Data',
-              trailing: const Icon(Icons.chevron_right, size: 20),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ExportScreen()),
-              ),
-            ),
-            _buildMenuTile(
-              icon: Icons.file_download_outlined,
-              title: 'Impor Data',
-              trailing: const Icon(Icons.chevron_right, size: 20),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ImportScreen()),
-              ),
-            ),
-            const Divider(),
-
-            const Divider(),
-
-            // === PREMIUM ===
-            _buildSectionHeader('Premium'),
-            _buildMenuTile(
-              icon: Icons.workspace_premium_rounded,
-              title: settings?.isPremium == true
-                  ? 'Premium Aktif'
-                  : 'Upgrade ke Premium',
-              trailing: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: settings?.isPremium == true
-                      ? Colors.green
-                      : Colors.orange,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  settings?.isPremium == true ? 'AKTIF' : 'FREE',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+        return Scaffold(
+          body: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildTopAppBar(isPremium),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                    children: [
+                      _buildSectionTitle('Akun'),
+                      _buildAccountCard(),
+                      const SizedBox(height: AppSpacing.stackMd),
+                      _buildSectionTitle('Tampilan'),
+                      _buildAppearanceCard(settings?.isDarkMode ?? false),
+                      const SizedBox(height: AppSpacing.stackMd),
+                      _buildSectionTitle('Preferensi'),
+                      _buildPreferencesCard(settings),
+                      const SizedBox(height: AppSpacing.stackMd),
+                      _buildSectionTitle('Data'),
+                      _buildDataCard(),
+                      const SizedBox(height: AppSpacing.stackMd),
+                      _buildSectionTitle('Premium'),
+                      _buildPremiumCard(isPremium),
+                      const SizedBox(height: AppSpacing.stackMd),
+                      _buildSectionTitle('Tentang'),
+                      _buildAboutCard(),
+                    ],
                   ),
                 ),
-              ),
-              onTap: () {
-                if (settings?.isPremium != true) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const UpgradeScreen()),
-                  );
-                }
-              },
+              ],
             ),
-            const Divider(),
-
-            // === TENTANG ===
-            _buildSectionHeader('Tentang'),
-            _buildMenuTile(
-              icon: Icons.info_outline,
-              title: 'Versi Aplikasi',
-              trailing: const Text(
-                '1.7.0',
-                style: TextStyle(color: Colors.grey),
-              ),
-              onTap: () {},
-            ),
-            const SizedBox(height: 32),
-          ],
+          ),
         );
       },
     );
   }
 
-  void _applyTheme(BuildContext context, bool isDarkMode) {
-    // Theme is applied via MaterialApp's themeMode
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-      child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: Theme.of(context).colorScheme.primary,
-          letterSpacing: 0.5,
+  Widget _buildTopAppBar(bool isPremium) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface.withValues(alpha: 0.8),
+        border: Border(bottom: BorderSide(color: AppColors.surfaceContainerHighest, width: 0.5)),
+      ),
+      child: SizedBox(
+        height: 64,
+        child: Row(
+          children: [
+            const SizedBox(width: AppSpacing.containerPadding),
+            const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary, size: 28),
+            const SizedBox(width: 8),
+            Text('Uwangku', style: AppTypography.headlineSm.copyWith(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.primary)),
+            const Spacer(),
+            if (isPremium)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(color: AppColors.primary, borderRadius: AppRadius.fullRadius),
+                child: Text('Premium', style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w600, color: AppColors.onPrimary)),
+              )
+            else
+              OutlinedButton(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const UpgradeScreen())),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: BorderSide(color: AppColors.primary),
+                  shape: RoundedRectangleBorder(borderRadius: AppRadius.fullRadius),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('Premium', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              ),
+            const SizedBox(width: AppSpacing.containerPadding),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildProfileTile({
-    required String name,
-    required String email,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        child: Text(
-          name.isNotEmpty ? name[0].toUpperCase() : '?',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 10),
+      child: Text(title.toUpperCase(), style: AppTypography.labelMono.copyWith(fontSize: 11, color: AppColors.onSurfaceVariant, letterSpacing: 2)),
+    );
+  }
+
+  Widget _buildWhiteCard(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: AppRadius.xlRadius,
+        border: Border.all(color: AppColors.surfaceContainerHigh),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildAccountCard() {
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, authState) {
+        final profile = authState is AuthAuthenticated ? authState.profile : null;
+        final name = profile?.name ?? 'Pengguna';
+        final email = profile?.email ?? '';
+
+        return _buildWhiteCard([
+          InkWell(
+            onTap: () => _navigateToProfile(context),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48, height: 48,
+                    decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
+                    child: Center(child: Text(name[0].toUpperCase(), style: AppTypography.headlineSm.copyWith(color: AppColors.primary))),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(name, style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+                        const SizedBox(height: 2),
+                        Text(email, style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded, color: AppColors.onSurfaceVariant),
+                ],
+              ),
+            ),
+          ),
+          Divider(height: 1, color: AppColors.surfaceContainerLow, indent: 16, endIndent: 16),
+          InkWell(
+            onTap: () => _confirmLogout(context),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40, height: 40,
+                    decoration: BoxDecoration(color: AppColors.surfaceContainer, shape: BoxShape.circle),
+                    child: const Icon(Icons.logout_rounded, color: AppColors.onSurfaceVariant, size: 20),
+                  ),
+                  const SizedBox(width: 14),
+                  Text('Keluar', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: AppColors.onSurface)),
+                ],
+              ),
+            ),
+          ),
+        ]);
+      },
+    );
+  }
+
+  Widget _buildAppearanceCard(bool isDarkMode) {
+    return _buildWhiteCard([
+      Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(color: AppColors.surfaceContainer, shape: BoxShape.circle),
+              child: Icon(Icons.dark_mode_rounded, color: AppColors.onSurfaceVariant, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(child: Text('Mode Gelap', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: AppColors.onSurface))),
+            ToggleSwitch(
+              value: isDarkMode,
+              onChanged: (_) => context.read<SettingsBloc>().add(const SettingsToggleDarkMode()),
+            ),
+          ],
+        ),
+      ),
+    ]);
+  }
+
+  Widget _buildPreferencesCard(dynamic settings) {
+    final preferredCurrency = settings?.preferredCurrency ?? 'IDR';
+    final notificationsEnabled = settings?.notificationsEnabled ?? true;
+
+    return _buildWhiteCard([
+      InkWell(
+        onTap: () => _showCurrencyPicker(context),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(color: AppColors.surfaceContainer, shape: BoxShape.circle),
+                child: const Icon(Icons.payments_rounded, color: AppColors.onSurfaceVariant, size: 20),
+              ),
+              const SizedBox(width: 14),
+              Expanded(child: Text('Mata Uang', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: AppColors.onSurface))),
+              Text(preferredCurrency, style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w700, color: AppColors.primary)),
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right_rounded, color: AppColors.onSurfaceVariant, size: 20),
+            ],
           ),
         ),
       ),
-      title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Text(email, style: const TextStyle(fontSize: 12)),
-      trailing: const Icon(Icons.chevron_right, size: 20),
-      onTap: onTap,
-    );
+      Divider(height: 1, color: AppColors.surfaceContainerLow, indent: 16, endIndent: 16),
+      Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(color: AppColors.surfaceContainer, shape: BoxShape.circle),
+              child: const Icon(Icons.notifications_outlined, color: AppColors.onSurfaceVariant, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(child: Text('Notifikasi', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: AppColors.onSurface))),
+            ToggleSwitch(
+              value: notificationsEnabled,
+              onChanged: (_) => context.read<SettingsBloc>().add(const SettingsToggleNotifications()),
+            ),
+          ],
+        ),
+      ),
+    ]);
   }
 
-  Widget _buildMenuTile({
-    required IconData icon,
-    required String title,
-    required Widget? trailing,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon, size: 22),
-      title: Text(title, style: const TextStyle(fontSize: 15)),
-      trailing: trailing,
-      onTap: onTap,
-    );
+  Widget _buildDataCard() {
+    return _buildWhiteCard([
+      InkWell(
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExportScreen())),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(color: AppColors.surfaceContainer, shape: BoxShape.circle),
+                child: const Icon(Icons.file_upload_outlined, color: AppColors.onSurfaceVariant, size: 20),
+              ),
+              const SizedBox(width: 14),
+              Expanded(child: Text('Ekspor Data', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: AppColors.onSurface))),
+              const Icon(Icons.chevron_right_rounded, color: AppColors.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+      Divider(height: 1, color: AppColors.surfaceContainerLow, indent: 16, endIndent: 16),
+      InkWell(
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ImportScreen())),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(color: AppColors.surfaceContainer, shape: BoxShape.circle),
+                child: const Icon(Icons.file_download_outlined, color: AppColors.onSurfaceVariant, size: 20),
+              ),
+              const SizedBox(width: 14),
+              Expanded(child: Text('Impor Data', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: AppColors.onSurface))),
+              const Icon(Icons.chevron_right_rounded, color: AppColors.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    ]);
   }
 
-  Widget _buildSwitchTile({
-    required IconData icon,
-    required String title,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    if (Platform.isIOS) {
-      return ListTile(
-        leading: Icon(icon, size: 22),
-        title: Text(title, style: const TextStyle(fontSize: 15)),
-        trailing: CupertinoSwitch(value: value, onChanged: onChanged),
-      );
-    }
-    return SwitchListTile(
-      secondary: Icon(icon, size: 22),
-      title: Text(title, style: const TextStyle(fontSize: 15)),
-      value: value,
-      onChanged: onChanged,
-    );
+  Widget _buildPremiumCard(bool isPremium) {
+    return _buildWhiteCard([
+      Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
+              child: const Icon(Icons.verified_rounded, color: AppColors.primary, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(isPremium ? 'Premium Aktif' : 'Upgrade ke Premium',
+                style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: AppColors.onSurface)),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(color: isPremium ? AppColors.primary.withValues(alpha: 0.1) : AppColors.secondaryContainer, borderRadius: AppRadius.fullRadius),
+              child: Text(isPremium ? 'AKTIF' : 'FREE',
+                style: AppTypography.labelMono.copyWith(fontSize: 10, fontWeight: FontWeight.w700, color: isPremium ? AppColors.primary : AppColors.secondary)),
+            ),
+          ],
+        ),
+      ),
+    ]);
   }
 
-  Widget _buildToggle({required bool value}) {
-    if (Platform.isIOS) {
-      return CupertinoSwitch(
-        value: value,
-        onChanged: (_) {},
-      );
-    }
-    return Switch(
-      value: value,
-      onChanged: (_) {},
-    );
+  Widget _buildAboutCard() {
+    return _buildWhiteCard([
+      const Padding(
+        padding: EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline, color: AppColors.onSurfaceVariant, size: 20),
+            SizedBox(width: 14),
+            Expanded(child: Text('Versi Aplikasi', style: TextStyle(fontWeight: FontWeight.w500, color: AppColors.onSurface))),
+            Text('1.7.0', style: TextStyle(color: AppColors.onSurfaceVariant)),
+          ],
+        ),
+      ),
+    ]);
   }
 
   void _showCurrencyPicker(BuildContext context) {
@@ -307,38 +360,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'Pilih Mata Uang',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text('Pilih Mata Uang', style: AppTypography.headlineSm.copyWith(color: AppColors.onSurface)),
             ),
-            const Divider(height: 1),
+            Divider(height: 1, color: AppColors.surfaceContainerHighest),
             Flexible(
               child: ListView(
                 shrinkWrap: true,
-                children: AppCurrencies.supported.map((c) => ListTile(
-                  title: Text(c.code),
-                  subtitle: Text(c.name, style: const TextStyle(fontSize: 12)),
-                  trailing: context
-                          .read<SettingsBloc>()
-                          .state
-                          is SettingsLoaded
-                      ? ((state) {
-                          final s = state as SettingsLoaded;
-                          return s.settings.preferredCurrency == c.code
-                              ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
-                              : null;
-                        })(context.read<SettingsBloc>().state)
-                      : null,
-                  onTap: () {
-                    context
-                        .read<SettingsBloc>()
-                        .add(SettingsSetCurrency(currency: c.code));
-                    Navigator.pop(ctx);
-                  },
-                )).toList(),
+                children: AppCurrencies.supported.map((c) {
+                  final isSelected = context.read<SettingsBloc>().state is SettingsLoaded &&
+                      (context.read<SettingsBloc>().state as SettingsLoaded).settings.preferredCurrency == c.code;
+                  return ListTile(
+                    title: Text(c.code, style: AppTypography.bodyMd.copyWith(color: AppColors.onSurface)),
+                    subtitle: Text(c.name, style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
+                    trailing: isSelected ? const Icon(Icons.check_rounded, color: AppColors.primary) : null,
+                    onTap: () {
+                      context.read<SettingsBloc>().add(SettingsSetCurrency(currency: c.code));
+                      Navigator.pop(ctx);
+                    },
+                  );
+                }).toList(),
               ),
             ),
           ],
@@ -348,31 +390,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _navigateToProfile(BuildContext context) {
-    Navigator.push(
-      context,
-      Platform.isIOS
-          ? CupertinoPageRoute(builder: (_) => const _ProfileScreen())
-          : MaterialPageRoute(builder: (_) => const _ProfileScreen()),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const _ProfileScreen()));
   }
 
   void _confirmLogout(BuildContext context) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.xlRadius),
         title: const Text('Konfirmasi Logout'),
         content: const Text('Apakah kamu yakin ingin keluar dari akun?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               context.read<AuthBloc>().add(const AuthLogoutRequested());
             },
-            child: const Text('Keluar', style: TextStyle(color: Colors.red)),
+            child: const Text('Keluar', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -385,103 +420,78 @@ class _ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isIOS = Platform.isIOS;
-
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         final profile = state is AuthAuthenticated ? state.profile : null;
         final nameController = TextEditingController(text: profile?.name ?? '');
-
-        Widget body = ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Center(
-              child: CircleAvatar(
-                radius: 48,
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                child: Text(
-                  (profile?.name ?? '?')[0].toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Nama',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.person_outline),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: TextEditingController(text: profile?.email ?? ''),
-              enabled: false,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.email_outlined),
-              ),
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: () {
-                context.read<AuthBloc>().add(
-                  AuthUpdateProfileRequested(name: nameController.text.trim()),
-                );
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Profil diperbarui')),
-                );
-              },
-              icon: const Icon(Icons.save_rounded),
-              label: const Text('Simpan Profil'),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-              ),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () => _showChangePasswordDialog(context),
-              icon: const Icon(Icons.lock_outline),
-              label: const Text('Ubah Password'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-              ),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () => _showDeleteAccountDialog(context),
-              icon: const Icon(Icons.delete_forever_outlined),
-              label: const Text('Hapus Akun'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.red,
-                side: const BorderSide(color: Colors.red),
-                minimumSize: const Size.fromHeight(48),
-              ),
-            ),
-          ],
-        );
-
-        if (isIOS) {
-          return CupertinoPageScaffold(
-            navigationBar: const CupertinoNavigationBar(
-              middle: Text('Profil'),
-            ),
-            child: SafeArea(child: body),
-          );
-        }
 
         return Scaffold(
           appBar: AppBar(
             title: const Text('Profil'),
             centerTitle: true,
           ),
-          body: body,
+          body: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Center(
+                child: CircleAvatar(
+                  radius: 48,
+                  backgroundColor: AppColors.primary,
+                  child: Text(
+                    (profile?.name ?? '?')[0].toUpperCase(),
+                    style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Nama',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person_outline),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: TextEditingController(text: profile?.email ?? ''),
+                enabled: false,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
+              ),
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: () {
+                  context.read<AuthBloc>().add(AuthUpdateProfileRequested(name: nameController.text.trim()));
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profil diperbarui')));
+                },
+                icon: const Icon(Icons.save_rounded),
+                label: const Text('Simpan Profil'),
+                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => _showChangePasswordDialog(context),
+                icon: const Icon(Icons.lock_outline),
+                label: const Text('Ubah Password'),
+                style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => _showDeleteAccountDialog(context),
+                icon: const Icon(Icons.delete_forever_outlined),
+                label: const Text('Hapus Akun'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                  side: const BorderSide(color: AppColors.error),
+                  minimumSize: const Size.fromHeight(48),
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -495,58 +505,28 @@ class _ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.xlRadius),
         title: const Text('Ubah Password'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: currentCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password Saat Ini',
-                border: OutlineInputBorder(),
-              ),
-            ),
+            TextField(controller: currentCtrl, obscureText: true, decoration: const InputDecoration(labelText: 'Password Saat Ini', border: OutlineInputBorder())),
             const SizedBox(height: 12),
-            TextField(
-              controller: newCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password Baru',
-                border: OutlineInputBorder(),
-              ),
-            ),
+            TextField(controller: newCtrl, obscureText: true, decoration: const InputDecoration(labelText: 'Password Baru', border: OutlineInputBorder())),
             const SizedBox(height: 12),
-            TextField(
-              controller: confirmCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Konfirmasi Password Baru',
-                border: OutlineInputBorder(),
-              ),
-            ),
+            TextField(controller: confirmCtrl, obscureText: true, decoration: const InputDecoration(labelText: 'Konfirmasi Password Baru', border: OutlineInputBorder())),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
           TextButton(
             onPressed: () {
               if (newCtrl.text != confirmCtrl.text) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Password baru tidak cocok')),
-                );
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password baru tidak cocok')));
                 return;
               }
               Navigator.pop(ctx);
-              context.read<AuthBloc>().add(
-                AuthChangePasswordRequested(
-                  currentPassword: currentCtrl.text,
-                  newPassword: newCtrl.text,
-                ),
-              );
+              context.read<AuthBloc>().add(AuthChangePasswordRequested(currentPassword: currentCtrl.text, newPassword: newCtrl.text));
             },
             child: const Text('Simpan'),
           ),
@@ -561,49 +541,31 @@ class _ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.xlRadius),
         title: const Text('Hapus Akun'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Semua data termasuk transaksi, aset, hutang, dan budget akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.',
-              style: TextStyle(fontSize: 13, color: Colors.red),
-            ),
+            const Text('Semua data akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.', style: TextStyle(fontSize: 13, color: AppColors.error)),
             const SizedBox(height: 16),
-            const Text(
-              'Ketik "HAPUS" untuk konfirmasi:',
-              style: TextStyle(fontSize: 13),
-            ),
+            const Text('Ketik "HAPUS" untuk konfirmasi:', style: TextStyle(fontSize: 13)),
             const SizedBox(height: 8),
-            TextField(
-              controller: confirmCtrl,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'HAPUS',
-              ),
-            ),
+            TextField(controller: confirmCtrl, decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'HAPUS')),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
           TextButton(
             onPressed: () {
               if (confirmCtrl.text != 'HAPUS') {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Ketik "HAPUS" untuk konfirmasi'),
-                  ),
-                );
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ketik "HAPUS" untuk konfirmasi')));
                 return;
               }
               Navigator.pop(ctx);
               context.read<AuthBloc>().add(const AuthDeleteAccountRequested());
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('Hapus Akun Saya'),
           ),
         ],

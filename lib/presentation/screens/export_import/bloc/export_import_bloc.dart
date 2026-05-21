@@ -2,13 +2,18 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'export_import_event.dart';
 import 'export_import_state.dart';
-import '../data/export_datasource.dart';
+import '../../../../data/repositories/transaction_repository_impl.dart';
+import '../../../../data/datasources/smart_db_helper.dart';
+import '../../../../data/datasources/pb_helper.dart';
+import '../../../../data/datasources/local/sqlite_helper.dart';
 
 class ExportImportBloc extends Bloc<ExportImportEvent, ExportImportState> {
-  final ExportDatasource _datasource;
+  final TransactionRepositoryImpl _repository;
 
-  ExportImportBloc({ExportDatasource? datasource})
-      : _datasource = datasource ?? ExportDatasource(),
+  ExportImportBloc()
+      : _repository = TransactionRepositoryImpl(
+          SmartDbHelper(remote: PbHelper(), local: SqliteHelper()),
+        ),
         super(const ExportImportInitial()) {
     on<ExportImportLoadRequested>(_onLoad);
     on<ExportImportExportPdf>(_onExportPdf);
@@ -21,7 +26,7 @@ class ExportImportBloc extends Bloc<ExportImportEvent, ExportImportState> {
   ) async {
     emit(const ExportImportLoading());
     try {
-      final transactions = await _datasource.fetchAll();
+      final transactions = await _repository.getTransactions();
       final filtered = transactions
           .where((t) => t.date.month == event.month && t.date.year == event.year)
           .toList();
@@ -43,7 +48,7 @@ class ExportImportBloc extends Bloc<ExportImportEvent, ExportImportState> {
   ) async {
     emit(const ExportImportExporting(exportType: 'pdf'));
     try {
-      final transactions = await _datasource.fetchByMonth(event.month, event.year);
+      final transactions = await _repository.fetchByMonth(event.month, event.year);
       emit(ExportImportLoaded(
         transactions: transactions,
         month: event.month,
@@ -62,7 +67,7 @@ class ExportImportBloc extends Bloc<ExportImportEvent, ExportImportState> {
   ) async {
     emit(const ExportImportExporting(exportType: 'excel'));
     try {
-      final transactions = await _datasource.fetchByMonth(event.month, event.year);
+      final transactions = await _repository.fetchByMonth(event.month, event.year);
       emit(ExportImportLoaded(
         transactions: transactions,
         month: event.month,

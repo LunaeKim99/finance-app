@@ -23,7 +23,7 @@ class AuthRepositoryImpl implements AuthRepository {
   bool get isLoggedIn => _pb.authStore.isValid;
 
   @override
-  String? get userId => _pb.authStore.model?.id;
+  String? get userId => _pb.authStore.record?.id;
 
   @override
   Future<void> initialize() async {

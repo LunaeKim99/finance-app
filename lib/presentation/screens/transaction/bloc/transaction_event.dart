@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../../../data/models/transaction_model.dart';
+import '../../../../domain/entities/transaction.dart';
 
 abstract class TransactionEvent extends Equatable {
   const TransactionEvent();
@@ -13,7 +13,7 @@ class TransactionLoadRequested extends TransactionEvent {
 }
 
 class TransactionAddRequested extends TransactionEvent {
-  final TransactionModel transaction;
+  final Transaction transaction;
 
   const TransactionAddRequested({required this.transaction});
 
@@ -22,7 +22,7 @@ class TransactionAddRequested extends TransactionEvent {
 }
 
 class TransactionUpdateRequested extends TransactionEvent {
-  final TransactionModel transaction;
+  final Transaction transaction;
 
   const TransactionUpdateRequested({required this.transaction});
 

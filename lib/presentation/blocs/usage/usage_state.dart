@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../../data/models/usage_model.dart';
+import '../../../domain/entities/usage.dart';
 import '../../../core/config/app_config.dart';
 
 abstract class UsageState extends Equatable {
@@ -18,7 +18,7 @@ class UsageLoading extends UsageState {
 }
 
 class UsageLoaded extends UsageState {
-  final UsageModel usage;
+  final Usage usage;
 
   const UsageLoaded({required this.usage});
 

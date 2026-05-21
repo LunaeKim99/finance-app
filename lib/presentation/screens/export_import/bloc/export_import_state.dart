@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../../../data/models/transaction_model.dart';
+import '../../../../domain/entities/transaction.dart';
 
 abstract class ExportImportState extends Equatable {
   const ExportImportState();
@@ -17,7 +17,7 @@ class ExportImportLoading extends ExportImportState {
 }
 
 class ExportImportLoaded extends ExportImportState {
-  final List<TransactionModel> transactions;
+  final List<Transaction> transactions;
   final int month;
   final int year;
   final int filteredCount;

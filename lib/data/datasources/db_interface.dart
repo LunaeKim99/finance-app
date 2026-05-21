@@ -1,7 +1,7 @@
-import '../../data/models/transaction_model.dart';
-import '../../data/models/asset_model.dart';
-import '../../data/models/debt_model.dart';
-import '../../data/models/budget_model.dart';
+import '../models/transaction_model.dart';
+import '../models/asset_model.dart';
+import '../models/debt_model.dart';
+import '../models/budget_model.dart';
 
 abstract class DbInterface {
   Future<void> initialize();

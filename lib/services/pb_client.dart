@@ -64,7 +64,7 @@ class PbClient {
 
   static Future<bool> isConnected() async {
     try {
-      await instance.health.check();
+      await instance.health.check().timeout(const Duration(seconds: 5));
       return true;
     } catch (_) {
       return false;

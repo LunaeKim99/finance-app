@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import '../data/repositories/auth_repository_impl.dart';
 import '../data/repositories/settings_repository_impl.dart';
+import '../data/repositories/usage_repository_impl.dart';
 import '../presentation/blocs/settings/settings_bloc.dart';
 import '../presentation/blocs/settings/settings_state.dart';
 import '../presentation/blocs/category/category_bloc.dart';
@@ -15,6 +16,8 @@ import '../presentation/screens/transaction/bloc/transaction_bloc.dart';
 import '../presentation/screens/budget/bloc/budget_bloc.dart';
 import '../presentation/screens/auth/splash_screen.dart';
 import '../presentation/screens/auth/login_screen.dart';
+import '../core/theme/app_theme.dart';
+import '../core/theme/app_colors.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -42,7 +45,9 @@ class FinanceApp extends StatelessWidget {
           create: (_) => BudgetBloc(),
         ),
         BlocProvider<UsageBloc>(
-          create: (_) => UsageBloc(),
+          create: (_) => UsageBloc(
+            usageRepository: UsageRepositoryImpl(),
+          ),
         ),
         BlocProvider<CategoryBloc>(
           create: (_) => CategoryBloc(),
@@ -67,8 +72,9 @@ class FinanceApp extends StatelessWidget {
               return CupertinoApp(
                 debugShowCheckedModeBanner: false,
                 theme: CupertinoThemeData(
-                  primaryColor: const Color(0xFF4CAF50),
+                  primaryColor: AppColors.primary,
                   brightness: isDark ? Brightness.dark : Brightness.light,
+                  scaffoldBackgroundColor: isDark ? const Color(0xFF121212) : AppColors.background,
                 ),
                 locale: const Locale('id', 'ID'),
                 localizationsDelegates: const [
@@ -86,23 +92,8 @@ class FinanceApp extends StatelessWidget {
               debugShowCheckedModeBanner: false,
               title: 'UWANGKU',
               themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
-              theme: ThemeData(
-                useMaterial3: true,
-                colorScheme: ColorScheme.fromSeed(
-                  seedColor: const Color(0xFF4CAF50),
-                  brightness: Brightness.light,
-                ),
-                scaffoldBackgroundColor: Colors.white,
-                platform: TargetPlatform.android,
-              ),
-              darkTheme: ThemeData(
-                useMaterial3: true,
-                colorScheme: ColorScheme.fromSeed(
-                  seedColor: const Color(0xFF4CAF50),
-                  brightness: Brightness.dark,
-                ),
-                scaffoldBackgroundColor: const Color(0xFF121212),
-              ),
+              theme: AppTheme.light,
+              darkTheme: AppTheme.dark,
               locale: const Locale('id', 'ID'),
               localizationsDelegates: const [
                 GlobalMaterialLocalizations.delegate,

@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../../../data/models/budget_model.dart';
+import '../../../../domain/entities/budget.dart';
 
 abstract class BudgetState extends Equatable {
   const BudgetState();
@@ -17,7 +17,7 @@ class BudgetLoading extends BudgetState {
 }
 
 class BudgetLoaded extends BudgetState {
-  final List<BudgetModel> budgets;
+  final List<Budget> budgets;
   final int month;
   final int year;
 
@@ -30,7 +30,7 @@ class BudgetLoaded extends BudgetState {
   @override
   List<Object?> get props => [budgets, month, year];
 
-  BudgetModel? getBudgetForCategory(String category) {
+  Budget? getBudgetForCategory(String category) {
     try {
       return budgets.firstWhere(
         (b) => b.category == category && b.month == month && b.year == year && b.isActive,
@@ -40,7 +40,7 @@ class BudgetLoaded extends BudgetState {
     }
   }
 
-  List<BudgetModel> getBudgetsForMonth(int m, int y) {
+  List<Budget> getBudgetsForMonth(int m, int y) {
     return budgets.where((b) => b.month == m && b.year == y && b.isActive).toList();
   }
 

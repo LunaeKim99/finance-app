@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../../../data/models/transaction_model.dart';
-import '../../../../data/models/transaction_type.dart';
+import '../../../../domain/entities/transaction.dart';
 
 abstract class TransactionState extends Equatable {
   const TransactionState();
@@ -18,7 +17,7 @@ class TransactionLoading extends TransactionState {
 }
 
 class TransactionLoaded extends TransactionState {
-  final List<TransactionModel> transactions;
+  final List<Transaction> transactions;
   final bool isOnline;
 
   const TransactionLoaded({
@@ -69,13 +68,13 @@ class TransactionLoaded extends TransactionState {
         t.date.month == month &&
         t.date.year == year);
     for (final t in filtered) {
-      final cat = t.categoryName ?? t.categoryId;
-      categoryTotals[cat] = (categoryTotals[cat] ?? 0) + t.amount;
+      categoryTotals[t.category] =
+          (categoryTotals[t.category] ?? 0) + t.amount;
     }
     return categoryTotals;
   }
 
-  List<TransactionModel> getRecentTransactions(int limit) {
+  List<Transaction> getRecentTransactions(int limit) {
     return transactions.take(limit).toList();
   }
 

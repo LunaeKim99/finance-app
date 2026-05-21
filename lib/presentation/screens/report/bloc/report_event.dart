@@ -26,3 +26,18 @@ class ReportChangeMonth extends ReportEvent {
   @override
   List<Object?> get props => [month, year];
 }
+
+class ReportGenerateAiSummary extends ReportEvent {
+  final Map<String, double> categoryTotals;
+  final double totalIncome;
+  final double totalExpense;
+
+  const ReportGenerateAiSummary({
+    required this.categoryTotals,
+    required this.totalIncome,
+    required this.totalExpense,
+  });
+
+  @override
+  List<Object?> get props => [categoryTotals, totalIncome, totalExpense];
+}

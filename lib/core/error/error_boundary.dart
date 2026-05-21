@@ -23,13 +23,20 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
   void _setupErrorHandlers() {
     FlutterError.onError = (details) {
       FlutterError.dumpErrorToConsole(details);
-      setState(() => _error = details);
+      if (mounted) setState(() => _error = details);
     };
 
     PlatformDispatcher.instance.onError = (error, stack) {
       debugPrint('[ErrorBoundary] Platform error: $error\n$stack');
       return true;
     };
+  }
+
+  @override
+  void dispose() {
+    FlutterError.onError = null;
+    PlatformDispatcher.instance.onError = null;
+    super.dispose();
   }
 
   void _recover() {
@@ -45,75 +52,78 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
   }
 
   Widget _buildFallback(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.green,
-          brightness: isDark ? Brightness.dark : Brightness.light,
+          brightness: Brightness.light,
         ),
       ),
-      home: Scaffold(
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline_rounded,
-                  size: 72,
-                  color: Colors.red.shade300,
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Terjadi Kesalahan',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Maaf, aplikasi mengalami kesalahan yang tidak terduga.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (_error?.exception is SocketException ||
-                    _error?.exception is HttpException)
-                  Text(
-                    'Periksa koneksi internet kamu dan coba lagi.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.orange.shade600,
+      home: Builder(
+        builder: (context) {
+          return Scaffold(
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline_rounded,
+                      size: 72,
+                      color: Colors.red.shade300,
                     ),
-                  ),
-                const SizedBox(height: 32),
-                FilledButton.icon(
-                  onPressed: _recover,
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Coba Lagi'),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 14,
+                    const SizedBox(height: 24),
+                    Text(
+                      'Terjadi Kesalahan',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Maaf, aplikasi mengalami kesalahan yang tidak terduga.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (_error?.exception is SocketException ||
+                        _error?.exception is HttpException)
+                      Text(
+                        'Periksa koneksi internet kamu dan coba lagi.',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.orange.shade600,
+                        ),
+                      ),
+                    const SizedBox(height: 32),
+                    FilledButton.icon(
+                      onPressed: _recover,
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('Coba Lagi'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 14,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (kDebugMode)
+                      TextButton(
+                        onPressed: () => _showErrorDetails(),
+                        child: const Text('Detail Error'),
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                if (kDebugMode)
-                  TextButton(
-                    onPressed: () => _showErrorDetails(),
-                    child: const Text('Detail Error'),
-                  ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
