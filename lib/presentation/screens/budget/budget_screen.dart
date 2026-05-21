@@ -151,28 +151,26 @@ class BudgetScreenState extends State<BudgetScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Expanded(
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 72, height: 72,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.primary.withValues(alpha: 0.08)),
-              child: const Icon(Icons.account_balance_wallet_rounded, size: 32, color: AppColors.primary),
-            ),
-            const SizedBox(height: 16),
-            Text('Belum ada budget', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            Text('Atur budget untuk kelola keuangan', style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: () => _showAddBudgetDialog(context),
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: const Text('Tambah Budget'),
-            ),
-          ],
-        ),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 72, height: 72,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.primary.withValues(alpha: 0.08)),
+            child: const Icon(Icons.account_balance_wallet_rounded, size: 32, color: AppColors.primary),
+          ),
+          const SizedBox(height: 16),
+          Text('Belum ada budget', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 4),
+          Text('Atur budget untuk kelola keuangan', style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: () => _showAddBudgetDialog(context),
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('Tambah Budget'),
+          ),
+        ],
       ),
     );
   }

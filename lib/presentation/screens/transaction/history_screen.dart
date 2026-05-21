@@ -20,6 +20,8 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   int _selectedTab = 0;
+  int _currentPage = 0;
+  static const int _pageSize = 20;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +33,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
         final filtered = _getFilteredTransactions(state.transactions);
         final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
-        final grouped = _groupByDate(filtered);
+        final paginated = _getPaginatedTransactions(filtered);
+        final grouped = _groupByDate(paginated);
 
         return Scaffold(
           body: Column(
@@ -45,9 +48,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     : ListView(
                         padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
                         children: [
-                          ...grouped.entries.map((e) => _buildDateGroup(e.key, e.value, currencyFormat)),
-                          const SizedBox(height: 8),
                           _buildAddButton(),
+                          const SizedBox(height: 8),
+                          ...grouped.entries.map((e) => _buildDateGroup(e.key, e.value, currencyFormat)),
+                          _buildPaginationControls(filtered.length),
                         ],
                       ),
               ),
@@ -82,7 +86,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       child: SegmentedPillControl(
         labels: const ['Semua', 'Pemasukan', 'Pengeluaran'],
         selectedIndex: _selectedTab,
-        onChanged: (i) => setState(() => _selectedTab = i),
+        onChanged: (i) => setState(() { _selectedTab = i; _currentPage = 0; }),
       ),
     );
   }
@@ -165,22 +169,63 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Expanded(
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 72, height: 72,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.primary.withValues(alpha: 0.08)),
-              child: Icon(Icons.receipt_long_outlined, size: 32, color: AppColors.primary.withValues(alpha: 0.4)),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 72, height: 72,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.primary.withValues(alpha: 0.08)),
+            child: Icon(Icons.receipt_long_outlined, size: 32, color: AppColors.primary.withValues(alpha: 0.4)),
+          ),
+          const SizedBox(height: 16),
+          Text('Belum ada transaksi', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 4),
+          Text('Mulai catat pengeluaran atau pemasukan', style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
+        ],
+      ),
+    );
+  }
+
+  List<Transaction> _getPaginatedTransactions(List<Transaction> filtered) {
+    final start = _currentPage * _pageSize;
+    final end = (start + _pageSize).clamp(0, filtered.length);
+    return filtered.sublist(start, end);
+  }
+
+  Widget _buildPaginationControls(int totalItems) {
+    final totalPages = (totalItems / _pageSize).ceil();
+    if (totalPages <= 1) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            onPressed: _currentPage > 0
+                ? () => setState(() => _currentPage--)
+                : null,
+            icon: const Icon(Icons.chevron_left_rounded),
+            color: AppColors.primary,
+            disabledColor: AppColors.onSurfaceVariant,
+          ),
+          Text(
+            '${_currentPage + 1} / $totalPages',
+            style: AppTypography.bodyMd.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.onSurface,
             ),
-            const SizedBox(height: 16),
-            Text('Belum ada transaksi', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            Text('Mulai catat pengeluaran atau pemasukan', style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
-          ],
-        ),
+          ),
+          IconButton(
+            onPressed: _currentPage < totalPages - 1
+                ? () => setState(() => _currentPage++)
+                : null,
+            icon: const Icon(Icons.chevron_right_rounded),
+            color: AppColors.primary,
+            disabledColor: AppColors.onSurfaceVariant,
+          ),
+        ],
       ),
     );
   }
