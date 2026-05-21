@@ -104,10 +104,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildTopAppBar() {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.8),
-        border: const Border(bottom: BorderSide(color: AppColors.surfaceContainerHighest, width: 0.5)),
+        color: cs.surface.withValues(alpha: 0.8),
+        border: Border(bottom: BorderSide(color: cs.surfaceContainerHighest, width: 0.5)),
       ),
       child: SafeArea(
         bottom: false,
@@ -119,13 +120,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryContainer.withValues(alpha: 0.15),
+                  color: cs.primaryContainer.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary, size: 20),
+                child: Icon(Icons.account_balance_wallet_rounded, color: cs.primary, size: 20),
               ),
               const SizedBox(width: 10),
-              Text('Uwangku', style: AppTypography.headlineSm.copyWith(color: AppColors.onSurface)),
+              Text('Uwangku', style: AppTypography.headlineSm.copyWith(color: cs.onSurface)),
               const Spacer(),
               BlocBuilder<UsageBloc, UsageState>(
                 builder: (context, usageState) {
@@ -139,9 +140,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isPremium ? AppColors.primary : AppColors.primary.withValues(alpha: 0.1),
+                        color: isPremium ? cs.primary : cs.primary.withValues(alpha: 0.1),
                         borderRadius: AppRadius.fullRadius,
-                        border: !isPremium ? Border.all(color: AppColors.primary.withValues(alpha: 0.2)) : null,
+                        border: !isPremium ? Border.all(color: cs.primary.withValues(alpha: 0.2)) : null,
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -149,7 +150,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Icon(
                             isPremium ? Icons.verified_rounded : Icons.stars_rounded,
                             size: 14,
-                            color: isPremium ? AppColors.onPrimary : AppColors.primary,
+                            color: isPremium ? cs.onPrimary : cs.primary,
                           ),
                           const SizedBox(width: 4),
                           Flexible(
@@ -157,7 +158,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               isPremium ? 'Premium' : 'Premium',
                               style: AppTypography.labelMono.copyWith(
                                 fontSize: 10,
-                                color: isPremium ? AppColors.onPrimary : AppColors.primary,
+                                color: isPremium ? cs.onPrimary : cs.primary,
                                 fontWeight: FontWeight.w700,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -180,9 +181,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Container(
                       width: 36, height: 36,
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceContainer, borderRadius: AppRadius.fullRadius,
+                        color: cs.surfaceContainer, borderRadius: AppRadius.fullRadius,
                       ),
-                      child: Icon(isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded, size: 18, color: AppColors.onSurfaceVariant),
+                      child: Icon(isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded, size: 18, color: cs.onSurfaceVariant),
                     ),
                   );
                 },
@@ -194,9 +195,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Container(
                   width: 36, height: 36,
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceContainer, borderRadius: AppRadius.fullRadius,
+                    color: cs.surfaceContainer, borderRadius: AppRadius.fullRadius,
                   ),
-                  child: const Icon(Icons.logout_rounded, size: 18, color: AppColors.onSurfaceVariant),
+                  child: Icon(Icons.logout_rounded, size: 18, color: cs.onSurfaceVariant),
                 ),
               ),
             ],
@@ -207,25 +208,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildOfflineNotice() {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.tertiaryFixed.withValues(alpha: 0.2),
+        color: cs.tertiary.withValues(alpha: 0.1),
         borderRadius: AppRadius.lgRadius,
-        border: Border.all(color: AppColors.tertiaryFixedDim.withValues(alpha: 0.3)),
+        border: Border.all(color: cs.tertiary.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.wifi_off_rounded, color: AppColors.tertiary, size: 18),
+          Icon(Icons.wifi_off_rounded, color: cs.tertiary, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('OFFLINE', style: AppTypography.labelMono.copyWith(color: AppColors.tertiary, fontWeight: FontWeight.w700)),
+                Text('OFFLINE', style: AppTypography.labelMono.copyWith(color: cs.tertiary, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 2),
-                Text('Koneksi terputus. Data mungkin tidak sinkron.', style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
+                Text('Koneksi terputus. Data mungkin tidak sinkron.', style: AppTypography.bodySm.copyWith(color: cs.onSurfaceVariant)),
               ],
             ),
           ),
@@ -235,6 +237,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildBalanceCard(double balance, NumberFormat fmt, String month) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -257,7 +260,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Positioned(
             left: -40, bottom: -40,
             child: Container(width: 140, height: 140,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.primaryFixed.withValues(alpha: 0.15)),
+              decoration: BoxDecoration(shape: BoxShape.circle,             color: cs.primaryFixed.withValues(alpha: 0.15)),
             ),
           ),
           Column(
@@ -305,6 +308,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildSummaryRow(double income, double expense, NumberFormat fmt) {
+    final cs = Theme.of(context).colorScheme;
     return Row(
       children: [
         Expanded(
@@ -315,13 +319,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 Container(
                   width: 40, height: 40,
-                  decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: AppRadius.mdRadius),
-                  child: const Icon(Icons.south_east_rounded, color: AppColors.primary, size: 22),
+                  decoration: BoxDecoration(color: cs.primary.withValues(alpha: 0.1), borderRadius: AppRadius.mdRadius),
+                  child: Icon(Icons.south_east_rounded, color: cs.primary, size: 22),
                 ),
                 const SizedBox(height: 12),
-                Text('Pemasukan', style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
+                Text('Pemasukan', style: AppTypography.bodySm.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: 4),
-                Text(fmt.format(income), style: AppTypography.headlineSm.copyWith(color: AppColors.primary)),
+                Text(fmt.format(income), style: AppTypography.headlineSm.copyWith(color: cs.primary)),
               ],
             ),
           ),
@@ -335,13 +339,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 Container(
                   width: 40, height: 40,
-                  decoration: BoxDecoration(color: AppColors.secondary.withValues(alpha: 0.1), borderRadius: AppRadius.mdRadius),
-                  child: const Icon(Icons.north_east_rounded, color: AppColors.secondary, size: 22),
+                  decoration: BoxDecoration(color: cs.secondary.withValues(alpha: 0.1), borderRadius: AppRadius.mdRadius),
+                  child: Icon(Icons.north_east_rounded, color: cs.secondary, size: 22),
                 ),
                 const SizedBox(height: 12),
-                Text('Pengeluaran', style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
+                Text('Pengeluaran', style: AppTypography.bodySm.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: 4),
-                Text(fmt.format(expense), style: AppTypography.headlineSm.copyWith(color: AppColors.secondary)),
+                Text(fmt.format(expense), style: AppTypography.headlineSm.copyWith(color: cs.secondary)),
               ],
             ),
           ),
@@ -351,6 +355,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildBudgetSection(TransactionLoaded state, NumberFormat fmt) {
+    final cs = Theme.of(context).colorScheme;
     return BlocBuilder<BudgetBloc, BudgetState>(
       builder: (context, budgetState) {
         if (budgetState is! BudgetLoaded) return const SizedBox.shrink();
@@ -373,7 +378,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Budget Bulan Ini', style: AppTypography.textTheme.titleMedium!.copyWith(color: AppColors.onSurface)),
+                  Text('Budget Bulan Ini', style: AppTypography.textTheme.titleMedium!.copyWith(color: cs.onSurface)),
                   InkWell(
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BudgetScreen())),
                     borderRadius: AppRadius.mdRadius,
@@ -381,9 +386,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       child: Row(
                         children: [
-                          Text('Lihat Semua', style: AppTypography.bodySm.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
+                          Text('Lihat Semua', style: AppTypography.bodySm.copyWith(color: cs.primary, fontWeight: FontWeight.w600)),
                           const SizedBox(width: 4),
-                          Icon(Icons.arrow_forward_ios_rounded, size: 10, color: AppColors.primary),
+                          Icon(Icons.arrow_forward_ios_rounded, size: 10, color: cs.primary),
                         ],
                       ),
                     ),
@@ -400,6 +405,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _miniBudgetRow(String category, double budget, double spent, NumberFormat fmt) {
+    final cs = Theme.of(context).colorScheme;
     final pct = budget > 0 ? (spent / budget).clamp(0.0, 1.0) : 0.0;
     final isOver = spent >= budget && budget > 0;
     return Padding(
@@ -410,9 +416,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(category, style: AppTypography.bodyMd.copyWith(color: AppColors.onSurface)),
+              Text(category, style: AppTypography.bodyMd.copyWith(color: cs.onSurface)),
               Text('${fmt.format(spent)} / ${fmt.format(budget)}',
-                style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
+                style: AppTypography.bodySm.copyWith(color: cs.onSurfaceVariant)),
             ],
           ),
           const SizedBox(height: 6),
@@ -421,14 +427,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: LinearProgressIndicator(
               value: pct,
               minHeight: 6,
-              backgroundColor: AppColors.surfaceContainer,
-              valueColor: AlwaysStoppedAnimation(isOver ? AppColors.error : AppColors.primary),
+              backgroundColor: cs.surfaceContainer,
+              valueColor: AlwaysStoppedAnimation(isOver ? cs.error : cs.primary),
             ),
           ),
           if (isOver)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text('Melebihi budget!', style: AppTypography.bodySm.copyWith(color: AppColors.error, fontWeight: FontWeight.w500)),
+              child: Text('Melebihi budget!', style: AppTypography.bodySm.copyWith(color: cs.error, fontWeight: FontWeight.w500)),
             ),
         ],
       ),
@@ -436,10 +442,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildRecentTransactionsHeader() {
+    final cs = Theme.of(context).colorScheme;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text('Transaksi Terbaru', style: AppTypography.textTheme.titleMedium!.copyWith(color: AppColors.onSurface)),
+        Text('Transaksi Terbaru', style: AppTypography.textTheme.titleMedium!.copyWith(color: cs.onSurface)),
           InkWell(
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen())),
             borderRadius: AppRadius.mdRadius,
@@ -447,9 +454,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Row(
                 children: [
-                  Text('Lihat Semua', style: AppTypography.bodySm.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
+                  Text('Lihat Semua', style: AppTypography.bodySm.copyWith(color: cs.primary, fontWeight: FontWeight.w600)),
                   const SizedBox(width: 4),
-                  const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: AppColors.primary),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 10, color: cs.primary),
                 ],
               ),
             ),
@@ -459,6 +466,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildEmptyState() {
+    final cs = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 40),
@@ -466,13 +474,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Container(
               width: 72, height: 72,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.primary.withValues(alpha: 0.08)),
-              child: Icon(Icons.receipt_long_outlined, size: 32, color: AppColors.primary.withValues(alpha: 0.4)),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: cs.primary.withValues(alpha: 0.08)),
+              child: Icon(Icons.receipt_long_outlined, size: 32, color: cs.primary.withValues(alpha: 0.4)),
             ),
             const SizedBox(height: 16),
-            Text('Belum ada transaksi', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+            Text('Belum ada transaksi', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600, color: cs.onSurface)),
             const SizedBox(height: 4),
-            Text('Tap + untuk mulai mencatat', style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
+            Text('Tap + untuk mulai mencatat', style: AppTypography.bodySm.copyWith(color: cs.onSurfaceVariant)),
             const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddTransactionScreen())),
@@ -486,6 +494,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildAiRecommendationSection(TransactionLoaded state) {
+    final cs = Theme.of(context).colorScheme;
     return BlocBuilder<UsageBloc, UsageState>(
       builder: (context, usageState) {
         final isPremium = usageState is UsageLoaded ? usageState.isPremium : false;
@@ -504,15 +513,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: AppRadius.mdRadius),
-                      child: const Icon(Icons.auto_awesome_rounded, color: AppColors.primary, size: 20),
+                      decoration: BoxDecoration(color: cs.primary.withValues(alpha: 0.1), borderRadius: AppRadius.mdRadius),
+                      child: Icon(Icons.auto_awesome_rounded, color: cs.primary, size: 20),
                     ),
                     const SizedBox(width: 12),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Saran Keuangan AI', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600, color: AppColors.onSurface)),
-                        Text('Khusus pengguna Premium', style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
+                        Text('Saran Keuangan AI', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600, color: cs.onSurface)),
+                        Text('Khusus pengguna Premium', style: AppTypography.bodySm.copyWith(color: cs.onSurfaceVariant)),
                       ],
                     ),
                   ],
@@ -539,9 +548,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.lightbulb_rounded, color: AppColors.primary, size: 20),
+                      Icon(Icons.lightbulb_rounded, color: cs.primary, size: 20),
                       const SizedBox(width: 8),
-                      Text('Saran Keuangan AI', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+                      Text('Saran Keuangan AI', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600, color: cs.onSurface)),
                     ],
                   ),
                   IconButton(
@@ -565,7 +574,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     );
                   }
-                  if (snapshot.hasError) return Text('Gagal: ${snapshot.error}', style: AppTypography.bodySm.copyWith(color: AppColors.error));
+                  if (snapshot.hasError) return Text('Gagal: ${snapshot.error}', style: AppTypography.bodySm.copyWith(color: cs.error));
                   return MarkdownBody(data: snapshot.data ?? '', styleSheet: MarkdownStyleSheet(p: const TextStyle(fontSize: 14)));
                 },
               ),
@@ -581,6 +590,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _showLogoutDialog() {
+    final cs = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -591,7 +601,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
           TextButton(
             onPressed: () { Navigator.pop(ctx); context.read<AuthBloc>().add(const AuthLogoutRequested()); },
-            child: const Text('Keluar', style: TextStyle(color: AppColors.error)),
+            child: Text('Keluar', style: TextStyle(color: cs.error)),
           ),
         ],
       ),

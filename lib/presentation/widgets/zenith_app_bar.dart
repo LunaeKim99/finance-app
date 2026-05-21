@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 
 class ZenithAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -22,11 +21,12 @@ class ZenithAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: backgroundColor ?? AppColors.surface,
-        border: const Border(
-          bottom: BorderSide(color: AppColors.surfaceContainerHighest, width: 0.5),
+        color: backgroundColor ?? cs.surface,
+        border: Border(
+          bottom: BorderSide(color: cs.surfaceContainerHighest, width: 0.5),
         ),
       ),
       child: SafeArea(
@@ -44,15 +44,15 @@ class ZenithAppBar extends StatelessWidget implements PreferredSizeWidget {
                 const SizedBox(width: 12),
               const SizedBox(width: 4),
               if (showLogo)
-                const Padding(
-                  padding: EdgeInsets.only(right: 8),
-                  child: Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary, size: 28),
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Icon(Icons.account_balance_wallet_rounded, color: cs.primary, size: 28),
                 ),
               Expanded(
                 child: titleWidget ??
                     Text(
                       title ?? '',
-                      style: AppTypography.headlineSm.copyWith(color: AppColors.onSurface),
+                      style: AppTypography.headlineSm.copyWith(color: cs.onSurface),
                     ),
               ),
               if (actions != null) ...[

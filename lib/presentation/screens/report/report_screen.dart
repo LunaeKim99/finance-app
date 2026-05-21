@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../widgets/glass_card.dart';
@@ -83,10 +82,11 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Widget _buildHeader() {
+    final cs = Theme.of(context).colorScheme;
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.surfaceContainerHighest, width: 0.5)),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        border: Border(bottom: BorderSide(color: cs.surfaceContainerHighest, width: 0.5)),
       ),
       child: SizedBox(
         height: 56,
@@ -94,11 +94,11 @@ class _ReportScreenState extends State<ReportScreen> {
           children: [
             const SizedBox(width: 48),
             const Spacer(),
-            Text('Laporan', style: AppTypography.headlineSm.copyWith(color: AppColors.onSurface)),
+            Text('Laporan', style: AppTypography.headlineSm.copyWith(color: cs.onSurface)),
             const Spacer(),
             IconButton(
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExportScreen())),
-              icon: const Icon(Icons.ios_share_rounded, color: AppColors.primary),
+              icon: Icon(Icons.ios_share_rounded, color: cs.primary),
             ),
           ],
         ),
@@ -134,6 +134,7 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Widget _buildSummaryGrid(double income, double expense, double balance, NumberFormat fmt) {
+    final cs = Theme.of(context).colorScheme;
     return Column(
       children: [
         Row(
@@ -148,16 +149,16 @@ class _ReportScreenState extends State<ReportScreen> {
                       children: [
                         Container(
                           width: 28, height: 28,
-                          decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.primary.withValues(alpha: 0.1)),
-                          child: const Icon(Icons.arrow_downward_rounded, color: AppColors.primary, size: 16),
+                          decoration: BoxDecoration(shape: BoxShape.circle, color: cs.primary.withValues(alpha: 0.1)),
+                          child: Icon(Icons.arrow_downward_rounded, color: cs.primary, size: 16),
                         ),
                         const SizedBox(width: 8),
-                        Text('Pemasukan', style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
+                        Text('Pemasukan', style: AppTypography.bodySm.copyWith(color: cs.onSurfaceVariant)),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text('Rp', style: AppTypography.bodySm.copyWith(color: AppColors.primary)),
-                    Text(fmt.format(income), style: AppTypography.headlineSm.copyWith(color: AppColors.primary)),
+                    Text('Rp', style: AppTypography.bodySm.copyWith(color: cs.primary)),
+                    Text(fmt.format(income), style: AppTypography.headlineSm.copyWith(color: cs.primary)),
                   ],
                 ),
               ),
@@ -173,16 +174,16 @@ class _ReportScreenState extends State<ReportScreen> {
                       children: [
                         Container(
                           width: 28, height: 28,
-                          decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.secondary.withValues(alpha: 0.1)),
-                          child: const Icon(Icons.arrow_upward_rounded, color: AppColors.secondary, size: 16),
+                          decoration: BoxDecoration(shape: BoxShape.circle, color: cs.secondary.withValues(alpha: 0.1)),
+                          child: Icon(Icons.arrow_upward_rounded, color: cs.secondary, size: 16),
                         ),
                         const SizedBox(width: 8),
-                        Text('Pengeluaran', style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
+                        Text('Pengeluaran', style: AppTypography.bodySm.copyWith(color: cs.onSurfaceVariant)),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text('Rp', style: AppTypography.bodySm.copyWith(color: AppColors.secondary)),
-                    Text(fmt.format(expense), style: AppTypography.headlineSm.copyWith(color: AppColors.secondary)),
+                    Text('Rp', style: AppTypography.bodySm.copyWith(color: cs.secondary)),
+                    Text(fmt.format(expense), style: AppTypography.headlineSm.copyWith(color: cs.secondary)),
                   ],
                 ),
               ),
@@ -198,18 +199,18 @@ class _ReportScreenState extends State<ReportScreen> {
                 width: 44, height: 44,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  border: Border.all(color: AppColors.surfaceContainerHighest),
+                  color: cs.primary.withValues(alpha: 0.1),
+                  border: Border.all(color: cs.surfaceContainerHighest),
                 ),
-                child: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary, size: 22),
+                child: Icon(Icons.account_balance_wallet_rounded, color: cs.primary, size: 22),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Saldo Bersih', style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
-                    Text(fmt.format(balance), style: AppTypography.headlineMd.copyWith(color: AppColors.primary)),
+                    Text('Saldo Bersih', style: AppTypography.bodySm.copyWith(color: cs.onSurfaceVariant)),
+                    Text(fmt.format(balance), style: AppTypography.headlineMd.copyWith(color: cs.primary)),
                   ],
                 ),
               ),
@@ -221,6 +222,7 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Widget _buildWeeklySummary(TransactionLoaded state, int month, int year, double income, double expense, NumberFormat fmt) {
+    final cs = Theme.of(context).colorScheme;
     final categoryTotals = state.getCategoryTotals(month, year);
     final topCategory = categoryTotals.entries.isNotEmpty
         ? categoryTotals.entries.reduce((a, b) => a.value > b.value ? a : b)
@@ -234,11 +236,11 @@ class _ReportScreenState extends State<ReportScreen> {
             children: [
               Container(
                 width: 32, height: 32,
-                decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: AppRadius.mdRadius),
-                child: const Icon(Icons.description_rounded, color: AppColors.primary, size: 18),
+                decoration: BoxDecoration(color: cs.primary.withValues(alpha: 0.1), borderRadius: AppRadius.mdRadius),
+                child: Icon(Icons.description_rounded, color: cs.primary, size: 18),
               ),
               const SizedBox(width: 12),
-              Text('Ringkasan Mingguan', style: AppTypography.headlineSm.copyWith(color: AppColors.onSurface)),
+              Text('Ringkasan Mingguan', style: AppTypography.headlineSm.copyWith(color: cs.onSurface)),
             ],
           ),
           const SizedBox(height: 16),
@@ -248,7 +250,7 @@ class _ReportScreenState extends State<ReportScreen> {
             '${topCategory != null ? "Pengeluaran terbesar kamu adalah pada kategori ${topCategory.key}, dengan total ${fmt.format(topCategory.value)}. " : ""}'
             'Sementara itu, kamu juga memiliki pendapatan sebesar '
             '${fmt.format(income)}.',
-            style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant, height: 1.6),
+            style: AppTypography.bodyMd.copyWith(color: cs.onSurfaceVariant, height: 1.6),
           ),
           const SizedBox(height: 12),
           BlocBuilder<UsageBloc, UsageState>(

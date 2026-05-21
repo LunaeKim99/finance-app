@@ -12,7 +12,6 @@ import '../upgrade/upgrade_screen.dart';
 import '../export_import/export_screen.dart';
 import '../export_import/import_screen.dart';
 import '../../../core/constants/currencies.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -80,32 +79,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildTopAppBar(bool isPremium) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.8),
-        border: Border(bottom: BorderSide(color: AppColors.surfaceContainerHighest, width: 0.5)),
+        color: cs.surface.withValues(alpha: 0.8),
+        border: Border(bottom: BorderSide(color: cs.surfaceContainerHighest, width: 0.5)),
       ),
       child: SizedBox(
         height: 64,
         child: Row(
           children: [
             const SizedBox(width: AppSpacing.containerPadding),
-            const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary, size: 28),
+            Icon(Icons.account_balance_wallet_rounded, color: cs.primary, size: 28),
             const SizedBox(width: 8),
-            Text('Uwangku', style: AppTypography.headlineSm.copyWith(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.primary)),
+            Text('Uwangku', style: AppTypography.headlineSm.copyWith(fontSize: 20, fontWeight: FontWeight.w700, color: cs.primary)),
             const Spacer(),
             if (isPremium)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(color: AppColors.primary, borderRadius: AppRadius.fullRadius),
-                child: Text('Premium', style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w600, color: AppColors.onPrimary)),
+                decoration: BoxDecoration(color: cs.primary, borderRadius: AppRadius.fullRadius),
+                child: Text('Premium', style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w600, color: cs.onPrimary)),
               )
             else
               OutlinedButton(
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const UpgradeScreen())),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: BorderSide(color: AppColors.primary),
+                  foregroundColor: cs.primary,
+                  side: BorderSide(color: cs.primary),
                   shape: RoundedRectangleBorder(borderRadius: AppRadius.fullRadius),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   minimumSize: Size.zero,
@@ -121,24 +121,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSectionTitle(String title) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 10),
-      child: Text(title.toUpperCase(), style: AppTypography.labelMono.copyWith(fontSize: 11, color: AppColors.onSurfaceVariant, letterSpacing: 2)),
+      child: Text(title.toUpperCase(), style: AppTypography.labelMono.copyWith(fontSize: 11, color: cs.onSurfaceVariant, letterSpacing: 2)),
     );
   }
 
   Widget _buildWhiteCard(List<Widget> children) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+        color: cs.surfaceContainerLowest,
         borderRadius: AppRadius.xlRadius,
-        border: Border.all(color: AppColors.surfaceContainerHigh),
+        border: Border.all(color: cs.surfaceContainerHigh),
       ),
       child: Column(children: children),
     );
   }
 
   Widget _buildAccountCard() {
+    final cs = Theme.of(context).colorScheme;
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, authState) {
         final profile = authState is AuthAuthenticated ? authState.profile : null;
@@ -154,26 +157,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Container(
                     width: 48, height: 48,
-                    decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
-                    child: Center(child: Text(name[0].toUpperCase(), style: AppTypography.headlineSm.copyWith(color: AppColors.primary))),
+                    decoration: BoxDecoration(color: cs.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
+                    child: Center(child: Text(name[0].toUpperCase(), style: AppTypography.headlineSm.copyWith(color: cs.primary))),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(name, style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+                        Text(name, style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600, color: cs.onSurface)),
                         const SizedBox(height: 2),
-                        Text(email, style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
+                        Text(email, style: AppTypography.bodySm.copyWith(color: cs.onSurfaceVariant)),
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right_rounded, color: AppColors.onSurfaceVariant),
+                  Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
                 ],
               ),
             ),
           ),
-          Divider(height: 1, color: AppColors.surfaceContainerLow, indent: 16, endIndent: 16),
+          Divider(height: 1, color: cs.surfaceContainerLow, indent: 16, endIndent: 16),
           InkWell(
             onTap: () => _confirmLogout(context),
             child: Padding(
@@ -182,11 +185,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Container(
                     width: 40, height: 40,
-                    decoration: BoxDecoration(color: AppColors.surfaceContainer, shape: BoxShape.circle),
-                    child: const Icon(Icons.logout_rounded, color: AppColors.onSurfaceVariant, size: 20),
+                    decoration: BoxDecoration(color: cs.surfaceContainer, shape: BoxShape.circle),
+                    child: Icon(Icons.logout_rounded, color: cs.onSurfaceVariant, size: 20),
                   ),
                   const SizedBox(width: 14),
-                  Text('Keluar', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: AppColors.onSurface)),
+                  Text('Keluar', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: cs.onSurface)),
                 ],
               ),
             ),
@@ -197,6 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildAppearanceCard(bool isDarkMode) {
+    final cs = Theme.of(context).colorScheme;
     return _buildWhiteCard([
       Padding(
         padding: const EdgeInsets.all(16),
@@ -204,11 +208,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Container(
               width: 40, height: 40,
-              decoration: BoxDecoration(color: AppColors.surfaceContainer, shape: BoxShape.circle),
-              child: Icon(Icons.dark_mode_rounded, color: AppColors.onSurfaceVariant, size: 20),
+              decoration: BoxDecoration(color: cs.surfaceContainer, shape: BoxShape.circle),
+              child: Icon(Icons.dark_mode_rounded, color: cs.onSurfaceVariant, size: 20),
             ),
             const SizedBox(width: 14),
-            Expanded(child: Text('Mode Gelap', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: AppColors.onSurface))),
+            Expanded(child: Text('Mode Gelap', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: cs.onSurface))),
             ToggleSwitch(
               value: isDarkMode,
               onChanged: (_) => context.read<SettingsBloc>().add(const SettingsToggleDarkMode()),
@@ -220,6 +224,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildPreferencesCard(dynamic settings) {
+    final cs = Theme.of(context).colorScheme;
     final preferredCurrency = settings?.preferredCurrency ?? 'IDR';
     final notificationsEnabled = settings?.notificationsEnabled ?? true;
 
@@ -232,30 +237,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               Container(
                 width: 40, height: 40,
-                decoration: BoxDecoration(color: AppColors.surfaceContainer, shape: BoxShape.circle),
-                child: const Icon(Icons.payments_rounded, color: AppColors.onSurfaceVariant, size: 20),
+                decoration: BoxDecoration(color: cs.surfaceContainer, shape: BoxShape.circle),
+                child: Icon(Icons.payments_rounded, color: cs.onSurfaceVariant, size: 20),
               ),
               const SizedBox(width: 14),
-              Expanded(child: Text('Mata Uang', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: AppColors.onSurface))),
-              Text(preferredCurrency, style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w700, color: AppColors.primary)),
+              Expanded(child: Text('Mata Uang', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: cs.onSurface))),
+              Text(preferredCurrency, style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w700, color: cs.primary)),
               const SizedBox(width: 4),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.onSurfaceVariant, size: 20),
+              Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant, size: 20),
             ],
           ),
         ),
       ),
-      Divider(height: 1, color: AppColors.surfaceContainerLow, indent: 16, endIndent: 16),
+      Divider(height: 1, color: cs.surfaceContainerLow, indent: 16, endIndent: 16),
       Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             Container(
               width: 40, height: 40,
-              decoration: BoxDecoration(color: AppColors.surfaceContainer, shape: BoxShape.circle),
-              child: const Icon(Icons.notifications_outlined, color: AppColors.onSurfaceVariant, size: 20),
+              decoration: BoxDecoration(color: cs.surfaceContainer, shape: BoxShape.circle),
+              child: Icon(Icons.notifications_outlined, color: cs.onSurfaceVariant, size: 20),
             ),
             const SizedBox(width: 14),
-            Expanded(child: Text('Notifikasi', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: AppColors.onSurface))),
+            Expanded(child: Text('Notifikasi', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: cs.onSurface))),
             ToggleSwitch(
               value: notificationsEnabled,
               onChanged: (_) => context.read<SettingsBloc>().add(const SettingsToggleNotifications()),
@@ -267,6 +272,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildDataCard() {
+    final cs = Theme.of(context).colorScheme;
     return _buildWhiteCard([
       InkWell(
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExportScreen())),
@@ -276,17 +282,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               Container(
                 width: 40, height: 40,
-                decoration: BoxDecoration(color: AppColors.surfaceContainer, shape: BoxShape.circle),
-                child: const Icon(Icons.file_upload_outlined, color: AppColors.onSurfaceVariant, size: 20),
+                decoration: BoxDecoration(color: cs.surfaceContainer, shape: BoxShape.circle),
+                child: Icon(Icons.file_upload_outlined, color: cs.onSurfaceVariant, size: 20),
               ),
               const SizedBox(width: 14),
-              Expanded(child: Text('Ekspor Data', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: AppColors.onSurface))),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.onSurfaceVariant),
+              Expanded(child: Text('Ekspor Data', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: cs.onSurface))),
+              Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
             ],
           ),
         ),
       ),
-      Divider(height: 1, color: AppColors.surfaceContainerLow, indent: 16, endIndent: 16),
+      Divider(height: 1, color: cs.surfaceContainerLow, indent: 16, endIndent: 16),
       InkWell(
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ImportScreen())),
         child: Padding(
@@ -295,12 +301,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               Container(
                 width: 40, height: 40,
-                decoration: BoxDecoration(color: AppColors.surfaceContainer, shape: BoxShape.circle),
-                child: const Icon(Icons.file_download_outlined, color: AppColors.onSurfaceVariant, size: 20),
+                decoration: BoxDecoration(color: cs.surfaceContainer, shape: BoxShape.circle),
+                child: Icon(Icons.file_download_outlined, color: cs.onSurfaceVariant, size: 20),
               ),
               const SizedBox(width: 14),
-              Expanded(child: Text('Impor Data', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: AppColors.onSurface))),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.onSurfaceVariant),
+              Expanded(child: Text('Impor Data', style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: cs.onSurface))),
+              Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
             ],
           ),
         ),
@@ -309,6 +315,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildPremiumCard(bool isPremium) {
+    final cs = Theme.of(context).colorScheme;
     return _buildWhiteCard([
       Padding(
         padding: const EdgeInsets.all(16),
@@ -316,19 +323,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Container(
               width: 40, height: 40,
-              decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
-              child: const Icon(Icons.verified_rounded, color: AppColors.primary, size: 20),
+              decoration: BoxDecoration(color: cs.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
+              child: Icon(Icons.verified_rounded, color: cs.primary, size: 20),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Text(isPremium ? 'Premium Aktif' : 'Upgrade ke Premium',
-                style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: AppColors.onSurface)),
+                style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w500, color: cs.onSurface)),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(color: isPremium ? AppColors.primary.withValues(alpha: 0.1) : AppColors.secondaryContainer, borderRadius: AppRadius.fullRadius),
+              decoration: BoxDecoration(color: isPremium ? cs.primary.withValues(alpha: 0.1) : cs.secondaryContainer, borderRadius: AppRadius.fullRadius),
               child: Text(isPremium ? 'AKTIF' : 'FREE',
-                style: AppTypography.labelMono.copyWith(fontSize: 10, fontWeight: FontWeight.w700, color: isPremium ? AppColors.primary : AppColors.secondary)),
+                style: AppTypography.labelMono.copyWith(fontSize: 10, fontWeight: FontWeight.w700, color: isPremium ? cs.primary : cs.secondary)),
             ),
           ],
         ),
@@ -337,15 +344,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildAboutCard() {
+    final cs = Theme.of(context).colorScheme;
     return _buildWhiteCard([
-      const Padding(
-        padding: EdgeInsets.all(16),
+      Padding(
+        padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Icon(Icons.info_outline, color: AppColors.onSurfaceVariant, size: 20),
-            SizedBox(width: 14),
-            Expanded(child: Text('Versi Aplikasi', style: TextStyle(fontWeight: FontWeight.w500, color: AppColors.onSurface))),
-            Text('1.7.0', style: TextStyle(color: AppColors.onSurfaceVariant)),
+            Icon(Icons.info_outline, color: cs.onSurfaceVariant, size: 20),
+            const SizedBox(width: 14),
+            Expanded(child: Text('Versi Aplikasi', style: TextStyle(fontWeight: FontWeight.w500, color: cs.onSurface))),
+            Text('1.7.0', style: TextStyle(color: cs.onSurfaceVariant)),
           ],
         ),
       ),
@@ -353,6 +361,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showCurrencyPicker(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -362,9 +371,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('Pilih Mata Uang', style: AppTypography.headlineSm.copyWith(color: AppColors.onSurface)),
+              child: Text('Pilih Mata Uang', style: AppTypography.headlineSm.copyWith(color: cs.onSurface)),
             ),
-            Divider(height: 1, color: AppColors.surfaceContainerHighest),
+            Divider(height: 1, color: cs.surfaceContainerHighest),
             Flexible(
               child: ListView(
                 shrinkWrap: true,
@@ -372,9 +381,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   final isSelected = context.read<SettingsBloc>().state is SettingsLoaded &&
                       (context.read<SettingsBloc>().state as SettingsLoaded).settings.preferredCurrency == c.code;
                   return ListTile(
-                    title: Text(c.code, style: AppTypography.bodyMd.copyWith(color: AppColors.onSurface)),
-                    subtitle: Text(c.name, style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
-                    trailing: isSelected ? const Icon(Icons.check_rounded, color: AppColors.primary) : null,
+                    title: Text(c.code, style: AppTypography.bodyMd.copyWith(color: cs.onSurface)),
+                    subtitle: Text(c.name, style: AppTypography.bodySm.copyWith(color: cs.onSurfaceVariant)),
+                    trailing: isSelected ? Icon(Icons.check_rounded, color: cs.primary) : null,
                     onTap: () {
                       context.read<SettingsBloc>().add(SettingsSetCurrency(currency: c.code));
                       Navigator.pop(ctx);
@@ -394,6 +403,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _confirmLogout(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -407,7 +417,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.pop(ctx);
               context.read<AuthBloc>().add(const AuthLogoutRequested());
             },
-            child: const Text('Keluar', style: TextStyle(color: AppColors.error)),
+            child: Text('Keluar', style: TextStyle(color: cs.error)),
           ),
         ],
       ),
@@ -420,6 +430,7 @@ class _ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         final profile = state is AuthAuthenticated ? state.profile : null;
@@ -436,7 +447,7 @@ class _ProfileScreen extends StatelessWidget {
               Center(
                 child: CircleAvatar(
                   radius: 48,
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: cs.primary,
                   child: Text(
                     (profile?.name ?? '?')[0].toUpperCase(),
                     style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
@@ -485,8 +496,8 @@ class _ProfileScreen extends StatelessWidget {
                 icon: const Icon(Icons.delete_forever_outlined),
                 label: const Text('Hapus Akun'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.error,
-                  side: const BorderSide(color: AppColors.error),
+                  foregroundColor: cs.error,
+                  side: BorderSide(color: cs.error),
                   minimumSize: const Size.fromHeight(48),
                 ),
               ),
@@ -536,6 +547,7 @@ class _ProfileScreen extends StatelessWidget {
   }
 
   void _showDeleteAccountDialog(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final confirmCtrl = TextEditingController();
 
     showDialog(
@@ -547,7 +559,7 @@ class _ProfileScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Semua data akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.', style: TextStyle(fontSize: 13, color: AppColors.error)),
+            Text('Semua data akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.', style: TextStyle(fontSize: 13, color: cs.error)),
             const SizedBox(height: 16),
             const Text('Ketik "HAPUS" untuk konfirmasi:', style: TextStyle(fontSize: 13)),
             const SizedBox(height: 8),
@@ -565,7 +577,7 @@ class _ProfileScreen extends StatelessWidget {
               Navigator.pop(ctx);
               context.read<AuthBloc>().add(const AuthDeleteAccountRequested());
             },
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            style: TextButton.styleFrom(foregroundColor: cs.error),
             child: const Text('Hapus Akun Saya'),
           ),
         ],

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/icon_registry.dart';
-import '../../core/theme/app_colors.dart';
 
 class CategoryIconCircle extends StatelessWidget {
   final String categoryId;
@@ -18,8 +17,9 @@ class CategoryIconCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final iconData = CategoryIconRegistry.resolve(categoryId, categoryName.isNotEmpty ? categoryName : categoryId);
-    final resolvedColor = color ?? AppColors.primary.withValues(alpha: 0.1);
+    final resolvedColor = color ?? cs.primary.withValues(alpha: 0.1);
 
     return Container(
       width: size,
@@ -28,7 +28,7 @@ class CategoryIconCircle extends StatelessWidget {
         color: resolvedColor,
         borderRadius: BorderRadius.all(Radius.circular(size / 4)),
       ),
-      child: Icon(iconData, color: color ?? AppColors.primary, size: size * 0.5),
+      child: Icon(iconData, color: color ?? cs.primary, size: size * 0.5),
     );
   }
 }

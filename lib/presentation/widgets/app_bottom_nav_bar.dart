@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_radius.dart';
 
@@ -20,17 +19,18 @@ class AppBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: cs.surface,
         border: Border(
-          top: BorderSide(color: AppColors.surfaceContainerHighest, width: 0.5),
+          top: BorderSide(color: cs.surfaceContainerHighest, width: 0.5),
         ),
         boxShadow: [
           BoxShadow(
-            color: Color(0x0D000000),
+            color: cs.shadow.withValues(alpha: 0.08),
             blurRadius: 10,
-            offset: Offset(0, -1),
+            offset: const Offset(0, -1),
           ),
         ],
       ),
@@ -46,6 +46,7 @@ class AppBottomNavBar extends StatelessWidget {
   }
 
   Widget _buildNavItem(BuildContext context, int index) {
+    final cs = Theme.of(context).colorScheme;
     final isActive = currentIndex == index;
     return Expanded(
       child: InkWell(
@@ -59,7 +60,7 @@ class AppBottomNavBar extends StatelessWidget {
               Icon(
                 _resolveIcon(_tabs.icons[index], isActive),
                 size: 24,
-                color: isActive ? AppColors.primary : AppColors.onSurfaceVariant.withValues(alpha: 0.6),
+                color: isActive ? cs.primary : cs.onSurfaceVariant.withValues(alpha: 0.6),
               ),
               const SizedBox(height: 2),
               Text(
@@ -67,7 +68,7 @@ class AppBottomNavBar extends StatelessWidget {
                 style: AppTypography.labelMono.copyWith(
                   fontSize: 10,
                   fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                  color: isActive ? AppColors.primary : AppColors.onSurfaceVariant.withValues(alpha: 0.6),
+                  color: isActive ? cs.primary : cs.onSurfaceVariant.withValues(alpha: 0.6),
                 ),
               ),
             ],

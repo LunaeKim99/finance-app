@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../domain/entities/transaction.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/constants/icon_registry.dart';
@@ -22,18 +21,19 @@ class TransactionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
     final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
     final isIncome = transaction.type == TransactionType.income;
-    final amountColor = isIncome ? AppColors.primary : AppColors.secondary;
+    final amountColor = isIncome ? cs.primary : cs.secondary;
     final amountPrefix = isIncome ? '+ ' : '- ';
     final iconData = CategoryIconRegistry.resolve(transaction.category, transaction.category);
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+        color: cs.surfaceContainerLowest,
         borderRadius: AppRadius.xlRadius,
-        border: Border.all(color: AppColors.surfaceContainer.withValues(alpha: 0.8)),
+        border: Border.all(color: cs.surfaceContainer.withValues(alpha: 0.8)),
         boxShadow: [
           BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 12, offset: const Offset(0, 2)),
         ],
@@ -62,8 +62,8 @@ class TransactionCard extends StatelessWidget {
                   height: 40,
                   decoration: BoxDecoration(
                     color: isIncome
-                        ? AppColors.primary.withValues(alpha: 0.1)
-                        : AppColors.secondary.withValues(alpha: 0.1),
+                        ? cs.primary.withValues(alpha: 0.1)
+                        : cs.secondary.withValues(alpha: 0.1),
                     borderRadius: AppRadius.mdRadius,
                   ),
                   child: Icon(iconData, color: amountColor, size: 20),
@@ -75,12 +75,12 @@ class TransactionCard extends StatelessWidget {
                     children: [
                       Text(
                         transaction.category,
-                        style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600, color: AppColors.onSurface),
+                        style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600, color: cs.onSurface),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '${dateFormat.format(transaction.date)}${transaction.note != null && transaction.note!.isNotEmpty ? ' • ${transaction.note}' : ''}',
-                        style: AppTypography.bodySm.copyWith(color: AppColors.onSurfaceVariant),
+                        style: AppTypography.bodySm.copyWith(color: cs.onSurfaceVariant),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -99,7 +99,7 @@ class TransactionCard extends StatelessWidget {
                             padding: const EdgeInsets.only(right: 4),
                             child: Tooltip(
                               message: 'Menunggu sinkronisasi',
-                              child: Icon(Icons.cloud_off_rounded, size: 14, color: AppColors.tertiary),
+                              child: Icon(Icons.cloud_off_rounded, size: 14, color: cs.tertiary),
                             ),
                           ),
                         Text(
@@ -110,7 +110,7 @@ class TransactionCard extends StatelessWidget {
                     ),
                     if (showEditIcon) ...[
                       const SizedBox(height: 4),
-                      Icon(Icons.edit_outlined, size: 14, color: AppColors.onSurfaceVariant.withValues(alpha: 0.5)),
+                      Icon(Icons.edit_outlined, size: 14, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
                     ],
                   ],
                 ),
