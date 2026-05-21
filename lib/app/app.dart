@@ -10,6 +10,7 @@ import '../presentation/blocs/settings/settings_bloc.dart';
 import '../presentation/blocs/settings/settings_state.dart';
 import '../presentation/blocs/category/category_bloc.dart';
 import '../presentation/blocs/usage/usage_bloc.dart';
+import '../presentation/screens/ai_chat/bloc/ai_chat_bloc.dart';
 import '../presentation/screens/auth/bloc/auth_bloc.dart';
 import '../presentation/screens/auth/bloc/auth_state.dart';
 import '../presentation/screens/transaction/bloc/transaction_bloc.dart';
@@ -48,6 +49,9 @@ class FinanceApp extends StatelessWidget {
           create: (_) => UsageBloc(
             usageRepository: UsageRepositoryImpl(),
           ),
+        ),
+        BlocProvider<AiChatBloc>(
+          create: (_) => AiChatBloc(),
         ),
         BlocProvider<CategoryBloc>(
           create: (_) => CategoryBloc(),
